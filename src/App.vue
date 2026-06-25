@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView, RouterLink } from 'vue-router'
 import { ListTodo, Sun, Archive, Calendar } from '@lucide/vue'
+import { useReset } from './composables/useReset'
+
+const { checkAndReset } = useReset()
+onMounted(checkAndReset)
 </script>
 
 <template>
