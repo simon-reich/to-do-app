@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { RouterView, RouterLink } from 'vue-router'
-import { ListTodo, Sun, Archive, Calendar } from '@lucide/vue'
+import { ListTodo, Sun, Archive, Calendar, Settings } from '@lucide/vue'
 import { useReset } from './composables/useReset'
+import SettingsModal from './components/SettingsModal.vue'
 
 const { checkAndReset } = useReset()
 onMounted(checkAndReset)
+
+const showSettings = ref(false)
 </script>
 
 <template>
@@ -31,6 +34,12 @@ onMounted(checkAndReset)
         <Calendar :size="22" />
         <span>Kalender</span>
       </RouterLink>
+      <button class="nav-item nav-btn" @click="showSettings = true">
+        <Settings :size="22" />
+        <span>Settings</span>
+      </button>
     </nav>
+
+    <SettingsModal v-if="showSettings" @close="showSettings = false" />
   </div>
 </template>

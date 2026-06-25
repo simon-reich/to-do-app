@@ -91,3 +91,10 @@ main {
 .nav-item.router-link-active {
   color: var(--accent);
 }
+
+.nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
