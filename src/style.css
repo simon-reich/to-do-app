@@ -98,3 +98,61 @@ main {
   cursor: pointer;
   font-family: inherit;
 }
+
+/* ── Route Transitions ── */
+.route-enter-active,
+.route-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.route-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.route-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* ── List Transitions ── */
+.list-enter-active,
+.list-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* ── Focus Styles ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+/* ── v-calendar Overrides ── */
+:root {
+  --vc-font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --vc-rounded-full: 8px;
+  --vc-font-size-xs: 12px;
+  --vc-font-size-sm: 13px;
+  --vc-font-size-base: 14px;
+  --vc-color-gray-50: var(--bg);
+  --vc-color-gray-100: var(--border);
+  --vc-color-gray-200: var(--border);
+  --vc-color-gray-900: var(--text);
+  --vc-color-white: var(--surface);
+}

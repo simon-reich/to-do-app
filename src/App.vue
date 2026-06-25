@@ -14,7 +14,11 @@ const showSettings = ref(false)
 <template>
   <div id="app-shell">
     <main>
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <Transition name="route" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </main>
 
     <nav class="bottom-nav">

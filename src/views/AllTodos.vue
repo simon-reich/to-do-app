@@ -94,9 +94,9 @@ const hasTags = computed(() => store.tags.length > 0)
     </div>
 
     <!-- List -->
-    <div v-if="sortedTodos.length" class="todo-list">
+    <TransitionGroup v-if="sortedTodos.length" name="list" tag="div" class="todo-list">
       <TodoItem v-for="todo in sortedTodos" :key="todo.id" :todo="todo" />
-    </div>
+    </TransitionGroup>
 
     <p v-else class="empty-state">
       {{ store.activeTodos.length === 0 ? 'Noch keine Todos. Leg einfach los!' : 'Keine Todos für diesen Filter.' }}
