@@ -120,10 +120,10 @@ const hasTags = computed(() => store.tags.length > 0)
 
 .sort-select {
   padding: 5px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 2px solid var(--text);
   background: var(--surface);
   font-size: 13px;
+  font-weight: 600;
   color: var(--text);
   cursor: pointer;
   outline: none;
@@ -138,23 +138,24 @@ const hasTags = computed(() => store.tags.length > 0)
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 2px solid var(--text);
   background: var(--surface);
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--text);
   cursor: pointer;
 }
 
 .sort-dir-btn:hover {
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
+  color: #fff;
 }
 
 .tag-filter {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
 
 .tag-filter-btn {
@@ -162,8 +163,7 @@ const hasTags = computed(() => store.tags.length > 0)
   background: none;
   padding: 0;
   cursor: pointer;
-  border-radius: 10px;
-  opacity: 0.45;
+  opacity: 0.4;
   transition: opacity 0.15s;
 }
 
@@ -179,24 +179,26 @@ const hasTags = computed(() => store.tags.length > 0)
 }
 
 .project-toggle {
-  padding: 3px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 4px 12px;
+  border: 2px solid var(--text);
   background: var(--surface);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text);
   cursor: pointer;
-  transition: opacity 0.15s, background 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: background 0.1s, color 0.1s;
 }
 
 .project-toggle.hidden {
-  opacity: 0.4;
+  opacity: 0.35;
   text-decoration: line-through;
 }
 
 .project-toggle:hover {
-  border-color: var(--accent);
+  background: var(--text);
+  color: #fff;
 }
 
 .todo-list {

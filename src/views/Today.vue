@@ -86,15 +86,14 @@ function projectName(projectId?: string) {
   align-items: flex-start;
   gap: 12px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--text);
   padding: 12px 14px;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: box-shadow 0.1s;
 }
 
 .today-item:hover {
-  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent);
 }
 
 .check-btn {
@@ -146,12 +145,12 @@ function projectName(projectId?: string) {
 
 .project-chip {
   font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--text-muted);
   padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .empty-state {

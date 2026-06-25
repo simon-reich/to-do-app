@@ -6,11 +6,7 @@ defineProps<{ tag: Tag }>()
 <template>
   <span
     class="tag-badge"
-    :style="{
-      background: tag.color + '22',
-      color: tag.color,
-      borderColor: tag.color + '66',
-    }"
+    :style="{ background: tag.color, color: '#fff' }"
   >{{ tag.label }}</span>
 </template>
 
@@ -18,11 +14,10 @@ defineProps<{ tag: Tag }>()
 .tag-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
   font-size: 11px;
-  font-weight: 600;
-  border: 1px solid;
+  font-weight: 700;
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 </style>

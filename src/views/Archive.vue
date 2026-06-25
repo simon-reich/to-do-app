@@ -86,12 +86,11 @@ function projectName(projectId?: string) {
 }
 
 .count-badge {
-  background: var(--accent-subtle);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 2px 9px;
-  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
 }
 
 .groups {
@@ -117,8 +116,7 @@ function projectName(projectId?: string) {
 
 .archive-item {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--border);
   padding: 10px 14px;
   display: flex;
   flex-direction: column;

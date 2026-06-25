@@ -156,8 +156,7 @@ const projectName = computed(() =>
 <style scoped>
 .todo-item {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--text);
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -199,7 +198,7 @@ const projectName = computed(() =>
   color: var(--text-muted);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 2px 8px;
 }
 
@@ -216,7 +215,7 @@ const projectName = computed(() =>
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -238,13 +237,13 @@ const projectName = computed(() =>
 
 /* Edit mode */
 .todo-item--editing {
-  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent);
 }
 
 .edit-title {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 10px;
   font-size: 15px;
   font-weight: 500;
@@ -261,7 +260,7 @@ const projectName = computed(() =>
 .edit-note {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 10px;
   font-size: 13px;
   font-family: inherit;
@@ -289,7 +288,7 @@ const projectName = computed(() =>
 .field-btn {
   padding: 4px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--bg);
   font-size: 12px;
   cursor: pointer;
@@ -310,7 +309,7 @@ const projectName = computed(() =>
   z-index: 50;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 6px;
   min-width: 160px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
@@ -345,7 +344,7 @@ const projectName = computed(() =>
 .project-select {
   padding: 4px 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--bg);
   font-size: 12px;
   color: var(--text-muted);
@@ -375,7 +374,7 @@ const projectName = computed(() =>
   align-items: center;
   gap: 4px;
   padding: 5px 12px;
-  border-radius: 6px;
+  border-radius: 0;
   border: 1px solid;
   font-size: 13px;
   cursor: pointer;

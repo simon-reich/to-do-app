@@ -30,9 +30,8 @@ const emit = defineEmits<{
 
 <style scoped>
 .check-modal {
-  background: var(--surface);
-  border: 1px solid var(--accent);
-  border-radius: 10px;
+  background: var(--yellow);
+  box-shadow: 3px 3px 0 var(--text);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -41,7 +40,7 @@ const emit = defineEmits<{
 
 .check-title {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text);
   line-height: 1.4;
 }
@@ -58,32 +57,25 @@ const emit = defineEmits<{
   justify-content: center;
   gap: 6px;
   padding: 10px 8px;
-  border-radius: 8px;
-  border: 1px solid;
+  border: none;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: opacity 0.1s;
+}
+
+.opt-btn:hover {
+  opacity: 0.85;
 }
 
 .opt-complete {
-  background: #f0fdf4;
-  border-color: #86efac;
-  color: #16a34a;
-}
-
-.opt-complete:hover {
-  background: #dcfce7;
+  background: var(--teal);
+  color: #fff;
 }
 
 .opt-today {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #2563eb;
-}
-
-.opt-today:hover {
-  background: #dbeafe;
+  background: var(--text);
+  color: #fff;
 }
 
 .cancel-btn {

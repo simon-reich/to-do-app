@@ -6,16 +6,19 @@
 }
 
 :root {
-  --bg: #f9f9f8;
+  --bg: #f2f0eb;
   --surface: #ffffff;
   --border: #e8e7e5;
-  --text: #1a1a1a;
-  --text-muted: #8a8a8a;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-subtle: rgba(79, 70, 229, 0.08);
+  --text: #0f0f0f;
+  --text-muted: #7a7570;
+  --accent: #ff3c00;
+  --accent-hover: #e03500;
+  --accent-subtle: rgba(255, 60, 0, 0.08);
+  --yellow: #ffe600;
+  --teal: #00c9a7;
   --nav-height: 64px;
   --max-width: 640px;
+  --radius: 0px;
 
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 16px;
@@ -41,14 +44,15 @@ body {
 
 main {
   flex: 1;
-  padding: 24px 16px calc(var(--nav-height) + 24px);
+  padding: 28px 16px calc(var(--nav-height) + 28px);
 }
 
 .view h1 {
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
 }
 
 /* ── Bottom Navigation ── */
@@ -60,8 +64,7 @@ main {
   width: 100%;
   max-width: var(--max-width);
   height: var(--nav-height);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--text);
   display: flex;
   align-items: stretch;
   z-index: 100;
@@ -74,22 +77,24 @@ main {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  color: var(--text-muted);
+  gap: 3px;
+  color: rgba(255,255,255,0.45);
   text-decoration: none;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  transition: color 0.15s;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.12s, background 0.12s;
   padding: 8px 0;
 }
 
 .nav-item:hover {
-  color: var(--text);
+  color: rgba(255,255,255,0.8);
 }
 
 .nav-item.router-link-active {
-  color: var(--accent);
+  color: var(--yellow);
+  background: rgba(255,255,255,0.06);
 }
 
 .nav-btn {
@@ -128,25 +133,17 @@ main {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); }
 
 /* ── v-calendar Overrides ── */
 :root {
   --vc-font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --vc-rounded-full: 8px;
+  --vc-rounded-full: 0px;
   --vc-font-size-xs: 12px;
   --vc-font-size-sm: 13px;
   --vc-font-size-base: 14px;

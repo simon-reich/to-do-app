@@ -122,10 +122,9 @@ const selectedTags = computed(() =>
 <style scoped>
 .inline-input {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 20px;
+  box-shadow: 3px 3px 0 var(--text);
+  padding: 14px;
+  margin-bottom: 24px;
 }
 
 .title-row {
@@ -151,15 +150,14 @@ const selectedTags = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
   border: none;
   background: var(--accent);
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: background 0.1s;
 }
 
 .add-btn:disabled {
@@ -198,7 +196,7 @@ const selectedTags = computed(() =>
 .note-input {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 8px;
   font-size: 13px;
   font-family: inherit;
@@ -226,7 +224,7 @@ const selectedTags = computed(() =>
 .field-btn {
   padding: 4px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--bg);
   font-size: 12px;
   cursor: pointer;
@@ -283,7 +281,7 @@ const selectedTags = computed(() =>
 .project-select {
   padding: 4px 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--bg);
   font-size: 12px;
   color: var(--text-muted);
