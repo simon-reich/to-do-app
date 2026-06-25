@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { X, Trash2, Eye, EyeOff } from '@lucide/vue'
+import { X, Trash2, Eye, EyeOff, Download, Upload } from '@lucide/vue'
 import { useTodosStore } from '../stores/todos'
+import { useStorage } from '../composables/useStorage'
 import TagForm from './TagForm.vue'
 
 const emit = defineEmits<{ close: [] }>()
 const store = useTodosStore()
+const { exportData, importData } = useStorage()
 
 const newProjectName = ref('')
 
@@ -17,6 +19,12 @@ function addProject() {
 
 function updateProjectName(id: string, value: string) {
   if (value.trim()) store.updateProject(id, { name: value })
+}
+
+async function handleImport() {
+  const confirmed = window.confirm('Import ersetzt alle aktuellen Daten. Fortfahren?')
+  if (!confirmed) return
+  await importData()
 }
 </script>
 
@@ -75,6 +83,22 @@ function updateProjectName(id: string, value: string) {
             </div>
 
             <p v-else class="empty-hint">Noch keine Projekte.</p>
+          </div>
+
+          <hr class="divider" />
+
+          <!-- Import / Export -->
+          <div class="io-section">
+            <h3 class="section-title">Daten</h3>
+            <div class="io-row">
+              <button class="io-btn" @click="exportData">
+                <Download :size="15" /> Exportieren
+              </button>
+              <button class="io-btn io-btn--import" @click="handleImport">
+                <Upload :size="15" /> Importieren
+              </button>
+            </div>
+            <p class="hint">Export speichert alle Todos, Tags und Projekte als JSON.</p>
           </div>
         </div>
       </div>
@@ -276,6 +300,46 @@ function updateProjectName(id: string, value: string) {
 
 .empty-hint {
   font-size: 13px;
+  color: var(--text-muted);
+}
+
+.io-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.io-row {
+  display: flex;
+  gap: 8px;
+}
+
+.io-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.io-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.io-btn--import {
+  color: var(--text-muted);
+}
+
+.hint {
+  font-size: 12px;
   color: var(--text-muted);
 }
 </style>

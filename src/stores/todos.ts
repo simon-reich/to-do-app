@@ -147,6 +147,14 @@ export const useTodosStore = defineStore('todos', () => {
     lastResetDate.value = new Date().toISOString().slice(0, 10)
   }
 
+  // ── Import ──
+  function importData(data: { todos: Todo[]; tags: Tag[]; projects: Project[]; lastResetDate: string }) {
+    todos.value = data.todos
+    tags.value = data.tags
+    projects.value = data.projects
+    lastResetDate.value = data.lastResetDate
+  }
+
   return {
     // state
     todos, tags, projects, lastResetDate,
@@ -156,7 +164,7 @@ export const useTodosStore = defineStore('todos', () => {
     addTodo, updateTodo, deleteTodo, sendToToday, completeTodo, doneForToday,
     addTag, updateTag, deleteTag,
     addProject, updateProject, deleteProject,
-    resetToday,
+    resetToday, importData,
   }
 }, {
   persist: true,
