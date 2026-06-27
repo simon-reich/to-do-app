@@ -113,6 +113,15 @@ todo-app/
 | Phase 7 | Import/Export (File API) | ~30min |
 | Phase 8 | Styling / Polishing – responsive, minimalistisches fixes Design | ~2h |
 
+## Branches
+
+| Branch | Zweck |
+|---|---|
+| `main` | Stabiler Stand nach Phase 8 – minimalistisches, generisches Design |
+| `design/poppy` | Design-Experiment: Neo-brutalist, keine runden Ecken, Flächen statt Borders, kräftige Farben (Orange-Rot, Gelb, Teal), harte Drop-Shadows |
+
+Auf `design/poppy` wird frei experimentiert. Rückkehr zu `main` jederzeit via `git checkout main`.
+
 ## Entwicklungshinweise
 
 - Todos sind durch `crypto.randomUUID()` eindeutig – gleiche Titel kein Problem.
