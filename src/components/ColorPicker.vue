@@ -46,6 +46,23 @@ watch(() => props.modelValue, (hex) => {
 const currentHex = computed(() => hsvToHex(hue.value, sat.value, val.value))
 watch(currentHex, v => emit('update:modelValue', v))
 
+const hexInput = ref('')
+watch(currentHex, v => { hexInput.value = v }, { immediate: true })
+
+function onHexInput(e: Event) {
+  hexInput.value = (e.target as HTMLInputElement).value
+}
+
+function onHexCommit() {
+  const raw = hexInput.value.trim()
+  const full = raw.startsWith('#') ? raw : '#' + raw
+  if (/^#[0-9a-fA-F]{6}$/.test(full)) {
+    ;[hue.value, sat.value, val.value] = rgbToHsv(...hexToRgb(full))
+  } else {
+    hexInput.value = currentHex.value
+  }
+}
+
 const squareBg = computed(() =>
   `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${hue.value},100%,50%))`
 )
@@ -81,7 +98,15 @@ function onHue(e: PointerEvent) {
     </div>
     <div class="cpicker-footer">
       <span class="result-swatch" :style="{ background: currentHex }" />
-      <span class="result-hex">{{ currentHex }}</span>
+      <input
+        class="result-hex"
+        :value="hexInput"
+        @input="onHexInput"
+        @blur="onHexCommit"
+        @keydown.enter.prevent="onHexCommit"
+        maxlength="7"
+        spellcheck="false"
+      />
     </div>
   </div>
 </template>
@@ -161,5 +186,14 @@ function onHue(e: PointerEvent) {
   font-size: 12px;
   font-family: monospace;
   color: var(--gray);
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  width: 7ch;
+  cursor: text;
+}
+.result-hex:focus {
+  color: var(--gray-dark);
 }
 </style>

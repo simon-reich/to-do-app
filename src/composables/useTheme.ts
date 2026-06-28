@@ -31,8 +31,8 @@ function hslToHex(h: number, s: number, l: number): string {
 export function applyTheme(bg: string, gray: string) {
   const root = document.documentElement
   const [h, s, l] = hexToHsl(gray)
-  const grayDark = hslToHex(h, Math.min(s + 5, 100), Math.max(l - 24, 5))
-  const grayLight = hslToHex(h, Math.max(s - 2, 0), Math.min(l + 18, 94))
+  const grayDark = hslToHex(h, Math.min(s + 5, 100), Math.max(l - 12, 5))
+  const grayLight = hslToHex(h, Math.max(s - 2, 0), Math.min(l + 15, 94))
   root.style.setProperty('--bg', bg)
   root.style.setProperty('--gray', gray)
   root.style.setProperty('--gray-dark', grayDark)
