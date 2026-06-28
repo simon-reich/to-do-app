@@ -85,17 +85,24 @@ export function effectConfetti(cx: number, cy: number) {
     ).onfinish = () => el.remove()
   }
 }
+
+import { ref } from 'vue'
+// Shared across all instances – only one tag menu open at a time
+const openTagMenuId = ref<string | null>(null)
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { CirclePlus, CircleMinus, Circle, Trash2, CheckCheck, Clock } from '@lucide/vue'
-import type { Todo } from '../stores/todos'
+import { useTodosStore, type Todo } from '../stores/todos'
+import TagSelectModal from './TagSelectModal.vue'
 
-defineProps<{
+const props = defineProps<{
   todo: Todo
   mode: 'all' | 'today'
 }>()
+
+const store = useTodosStore()
 
 const emit = defineEmits<{
   'send-to-today': [id: string]
@@ -106,19 +113,30 @@ const emit = defineEmits<{
 }>()
 
 const showMenu = ref(false)
+const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
 const wrapRef = ref<HTMLElement | null>(null)
 const circleBtnRef = ref<HTMLButtonElement | null>(null)
 
 function closeOnOutside(e: MouseEvent) {
   if (wrapRef.value && !wrapRef.value.contains(e.target as Node)) {
     showMenu.value = false
+    if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
   }
 }
 
-watch(showMenu, (val) => {
-  if (val) document.addEventListener('click', closeOnOutside)
+watch([showMenu, showTagMenu], ([m, t]) => {
+  if (m || t) document.addEventListener('click', closeOnOutside)
   else document.removeEventListener('click', closeOnOutside)
 })
+
+function toggleTagMenu() {
+  showMenu.value = false
+  openTagMenuId.value = openTagMenuId.value === props.todo.id ? null : props.todo.id
+}
+
+function updateTags(tags: string[]) {
+  store.updateTodo(props.todo.id, { tags })
+}
 
 function spawnEffect() {
   const btn = circleBtnRef.value
@@ -147,8 +165,8 @@ function handleDoneForToday(id: string) {
 
 <template>
   <div ref="wrapRef" class="todo-card-wrap">
-    <div class="todo-card">
-      <span class="todo-title">{{ todo.title }}</span>
+    <div class="todo-card" :class="{ 'has-tags': todo.tags.length }">
+      <span class="todo-title" @click.stop="store.tags.length ? toggleTagMenu() : null">{{ todo.title }}</span>
 
       <button
         v-if="mode === 'all'"
@@ -203,6 +221,13 @@ function handleDoneForToday(id: string) {
         <Clock :size="16" /> Done for today
       </button>
     </div>
+
+    <TagSelectModal
+      v-if="showTagMenu && store.tags.length"
+      :model-value="todo.tags"
+      @update:model-value="updateTags"
+      @mousedown.prevent
+    />
   </div>
 </template>
 
@@ -265,9 +290,9 @@ function handleDoneForToday(id: string) {
   top: calc(100% + 5px);
   left: 0;
   background: var(--bg);
-  border: 1px solid var(--gray);
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
-  box-shadow: 2px 2px 0 var(--gray);
+  box-shadow: 4px 4px 0 var(--gray);
   display: flex;
   flex-direction: column;
   z-index: 20;

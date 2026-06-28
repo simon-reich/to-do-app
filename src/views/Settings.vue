@@ -44,7 +44,7 @@ function saveTheme() {
           <ColorPicker v-model="pickerBg" />
         </div>
         <div class="color-field">
-          <span class="color-label">Gray</span>
+          <span class="color-label">Ink</span>
           <ColorPicker v-model="pickerGray" />
         </div>
       </div>
