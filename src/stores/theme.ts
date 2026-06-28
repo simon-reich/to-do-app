@@ -12,12 +12,18 @@ export interface ColorTheme {
 export const useThemeStore = defineStore('theme', () => {
   const activeBg = ref('#E2E790')
   const activeGray = ref('#878080')
+  const rounded = ref(true)
   const savedThemes = ref<ColorTheme[]>([])
 
   function apply(bg: string, gray: string) {
     activeBg.value = bg
     activeGray.value = gray
-    applyTheme(bg, gray)
+    applyTheme(bg, gray, rounded.value)
+  }
+
+  function toggleRounded() {
+    rounded.value = !rounded.value
+    applyTheme(activeBg.value, activeGray.value, rounded.value)
   }
 
   function saveTheme(name: string) {
@@ -37,5 +43,5 @@ export const useThemeStore = defineStore('theme', () => {
     apply(theme.bg, theme.gray)
   }
 
-  return { activeBg, activeGray, savedThemes, apply, saveTheme, deleteTheme, loadTheme }
+  return { activeBg, activeGray, rounded, savedThemes, apply, toggleRounded, saveTheme, deleteTheme, loadTheme }
 }, { persist: true })

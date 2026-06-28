@@ -21,7 +21,7 @@ const themeName = ref('')
 
 // Live preview only – does NOT persist to store
 watch([pickerBg, pickerGray], ([bg, gray]) => {
-  applyTheme(bg, gray)
+  applyTheme(bg, gray, themeStore.rounded)
 })
 
 function saveTheme() {
@@ -36,7 +36,7 @@ function saveTheme() {
 
     <!-- Appearance -->
     <section class="section">
-      <h2 class="section-title">Appearance</h2>
+      <h2 class="section-title">Colors</h2>
 
       <div class="color-row">
         <div class="color-field">
@@ -75,6 +75,14 @@ function saveTheme() {
           </span>
         </button>
       </div>
+    </section>
+
+    <!-- Corner style -->
+    <section class="section">
+      <h2 class="section-title">Corners</h2>
+      <button class="action-btn" @click="themeStore.toggleRounded()">
+        {{ themeStore.rounded ? 'Rounded (active)' : 'Square (active)' }}
+      </button>
     </section>
 
     <!-- Data -->
