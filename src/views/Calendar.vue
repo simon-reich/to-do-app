@@ -5,13 +5,14 @@ import { useTodosStore } from '../stores/todos'
 const store = useTodosStore()
 const selectedDate = ref<string | null>(null)
 
-const completedDates = computed(() =>
-  store.todos.filter(t => !!t.completedAt).map(t => new Date(t.completedAt!))
-)
-
-const workedDates = computed(() =>
-  store.todos.flatMap(t => t.workLog.map(ts => new Date(ts)))
-)
+const activeDates = computed(() => {
+  const days = new Set<string>()
+  store.todos.forEach(t => {
+    if (t.completedAt) days.add(t.completedAt.slice(0, 10))
+    t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
+  })
+  return [...days].map(d => new Date(d + 'T12:00:00'))
+})
 
 const attributes = computed(() => {
   const attrs: object[] = []
@@ -46,11 +47,8 @@ const attributes = computed(() => {
     },
     dates: new Date(),
   })
-  if (completedDates.value.length) {
-    attrs.push({ key: 'completed', dot: { style: { backgroundColor: 'var(--gray-dark)' } }, dates: completedDates.value })
-  }
-  if (workedDates.value.length) {
-    attrs.push({ key: 'worked', dot: { style: { backgroundColor: 'var(--gray-light)' } }, dates: workedDates.value })
+  if (activeDates.value.length) {
+    attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--gray)' } }, dates: activeDates.value })
   }
   return attrs
 })
@@ -61,7 +59,7 @@ function onDayClick(day: { id: string }) {
 
 const selectedDateLabel = computed(() => {
   if (!selectedDate.value) return ''
-  return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString('de-DE', {
+  return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 })
@@ -85,7 +83,7 @@ const activityOnDay = computed(() => {
       class="cal"
       :attributes="attributes"
       expanded
-      locale="de"
+      locale="en"
       @dayclick="onDayClick"
     />
 
