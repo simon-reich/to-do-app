@@ -116,8 +116,8 @@ function projectName(projectId?: string) {
 
 .archive-item {
   background: var(--surface);
-  box-shadow: 2px 2px 0 var(--border);
-  padding: 10px 14px;
+  box-shadow: 4px 4px 0 var(--border);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -131,7 +131,7 @@ function projectName(projectId?: string) {
 }
 
 .archive-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: line-through;
@@ -140,14 +140,14 @@ function projectName(projectId?: string) {
 }
 
 .archive-date {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .archive-note {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-muted);
   line-height: 1.4;
 }

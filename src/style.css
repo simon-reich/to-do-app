@@ -12,7 +12,7 @@
   --radius: 6px;
 
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--gray);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -59,9 +59,9 @@ input, button, select, textarea {
 /* ── v-calendar overrides ── */
 :root {
   --vc-font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --vc-font-size-xs: 12px;
-  --vc-font-size-sm: 13px;
-  --vc-font-size-base: 13px;
+  --vc-font-size-xs: 14px;
+  --vc-font-size-sm: 16px;
+  --vc-font-size-base: 16px;
   --vc-color-gray-50: var(--bg);
   --vc-color-gray-100: var(--gray-light);
   --vc-color-gray-200: var(--gray-light);
@@ -108,8 +108,9 @@ input, button, select, textarea {
 .vc-popover-content {
   background-color: var(--bg) !important;
   border-color: var(--gray) !important;
+  border-width: 2px !important;
   color: var(--gray) !important;
-  box-shadow: 2px 2px 0 var(--gray) !important;
+  box-shadow: 5px 5px 0 var(--gray) !important;
 }
 
 .vc-popover-caret {
@@ -120,6 +121,7 @@ input, button, select, textarea {
 .vc-nav-arrow {
   color: var(--gray-dark) !important;
   background: transparent !important;
+  font-size: 16px !important;
 }
 
 .vc-nav-title:hover,
@@ -130,6 +132,7 @@ input, button, select, textarea {
 .vc-nav-item {
   color: var(--gray) !important;
   background: transparent !important;
+  font-size: 15px !important;
 }
 
 .vc-nav-item:hover {
@@ -167,19 +170,20 @@ input, button, select, textarea {
 .vc-header .vc-title,
 .vc-header .vc-title:hover {
   color: var(--gray-dark) !important;
-  font-size: 13px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
   opacity: 1 !important;
   background: transparent !important;
 }
 
 .vc-weekday {
   color: var(--gray-light) !important;
-  font-size: 11px !important;
+  font-size: 14px !important;
 }
 
 .vc-day-content {
   color: var(--gray) !important;
-  font-size: 13px !important;
+  font-size: 16px !important;
 }
 
 .vc-day-content.is-disabled {

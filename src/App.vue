@@ -97,7 +97,7 @@ provide('sortKey', sortKey)
           :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
           @click="toggleSort"
         >
-          <ArrowUpDown :size="16" />
+          <ArrowUpDown :size="22" />
         </button>
 
         <div class="add-wrapper">
@@ -120,13 +120,13 @@ provide('sortKey', sortKey)
 
         <nav class="top-nav">
           <RouterLink to="/all" class="nav-icon" title="All todos">
-            <Globe :size="21" />
+            <Globe :size="27" />
           </RouterLink>
           <RouterLink to="/today" class="nav-icon" title="Today">
-            <Sun :size="21" />
+            <Sun :size="27" />
           </RouterLink>
           <RouterLink to="/calendar" class="nav-icon" title="Calendar">
-            <CalendarDays :size="21" />
+            <CalendarDays :size="27" />
           </RouterLink>
         </nav>
       </div>
@@ -167,7 +167,7 @@ provide('sortKey', sortKey)
         title="Settings"
         @click="toggleSettings"
       >
-        <Settings :size="21" />
+        <Settings :size="30" />
       </button>
     </div>
 
@@ -181,10 +181,10 @@ provide('sortKey', sortKey)
 <style scoped>
 #app {
   display: grid;
-  grid-template-columns: 190px 1fr 190px;
-  grid-template-rows: 68px 1fr;
+  grid-template-columns: 230px 1fr 230px;
+  grid-template-rows: 88px 1fr;
   min-height: 100svh;
-  padding: 28px 28px 0 28px;
+  padding: 36px 36px 0 36px;
 }
 
 /* ── Sidebar head ── */
@@ -201,9 +201,9 @@ provide('sortKey', sortKey)
   font-size: 13px;
   color: var(--gray);
   background: transparent;
-  border: 1px solid var(--gray);
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
-  padding: 7px 10px;
+  padding: 9px 12px;
   outline: none;
   transition: border-color 0.15s;
 }
@@ -251,20 +251,20 @@ provide('sortKey', sortKey)
 
 .add-input {
   width: 100%;
-  font-size: 15px;
+  font-size: 17px;
   color: var(--gray);
   background: transparent;
-  border: 1px solid var(--gray);
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
-  padding: 7px 12px;
+  padding: 10px 16px;
   outline: none;
-  box-shadow: 0 3px 0 var(--gray);
+  box-shadow: 0 5px 0 var(--gray);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .add-input:focus {
   border-color: var(--gray-dark);
-  box-shadow: 0 3px 0 var(--gray-dark);
+  box-shadow: 0 5px 0 var(--gray-dark);
 }
 
 .add-input::placeholder { color: var(--gray-light); }
@@ -309,7 +309,7 @@ provide('sortKey', sortKey)
 
 .all-btn {
   background: none;
-  border: 1px solid var(--gray);
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
   color: var(--gray);
   font-size: 13px;
@@ -330,7 +330,7 @@ provide('sortKey', sortKey)
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border: 1px solid var(--gray);
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--gray);

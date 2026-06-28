@@ -71,7 +71,7 @@ function saveTheme() {
           </span>
           {{ t.name }}
           <span class="chip-delete" role="button" @click.stop="themeStore.deleteTheme(t.id)">
-            <X :size="11" />
+            <X :size="14" />
           </span>
         </button>
       </div>
@@ -105,7 +105,7 @@ function saveTheme() {
 }
 
 .section-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -127,19 +127,19 @@ function saveTheme() {
 }
 
 .color-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--gray);
 }
 
 .name-input {
   width: 100%;
-  padding: 7px 10px;
-  border: 1px solid var(--gray);
+  padding: 9px 12px;
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
   background: transparent;
   color: var(--gray-dark);
-  font-size: 13px;
+  font-size: 15px;
   outline: none;
 }
 
@@ -156,23 +156,23 @@ function saveTheme() {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 10px 5px 8px;
-  border: 1px solid var(--gray);
+  padding: 7px 12px 7px 10px;
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
   background: transparent;
   color: var(--gray);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
-  box-shadow: 2px 2px 0 var(--gray);
+  box-shadow: 4px 4px 0 var(--gray);
 }
 
 .theme-chip:hover,
 .theme-chip.active {
   border-color: var(--gray-dark);
   color: var(--gray-dark);
-  box-shadow: 2px 2px 0 var(--gray-dark);
+  box-shadow: 4px 4px 0 var(--gray-dark);
 }
 
 .chip-swatches {
@@ -182,8 +182,8 @@ function saveTheme() {
 
 .swatch {
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 13px;
+  height: 13px;
   border-radius: 2px;
   border: 1px solid rgba(0,0,0,0.1);
 }
@@ -206,20 +206,20 @@ function saveTheme() {
 }
 
 .action-btn {
-  padding: 7px 16px;
-  border: 1px solid var(--gray);
+  padding: 10px 20px;
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
   background: transparent;
   color: var(--gray);
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--gray);
+  box-shadow: 4px 4px 0 var(--gray);
   transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .action-btn:hover {
   border-color: var(--gray-dark);
   color: var(--gray-dark);
-  box-shadow: 2px 2px 0 var(--gray-dark);
+  box-shadow: 4px 4px 0 var(--gray-dark);
 }
 </style>

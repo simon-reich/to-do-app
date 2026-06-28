@@ -72,13 +72,13 @@ const projectName = computed(() =>
           title="Zu Heute hinzufügen"
           @click="store.sendToToday(todo.id)"
         >
-          <ArrowRight :size="15" />
+          <ArrowRight :size="18" />
         </button>
         <button class="action-btn" title="Bearbeiten" @click="startEdit">
-          <Pencil :size="15" />
+          <Pencil :size="18" />
         </button>
         <button class="action-btn delete-btn" title="Löschen" @click="store.deleteTodo(todo.id)">
-          <Trash2 :size="15" />
+          <Trash2 :size="18" />
         </button>
       </div>
     </div>
@@ -156,8 +156,8 @@ const projectName = computed(() =>
 <style scoped>
 .todo-item {
   background: var(--surface);
-  box-shadow: 3px 3px 0 var(--text);
-  padding: 12px 14px;
+  box-shadow: 5px 5px 0 var(--text);
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -171,7 +171,7 @@ const projectName = computed(() =>
 }
 
 .todo-title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: var(--text);
   line-height: 1.4;
@@ -212,8 +212,8 @@ const projectName = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 0;
   background: transparent;

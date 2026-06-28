@@ -156,7 +156,7 @@ function handleDoneForToday(id: string) {
         title="Delete"
         @click.stop="emit('delete', todo.id)"
       >
-        <Trash2 :size="13" />
+        <Trash2 :size="16" />
       </button>
       <button
         v-else
@@ -164,7 +164,7 @@ function handleDoneForToday(id: string) {
         title="Move back to overview"
         @click.stop="emit('remove-from-today', todo.id)"
       >
-        <CircleMinus :size="15" />
+        <CircleMinus :size="18" />
       </button>
 
       <button
@@ -173,7 +173,7 @@ function handleDoneForToday(id: string) {
         title="Add to today"
         @click.stop="emit('send-to-today', todo.id)"
       >
-        <CirclePlus :size="15" />
+        <CirclePlus :size="18" />
       </button>
       <button
         v-else-if="mode === 'all' && todo.inToday"
@@ -181,7 +181,7 @@ function handleDoneForToday(id: string) {
         title="Remove from today"
         @click.stop="emit('remove-from-today', todo.id)"
       >
-        <CircleMinus :size="15" />
+        <CircleMinus :size="18" />
       </button>
       <button
         v-else
@@ -191,16 +191,16 @@ function handleDoneForToday(id: string) {
         title="Complete"
         @click.stop="showMenu = !showMenu"
       >
-        <Circle :size="15" />
+        <Circle :size="18" />
       </button>
     </div>
 
     <div v-if="showMenu && mode === 'today'" class="check-menu">
       <button class="check-opt" @click.stop="handleComplete(todo.id)">
-        <CheckCheck :size="13" /> Done
+        <CheckCheck :size="16" /> Done
       </button>
       <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
-        <Clock :size="13" /> Done for today
+        <Clock :size="16" /> Done for today
       </button>
     </div>
   </div>
@@ -217,13 +217,13 @@ function handleDoneForToday(id: string) {
 .todo-card {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
-  border: 1px solid var(--gray);
+  gap: 12px;
+  padding: 12px 18px;
+  border: 2px solid var(--gray);
   border-radius: var(--radius);
-  box-shadow: 2px 2px 0 var(--gray);
+  box-shadow: 5px 5px 0 var(--gray);
   background: var(--bg);
-  font-size: 15px;
+  font-size: 17px;
   color: var(--gray);
   max-width: 320px;
   transition: border-color 0.12s, box-shadow 0.12s;
@@ -231,7 +231,7 @@ function handleDoneForToday(id: string) {
 
 .todo-card:hover {
   border-color: var(--gray-dark);
-  box-shadow: 2px 2px 0 var(--gray-dark);
+  box-shadow: 5px 5px 0 var(--gray-dark);
 }
 
 .todo-title {

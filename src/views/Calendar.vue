@@ -132,7 +132,7 @@ const activityOnDay = computed(() => {
 
 .cal :deep(.vc-day-content) {
   color: var(--gray) !important;
-  font-size: 14px !important;
+  font-size: 16px !important;
 }
 
 .cal :deep(.vc-day-content:hover) {
@@ -141,12 +141,29 @@ const activityOnDay = computed(() => {
 
 .cal :deep(.vc-title) {
   color: var(--gray-dark) !important;
-  font-size: 14px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
 }
 
 .cal :deep(.vc-weekday) {
   color: var(--gray-light) !important;
-  font-size: 12px !important;
+  font-size: 14px !important;
+}
+
+.cal :deep(.vc-arrow) {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.cal :deep(.vc-arrow svg) {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.cal :deep(.vc-day-content) {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 16px !important;
 }
 
 .day-detail {
@@ -157,7 +174,7 @@ const activityOnDay = computed(() => {
 }
 
 .day-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--gray-dark);
   text-transform: uppercase;
@@ -174,19 +191,19 @@ const activityOnDay = computed(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--gray);
 }
 
 .icon {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--gray-dark);
   flex-shrink: 0;
   letter-spacing: -1px;
 }
 
 .no-activity {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--gray-light);
 }
 
