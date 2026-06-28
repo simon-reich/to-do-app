@@ -38,24 +38,26 @@ function saveTheme() {
     <section class="section">
       <h2 class="section-title">Colors</h2>
 
-      <div class="color-row">
-        <div class="color-field">
-          <span class="color-label">Background</span>
-          <ColorPicker v-model="pickerBg" />
+      <div class="color-picker-group">
+        <div class="color-row">
+          <div class="color-field">
+            <span class="color-label">Background</span>
+            <ColorPicker v-model="pickerBg" />
+          </div>
+          <div class="color-field">
+            <span class="color-label">Ink</span>
+            <ColorPicker v-model="pickerGray" />
+          </div>
         </div>
-        <div class="color-field">
-          <span class="color-label">Ink</span>
-          <ColorPicker v-model="pickerGray" />
-        </div>
-      </div>
 
-      <input
-        v-model="themeName"
-        class="name-input"
-        placeholder="Theme name + Enter to save…"
-        maxlength="32"
-        @keydown.enter="saveTheme"
-      />
+        <input
+          v-model="themeName"
+          class="name-input"
+          placeholder="Theme name + Enter to save…"
+          maxlength="32"
+          @keydown.enter="saveTheme"
+        />
+      </div>
 
       <div v-if="themeStore.savedThemes.length" class="themes-list">
         <button
@@ -103,7 +105,7 @@ function saveTheme() {
   max-width: 480px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 52px;
 }
 
 .section {
@@ -118,6 +120,12 @@ function saveTheme() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gray-light);
+}
+
+.color-picker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .color-row {
@@ -158,6 +166,7 @@ function saveTheme() {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 6px;
 }
 
 .theme-chip {
