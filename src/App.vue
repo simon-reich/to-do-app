@@ -209,7 +209,7 @@ provide('sortKey', sortKey)
 }
 
 .tag-new-input:focus { border-color: var(--gray-dark); }
-.tag-new-input::placeholder { color: var(--gray-light); }
+.tag-new-input::placeholder { color: var(--gray); }
 
 /* ── Main head ── */
 .main-head {
@@ -267,7 +267,7 @@ provide('sortKey', sortKey)
   box-shadow: 0 5px 0 var(--gray-dark);
 }
 
-.add-input::placeholder { color: var(--gray-light); }
+.add-input::placeholder { color: var(--gray); }
 
 .top-nav {
   display: flex;

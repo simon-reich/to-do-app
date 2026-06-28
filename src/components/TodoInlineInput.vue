@@ -143,7 +143,7 @@ const selectedTags = computed(() =>
 }
 
 .title-input::placeholder {
-  color: var(--text-muted);
+  color: var(--gray);
 }
 
 .add-btn {

@@ -144,7 +144,7 @@ function saveTheme() {
 }
 
 .name-input:focus { border-color: var(--gray-dark); }
-.name-input::placeholder { color: var(--gray-light); }
+.name-input::placeholder { color: var(--gray); }
 
 .themes-list {
   display: flex;
