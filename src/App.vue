@@ -132,7 +132,7 @@ provide('sortKey', sortKey)
       </div>
     </div>
 
-    <!-- Sidebar body: tag list + settings button -->
+    <!-- Sidebar body: tag list -->
     <aside class="sidebar">
       <div class="tag-list">
         <button
@@ -157,16 +157,19 @@ provide('sortKey', sortKey)
           <button class="tag-x" title="Delete" @click="store.deleteTag(tag.id)">×</button>
         </div>
       </div>
+    </aside>
 
+    <!-- Settings head: top-right, symmetrical to sidebar-head -->
+    <div class="settings-head">
       <button
         class="settings-btn"
         :class="{ active: route.path === '/settings' }"
         title="Settings"
         @click="toggleSettings"
       >
-        <Settings :size="26" />
+        <Settings :size="21" />
       </button>
-    </aside>
+    </div>
 
     <!-- Main content -->
     <main class="main-content">
@@ -181,7 +184,7 @@ provide('sortKey', sortKey)
   grid-template-columns: 190px 1fr 190px;
   grid-template-rows: 68px 1fr;
   min-height: 100svh;
-  padding: 28px 0 0 28px;
+  padding: 28px 28px 0 28px;
 }
 
 /* ── Sidebar head ── */
@@ -364,16 +367,23 @@ provide('sortKey', sortKey)
 
 .tag-x:hover { color: var(--gray-dark); }
 
+.settings-head {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 16px;
+}
+
 .settings-btn {
   display: flex;
   align-items: center;
   background: none;
   border: none;
-  color: var(--gray);
+  color: var(--gray-light);
   cursor: pointer;
-  padding: 4px 0;
-  margin-top: 14px;
-  margin-bottom: 28px;
+  padding: 4px;
   transition: color 0.15s;
 }
 
