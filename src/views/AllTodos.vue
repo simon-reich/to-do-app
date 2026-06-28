@@ -1,28 +1,12 @@
 <script setup lang="ts">
-import { inject, computed, ref } from 'vue'
+import { inject, computed } from 'vue'
 import type { Ref } from 'vue'
 import { useTodosStore } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
-import TodoCheckModal from '../components/TodoCheckModal.vue'
 
 const store = useTodosStore()
 const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
 const sortKey = inject<Ref<'createdAt' | 'title'>>('sortKey')!
-
-const checkingId = ref<string | null>(null)
-const checkingTodo = computed(() =>
-  checkingId.value ? store.todos.find(t => t.id === checkingId.value) : null
-)
-
-function handleComplete(id: string) {
-  store.completeTodo(id)
-  checkingId.value = null
-}
-
-function handleDoneForToday(id: string) {
-  store.doneForToday(id)
-  checkingId.value = null
-}
 
 const filteredTodos = computed(() => {
   let result = store.activeTodos.filter(t => !t.inToday)
@@ -47,24 +31,12 @@ const filteredTodos = computed(() => {
         mode="all"
         @send-to-today="store.sendToToday($event)"
         @remove-from-today="store.removeFromToday($event)"
-        @start-check="checkingId = $event"
         @delete="store.deleteTodo($event)"
       />
     </div>
     <p v-else class="empty">
       {{ store.activeTodos.filter(t => !t.inToday).length === 0 && activeTagIds.length === 0 ? 'No todos yet.' : 'No todos for this filter.' }}
     </p>
-
-    <Teleport to="body">
-      <div v-if="checkingId && checkingTodo" class="overlay" @click.self="checkingId = null">
-        <TodoCheckModal
-          :title="checkingTodo.title"
-          @complete="handleComplete(checkingId!)"
-          @done-for-today="handleDoneForToday(checkingId!)"
-          @cancel="checkingId = null"
-        />
-      </div>
-    </Teleport>
   </div>
 </template>
 
