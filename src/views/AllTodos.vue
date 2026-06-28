@@ -53,6 +53,15 @@ const filteredTodos = computed(() => {
   justify-content: center;
 }
 
+@media (max-width: 700px) {
+  .todo-wrap {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+}
+
 .empty {
   color: var(--gray-light);
   font-size: 15px;

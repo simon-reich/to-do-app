@@ -167,6 +167,7 @@ function saveTheme() {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 6px;
+  justify-content: center;
 }
 
 .theme-chip {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, provide, onMounted } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { Globe, Sun, CalendarDays, Settings, ArrowUpDown } from '@lucide/vue'
+import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight } from '@lucide/vue'
 import { useTodosStore } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useReset } from './composables/useReset'
@@ -77,14 +77,23 @@ function toggleSettings() {
   else router.push('/settings')
 }
 
+// ── Mobile tag panel ──
+const showMobileTags = ref(false)
+
+function closeMobileTags(path?: string) {
+  showMobileTags.value = false
+  if (path) router.push(path)
+}
+
 provide('activeTagIds', activeTagIds)
 provide('sortKey', sortKey)
 </script>
 
 <template>
-  <div id="app" :class="{ 'is-settings': route.path === '/settings' }">
-    <!-- Sidebar head: tag input -->
-    <div class="sidebar-head">
+  <div id="app" :class="{ 'is-settings': route.path === '/settings', 'mobile-tags-open': showMobileTags }">
+
+    <!-- ══ DESKTOP: Sidebar head (tag input) ══ -->
+    <div class="sidebar-head desktop-only">
       <input
         v-model="tagInput"
         class="tag-new-input"
@@ -93,17 +102,19 @@ provide('sortKey', sortKey)
       />
     </div>
 
-    <!-- Main head: centered sort + add input + nav icons -->
+    <!-- ══ Main head: add todo input (hidden on settings + mobile-tags-open) ══ -->
     <div class="main-head">
       <div class="main-head-inner">
+        <!-- Sort button (desktop only) -->
         <button
-          class="sort-btn"
+          class="sort-btn desktop-only"
           :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
           @click="toggleSort"
         >
           <ArrowUpDown :size="22" />
         </button>
 
+        <!-- Add todo input -->
         <div class="add-wrapper">
           <input
             v-model="todoInput"
@@ -123,7 +134,8 @@ provide('sortKey', sortKey)
           />
         </div>
 
-        <nav class="top-nav">
+        <!-- Desktop nav icons -->
+        <nav class="top-nav desktop-only">
           <RouterLink to="/all" class="nav-icon" title="All todos">
             <Globe :size="27" />
           </RouterLink>
@@ -134,11 +146,16 @@ provide('sortKey', sortKey)
             <CalendarDays :size="27" />
           </RouterLink>
         </nav>
+
+        <!-- Mobile: tag panel toggle -->
+        <button class="mobile-tags-btn mobile-only" title="Tags" @click="showMobileTags = true">
+          <Tag :size="22" />
+        </button>
       </div>
     </div>
 
-    <!-- Sidebar body: tag list -->
-    <aside class="sidebar">
+    <!-- ══ DESKTOP: Sidebar body (tag list) ══ -->
+    <aside class="sidebar desktop-only">
       <div class="tag-list">
         <button
           v-if="store.tags.length"
@@ -147,7 +164,7 @@ provide('sortKey', sortKey)
           @click="activeTagIds = []"
         >
           all
-</button>
+        </button>
 
         <div
           v-for="tag in store.tags"
@@ -164,8 +181,8 @@ provide('sortKey', sortKey)
       </div>
     </aside>
 
-    <!-- Settings head: top-right, symmetrical to sidebar-head -->
-    <div class="settings-head">
+    <!-- ══ DESKTOP: Settings head ══ -->
+    <div class="settings-head desktop-only">
       <button
         class="settings-btn"
         :class="{ active: route.path === '/settings' }"
@@ -176,14 +193,90 @@ provide('sortKey', sortKey)
       </button>
     </div>
 
-    <!-- Main content -->
+    <!-- ══ MOBILE: Tag panel (full screen, replaces main-head + content) ══ -->
+    <div class="mobile-tags-panel mobile-only">
+      <div class="mobile-tags-head">
+        <input
+          v-model="tagInput"
+          class="tag-new-input"
+          placeholder="tag, ... + enter"
+          @keydown="handleTagKey"
+        />
+        <button class="nav-icon back-btn" title="Back" @click="showMobileTags = false">
+          <ArrowRight :size="24" />
+        </button>
+      </div>
+
+      <div class="tag-list mobile-tag-list">
+        <button
+          v-if="store.tags.length"
+          class="all-btn"
+          :class="{ active: activeTagIds.length === 0 }"
+          @click="activeTagIds = []"
+        >
+          all
+        </button>
+
+        <div
+          v-for="tag in store.tags"
+          :key="tag.id"
+          class="tag-chip"
+          :class="{
+            active: activeTagIds.includes(tag.id),
+            dimmed: activeTagIds.length > 0 && !activeTagIds.includes(tag.id)
+          }"
+        >
+          <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
+          <button class="tag-x" title="Delete" @click="store.deleteTag(tag.id)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Main content ══ -->
     <main class="main-content">
       <RouterView />
     </main>
+
+    <!-- ══ MOBILE: Bottom nav ══ -->
+    <nav class="mobile-bottom-nav mobile-only">
+      <button
+        class="sort-btn"
+        :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
+        @click="toggleSort"
+      >
+        <ArrowUpDown :size="22" />
+      </button>
+
+      <div class="mobile-nav-views">
+        <RouterLink to="/all" class="nav-icon" title="All todos" @click="showMobileTags = false">
+          <Globe :size="24" />
+        </RouterLink>
+        <RouterLink to="/today" class="nav-icon" title="Today" @click="showMobileTags = false">
+          <Sun :size="24" />
+        </RouterLink>
+        <RouterLink to="/calendar" class="nav-icon" title="Calendar" @click="showMobileTags = false">
+          <CalendarDays :size="24" />
+        </RouterLink>
+      </div>
+
+      <button
+        class="settings-btn"
+        :class="{ active: route.path === '/settings' }"
+        title="Settings"
+        @click="toggleSettings"
+      >
+        <Settings :size="24" />
+      </button>
+    </nav>
+
   </div>
 </template>
 
 <style scoped>
+/* ══ Desktop visibility helpers ══ */
+.mobile-only { display: none; }
+
+/* ══ Desktop grid layout ══ */
 #app {
   display: grid;
   grid-template-columns: 230px 1fr 230px;
@@ -287,12 +380,18 @@ provide('sortKey', sortKey)
   display: flex;
   align-items: center;
   text-decoration: none;
-  transition: color 0.15s;
+  background: none;
+  border: none;
   cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s;
 }
 
 .nav-icon:hover,
 .nav-icon.router-link-active { color: var(--gray-dark); }
+
+/* No active highlight on bottom nav while tag panel is open */
+.mobile-tags-open .mobile-bottom-nav .nav-icon.router-link-active { color: var(--gray-light); }
 
 /* ── Sidebar body ── */
 .sidebar {
@@ -413,5 +512,137 @@ provide('sortKey', sortKey)
   justify-content: center;
   padding: 36px 24px 24px;
   overflow-y: auto;
+}
+
+/* ══ Mobile layout ══ */
+@media (max-width: 700px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: flex; }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 100svh;
+  }
+
+  /* Mobile top bar: add input + tags toggle */
+  .main-head {
+    padding: 12px 14px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  /* Hide main-head on settings and when tag panel is open */
+  #app.is-settings .main-head,
+  #app.mobile-tags-open .main-head {
+    display: none;
+  }
+
+  .main-head-inner {
+    gap: 10px;
+    max-width: none;
+  }
+
+  .add-wrapper {
+    margin-left: 0;
+  }
+
+  .add-input {
+    font-size: 16px;
+    padding: 9px 14px;
+  }
+
+  /* Tags toggle button (mobile) */
+  .mobile-tags-btn {
+    background: none;
+    border: none;
+    color: var(--gray);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+
+  .mobile-tags-btn:hover { color: var(--gray-dark); }
+
+  /* Mobile tag panel: hidden by default, full screen when open */
+  .mobile-tags-panel {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 60px;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    z-index: 15;
+    overflow-y: auto;
+  }
+
+  .mobile-tags-open .mobile-tags-panel {
+    display: flex;
+  }
+
+  .mobile-tags-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 1;
+  }
+
+  .mobile-tags-head .tag-new-input {
+    flex: 1;
+  }
+
+  .mobile-tag-list {
+    padding: 16px 14px;
+    flex: 1;
+  }
+
+  /* Main content on mobile */
+  .main-content {
+    flex: 1;
+    padding: 16px 14px;
+    padding-bottom: 72px;
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+
+  /* Mobile bottom nav */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 20;
+  }
+
+  .mobile-nav-views {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  /* Settings page on mobile: hide top input bar */
+  #app.is-settings .add-wrapper {
+    pointer-events: none;
+    opacity: 0.35;
+  }
 }
 </style>
