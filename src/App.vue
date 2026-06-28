@@ -49,6 +49,10 @@ function onTodoFocus() {
   if (store.tags.length > 0) showTagModal.value = true
 }
 
+function onTodoInput() {
+  if (store.tags.length > 0) showTagModal.value = true
+}
+
 function onTodoBlur() {
   setTimeout(() => { showTagModal.value = false }, 200)
 }
@@ -106,6 +110,7 @@ provide('sortKey', sortKey)
             class="add-input"
             placeholder="add + enter"
             @focus="onTodoFocus"
+            @input="onTodoInput"
             @blur="onTodoBlur"
             @keydown.enter.prevent="addTodo"
             @keydown.escape="showTagModal = false"

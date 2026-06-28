@@ -42,7 +42,7 @@ const filteredTodos = computed(() => {
 .todo-wrap {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
