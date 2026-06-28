@@ -128,3 +128,9 @@ Auf `design/poppy` wird frei experimentiert. Rückkehr zu `main` jederzeit via `
 - `pinia-plugin-persistedstate` übernimmt localStorage-Sync automatisch.
 - File API: `showSaveFilePicker`/`showOpenFilePicker` mit Fallback auf `a[download]` / `<input type="file">`.
 - Kein TypeScript-Strict erforderlich, aber Interfaces aus dem Datenmodell konsequent verwenden.
+
+## Arbeitsweise mit Claude
+
+- **Nach jeder bedeutenden Änderung committen** – nicht zu lange sammeln. Bedeutend heißt: neues Feature, sichtbare UI-Änderung, Bugfix, Refactoring einer Komponente.
+- Commit-Messages auf Deutsch oder Englisch, kurz und beschreibend.
+- Auf `design/poppy` kann frei experimentiert werden – trotzdem regelmäßig committen, damit der Fortschritt nachvollziehbar bleibt.

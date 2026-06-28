@@ -4,7 +4,7 @@ import { CheckCheck, Clock, X } from '@lucide/vue'
 defineProps<{ title: string }>()
 const emit = defineEmits<{
   complete: []
-  doneForToday: []
+  'done-for-today': []
   cancel: []
 }>()
 </script>
@@ -14,34 +14,38 @@ const emit = defineEmits<{
     <p class="check-title">{{ title }}</p>
     <div class="check-options">
       <button class="opt-btn opt-complete" @click="emit('complete')">
-        <CheckCheck :size="16" />
-        Erledigt
+        <CheckCheck :size="15" />
+        Done
       </button>
-      <button class="opt-btn opt-today" @click="emit('doneForToday')">
-        <Clock :size="16" />
-        Für heute fertig
+      <button class="opt-btn opt-today" @click="emit('done-for-today')">
+        <Clock :size="15" />
+        Done for today
       </button>
     </div>
     <button class="cancel-btn" @click="emit('cancel')">
-      <X :size="14" /> Abbrechen
+      <X :size="13" /> Cancel
     </button>
   </div>
 </template>
 
 <style scoped>
 .check-modal {
-  background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--text);
-  padding: 14px;
+  background: var(--bg);
+  border: 1px solid var(--gray);
+  border-radius: var(--radius);
+  box-shadow: 3px 3px 0 var(--gray);
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  min-width: 240px;
+  max-width: 320px;
 }
 
 .check-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-dark);
   line-height: 1.4;
 }
 
@@ -56,26 +60,20 @@ const emit = defineEmits<{
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 8px;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
+  padding: 8px 10px;
+  border: 1px solid var(--gray);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray);
+  background: transparent;
   cursor: pointer;
-  transition: opacity 0.1s;
+  transition: border-color 0.12s, color 0.12s;
 }
 
 .opt-btn:hover {
-  opacity: 0.85;
-}
-
-.opt-complete {
-  background: var(--teal);
-  color: #fff;
-}
-
-.opt-today {
-  background: var(--text);
-  color: #fff;
+  border-color: var(--gray-dark);
+  color: var(--gray-dark);
 }
 
 .cancel-btn {
@@ -85,14 +83,15 @@ const emit = defineEmits<{
   gap: 4px;
   border: none;
   background: none;
-  color: var(--text-muted);
+  color: var(--gray);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
   align-self: center;
+  transition: color 0.12s;
 }
 
 .cancel-btn:hover {
-  color: var(--text);
+  color: var(--gray-dark);
 }
 </style>

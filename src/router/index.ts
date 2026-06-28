@@ -1,8 +1,8 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import AllTodos from '../views/AllTodos.vue'
 import Today from '../views/Today.vue'
-import Archive from '../views/Archive.vue'
 import Calendar from '../views/Calendar.vue'
+import Settings from '../views/Settings.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -10,8 +10,8 @@ const router = createRouter({
     { path: '/', redirect: '/all' },
     { path: '/all', component: AllTodos },
     { path: '/today', component: Today },
-    { path: '/archive', component: Archive },
     { path: '/calendar', component: Calendar },
+    { path: '/settings', component: Settings },
   ],
 })
 

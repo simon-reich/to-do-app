@@ -83,6 +83,11 @@ export const useTodosStore = defineStore('todos', () => {
     if (todo) todo.inToday = true
   }
 
+  function removeFromToday(id: string) {
+    const todo = todos.value.find(t => t.id === id)
+    if (todo) todo.inToday = false
+  }
+
   function completeTodo(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (todo) {
@@ -161,7 +166,7 @@ export const useTodosStore = defineStore('todos', () => {
     // getters
     activeTodos, todayTodos, archivedTodos, visibleProjectIds,
     // actions
-    addTodo, updateTodo, deleteTodo, sendToToday, completeTodo, doneForToday,
+    addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
     addTag, updateTag, deleteTag,
     addProject, updateProject, deleteProject,
     resetToday, importData,
