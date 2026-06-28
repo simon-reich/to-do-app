@@ -4,6 +4,7 @@ import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
 import { applyTheme } from '../composables/useTheme'
+import ColorPicker from '../components/ColorPicker.vue'
 
 const { exportData, importData } = useStorage()
 const themeStore = useThemeStore()
@@ -24,7 +25,6 @@ watch([pickerBg, pickerGray], ([bg, gray]) => {
 })
 
 function saveTheme() {
-  // Persist current picker values to store, then save as named theme
   themeStore.apply(pickerBg.value, pickerGray.value)
   themeStore.saveTheme(themeName.value)
   themeName.value = ''
@@ -39,20 +39,14 @@ function saveTheme() {
       <h2 class="section-title">Appearance</h2>
 
       <div class="color-row">
-        <label class="color-field">
+        <div class="color-field">
           <span class="color-label">Background</span>
-          <div class="color-input-wrap">
-            <input type="color" v-model="pickerBg" class="color-picker" />
-            <span class="color-hex">{{ pickerBg }}</span>
-          </div>
-        </label>
-        <label class="color-field">
+          <ColorPicker v-model="pickerBg" />
+        </div>
+        <div class="color-field">
           <span class="color-label">Gray</span>
-          <div class="color-input-wrap">
-            <input type="color" v-model="pickerGray" class="color-picker" />
-            <span class="color-hex">{{ pickerGray }}</span>
-          </div>
-        </label>
+          <ColorPicker v-model="pickerGray" />
+        </div>
       </div>
 
       <input
@@ -76,11 +70,9 @@ function saveTheme() {
             <span class="swatch" :style="{ background: t.gray }" />
           </span>
           {{ t.name }}
-          <span
-            class="chip-delete"
-            role="button"
-            @click.stop="themeStore.deleteTheme(t.id)"
-          ><X :size="11" /></span>
+          <span class="chip-delete" role="button" @click.stop="themeStore.deleteTheme(t.id)">
+            <X :size="11" />
+          </span>
         </button>
       </div>
     </section>
@@ -123,49 +115,21 @@ function saveTheme() {
 .color-row {
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .color-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  cursor: pointer;
+  gap: 8px;
+  flex: 1;
+  min-width: 160px;
 }
 
 .color-label {
   font-size: 12px;
   font-weight: 600;
   color: var(--gray);
-}
-
-.color-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid var(--gray);
-  border-radius: var(--radius);
-  box-shadow: 2px 2px 0 var(--gray);
-}
-
-.color-picker {
-  width: 22px;
-  height: 22px;
-  border: none;
-  padding: 0;
-  background: none;
-  cursor: pointer;
-  border-radius: 3px;
-}
-
-.color-picker::-webkit-color-swatch-wrapper { padding: 0; }
-.color-picker::-webkit-color-swatch { border: none; border-radius: 3px; }
-
-.color-hex {
-  font-size: 12px;
-  font-family: monospace;
-  color: var(--gray);
-  min-width: 58px;
 }
 
 .name-input {
@@ -200,7 +164,7 @@ function saveTheme() {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
   box-shadow: 2px 2px 0 var(--gray);
 }
 
@@ -243,24 +207,19 @@ function saveTheme() {
 
 .action-btn {
   padding: 7px 16px;
-  box-shadow: 2px 2px 0 var(--gray);
   border: 1px solid var(--gray);
   border-radius: var(--radius);
   background: transparent;
   color: var(--gray);
   font-size: 13px;
   cursor: pointer;
+  box-shadow: 2px 2px 0 var(--gray);
   transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
-.action-btn:hover:not(:disabled) {
+.action-btn:hover {
   border-color: var(--gray-dark);
   color: var(--gray-dark);
   box-shadow: 2px 2px 0 var(--gray-dark);
-}
-
-.action-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
 }
 </style>
