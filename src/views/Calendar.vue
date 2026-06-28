@@ -22,7 +22,7 @@ const attributes = computed(() => {
       highlight: {
         style: {
           backgroundColor: 'transparent',
-          border: '2px solid #878080',
+          border: '2px solid var(--gray)',
           borderRadius: '4px',
           width: '28px',
           height: '20px',
@@ -35,13 +35,13 @@ const attributes = computed(() => {
     key: 'today',
     highlight: {
       style: {
-        backgroundColor: '#4a4545',
+        backgroundColor: 'var(--gray-dark)',
         borderRadius: '4px',
         width: '28px',
         height: '20px',
       },
       contentStyle: {
-        color: '#E2E790 !important',
+        color: 'var(--bg) !important',
         fontSize: '12px',
       },
     },

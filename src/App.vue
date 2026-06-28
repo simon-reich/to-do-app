@@ -3,11 +3,16 @@ import { ref, provide, onMounted } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown } from '@lucide/vue'
 import { useTodosStore } from './stores/todos'
+import { useThemeStore } from './stores/theme'
 import { useReset } from './composables/useReset'
 import TagSelectModal from './components/TagSelectModal.vue'
 
 const { checkAndReset } = useReset()
-onMounted(checkAndReset)
+const themeStore = useThemeStore()
+onMounted(() => {
+  checkAndReset()
+  themeStore.apply(themeStore.activeBg, themeStore.activeGray)
+})
 
 const store = useTodosStore()
 const router = useRouter()

@@ -6,6 +6,16 @@ import 'v-calendar/style.css'
 import router from './router'
 import './style.css'
 import App from './App.vue'
+import { applyTheme } from './composables/useTheme'
+
+// Apply persisted theme before mount to avoid flash of default colors
+try {
+  const saved = localStorage.getItem('theme')
+  if (saved) {
+    const { activeBg, activeGray } = JSON.parse(saved)
+    if (activeBg && activeGray) applyTheme(activeBg, activeGray)
+  }
+} catch { /* ignore */ }
 
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)

@@ -1,6 +1,7 @@
 <script lang="ts">
 // Module-level: shared across all TodoCard instances so the bag persists between card completions
-const DARK = '#4a4545'
+const COLOR = 'var(--gray-dark)'
+function randColor() { return COLOR }
 
 type EffectName = 'hearts' | 'stars' | 'confetti'
 const effectBag: EffectName[] = []
@@ -38,7 +39,7 @@ function animateOut(el: HTMLElement, dx: number, dy: number, endTransform: strin
 export function effectHearts(cx: number, cy: number) {
   for (let i = 0; i < 9; i++) {
     const size = 10 + Math.random() * 6
-    const el = particle(cx, cy, '♥', `font-size:${size}px;color:${DARK};transform:translate(-50%,-50%);`)
+    const el = particle(cx, cy, '♥', `font-size:${size}px;color:${randColor()};transform:translate(-50%,-50%);`)
     const angle = -90 + (Math.random() - 0.5) * 140
     const dist = 28 + Math.random() * 38
     const dx = Math.cos((angle * Math.PI) / 180) * dist
@@ -52,7 +53,7 @@ export function effectStars(cx: number, cy: number) {
   for (let i = 0; i < 12; i++) {
     const size = 12 + Math.random() * 8
     const glyph = glyphs[Math.floor(Math.random() * glyphs.length)]
-    const el = particle(cx, cy, glyph, `font-size:${size}px;color:${DARK};transform:translate(-50%,-50%) scale(1.2) rotate(0deg);`)
+    const el = particle(cx, cy, glyph, `font-size:${size}px;color:${randColor()};transform:translate(-50%,-50%) scale(1.2) rotate(0deg);`)
     const angle = (360 / 12) * i + (Math.random() - 0.5) * 30
     const dist = 32 + Math.random() * 28
     const dx = Math.cos((angle * Math.PI) / 180) * dist
@@ -68,7 +69,7 @@ export function effectConfetti(cx: number, cy: number) {
     const h = 8 + Math.random() * 6
     const initRot = Math.random() * 360
     const el = document.createElement('span')
-    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${w}px;height:${h}px;background:${DARK};pointer-events:none;user-select:none;z-index:9999;border-radius:1px;transform:translate(-50%,-50%) rotate(${initRot}deg);`
+    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${w}px;height:${h}px;background:${randColor()};pointer-events:none;user-select:none;z-index:9999;border-radius:1px;transform:translate(-50%,-50%) rotate(${initRot}deg);`
     document.body.appendChild(el)
     const angle = -90 + (Math.random() - 0.5) * 180
     const dist = 30 + Math.random() * 50
