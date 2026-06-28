@@ -21,6 +21,15 @@
 body {
   min-height: 100svh;
   background: var(--bg);
+  cursor: default;
+}
+
+* {
+  cursor: inherit;
+}
+
+input, textarea {
+  cursor: text;
 }
 
 input, button, select, textarea {

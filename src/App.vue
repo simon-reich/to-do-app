@@ -280,6 +280,7 @@ provide('sortKey', sortKey)
   align-items: center;
   text-decoration: none;
   transition: color 0.15s;
+  cursor: pointer;
 }
 
 .nav-icon:hover,
