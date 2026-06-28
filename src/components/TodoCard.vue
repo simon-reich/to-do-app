@@ -1,6 +1,6 @@
 <script lang="ts">
 // Module-level: shared across all TodoCard instances so the bag persists between card completions
-const COLOR = 'var(--gray-dark)'
+const COLOR = 'var(--gray)'
 function randColor() { return COLOR }
 
 type EffectName = 'hearts' | 'stars' | 'confetti'
