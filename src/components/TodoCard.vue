@@ -250,7 +250,7 @@ function handleDoneForToday(id: string) {
   background: var(--bg);
   font-size: 17px;
   color: var(--gray);
-  max-width: 320px;
+  max-width: 600px;
   transition: border-color 0.12s, box-shadow 0.12s;
 }
 
@@ -262,9 +262,8 @@ function handleDoneForToday(id: string) {
 .todo-title {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   line-height: 1.35;
 }
 

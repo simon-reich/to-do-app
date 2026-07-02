@@ -1,62 +1,4 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --bg: #E2E790;
-  --gray: #878080;
-  --gray-dark: #4a4545;
-  --gray-light: #b5b0b0;
-  --radius: 6px;
-
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  color: var(--gray);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-}
-
-body {
-  min-height: 100svh;
-  background: var(--bg);
-  cursor: default;
-}
-
-* {
-  cursor: inherit;
-}
-
-input, textarea {
-  cursor: text;
-}
-
-input, button, select, textarea {
-  font-family: inherit;
-}
-
-:focus-visible {
-  outline: 1px solid var(--gray);
-  outline-offset: 2px;
-}
-
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--gray-light); }
-
-/* ── Overlay (Teleport target for modals) ── */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-/* ── v-calendar overrides ── */
+/* ══ v-calendar overrides ══ */
 :root {
   --vc-font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --vc-font-size-xs: 14px;
@@ -75,7 +17,6 @@ input, button, select, textarea {
   --vc-gray-300: var(--gray-light);
   --vc-header-title-color: var(--gray-dark);
 
-  /* nav popover */
   --vc-popover-content-bg: var(--bg);
   --vc-popover-content-border: var(--gray);
   --vc-popover-content-color: var(--gray);
@@ -113,9 +54,7 @@ input, button, select, textarea {
   box-shadow: 5px 5px 0 var(--gray) !important;
 }
 
-.vc-popover-caret {
-  display: none !important;
-}
+.vc-popover-caret { display: none !important; }
 
 .vc-nav-title,
 .vc-nav-arrow {
@@ -152,9 +91,7 @@ input, button, select, textarea {
   font-weight: 600;
 }
 
-.vc-highlight-content-solid {
-  color: var(--bg) !important;
-}
+.vc-highlight-content-solid { color: var(--bg) !important; }
 
 .vc-day-content:focus,
 .vc-day-content.vc-focus,
@@ -186,9 +123,7 @@ input, button, select, textarea {
   font-size: 16px !important;
 }
 
-.vc-day-content.is-disabled {
-  color: var(--gray-light) !important;
-}
+.vc-day-content.is-disabled { color: var(--gray-light) !important; }
 
 .vc-arrow,
 .vc-nav-arrow {

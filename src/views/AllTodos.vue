@@ -43,7 +43,7 @@ const filteredTodos = computed(() => {
 <style scoped>
 .all-todos {
   width: 100%;
-  max-width: 800px;
+  max-width: min(70vw, 1100px);
 }
 
 .todo-wrap {

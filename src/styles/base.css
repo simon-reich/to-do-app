@@ -1,0 +1,53 @@
+/* ══ Resets ══ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ══ Design Tokens ══ */
+:root {
+  --bg: #E2E790;
+  --gray: #878080;
+  --gray-dark: #4a4545;
+  --gray-light: #b5b0b0;
+  --radius: 6px;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  color: var(--gray);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100svh;
+  background: var(--bg);
+  cursor: default;
+}
+
+* { cursor: inherit; }
+
+input, textarea { cursor: text; }
+
+input, button, select, textarea { font-family: inherit; }
+
+:focus-visible {
+  outline: 1px solid var(--gray);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-light); }
+
+/* ══ Modal overlay (Teleport target) ══ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
