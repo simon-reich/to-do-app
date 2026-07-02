@@ -2,6 +2,14 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { applyTheme } from '../composables/useTheme'
 
+function uuid(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+  })
+}
+
 export interface ColorTheme {
   id: string
   name: string
@@ -28,7 +36,7 @@ export const useThemeStore = defineStore('theme', () => {
 
   function saveTheme(name: string) {
     savedThemes.value.push({
-      id: crypto.randomUUID(),
+      id: uuid(),
       name: name.trim() || 'Theme',
       bg: activeBg.value,
       gray: activeGray.value,

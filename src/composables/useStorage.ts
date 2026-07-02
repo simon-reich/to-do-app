@@ -22,7 +22,6 @@ export function useStorage() {
       exportedAt: new Date().toISOString(),
       todos: store.todos,
       tags: store.tags,
-      projects: store.projects,
       lastResetDate: store.lastResetDate,
     }
     const json = JSON.stringify(payload, null, 2)
@@ -77,7 +76,6 @@ export function useStorage() {
       store.importData({
         todos: Array.isArray(data.todos) ? data.todos : [],
         tags: Array.isArray(data.tags) ? data.tags : [],
-        projects: Array.isArray(data.projects) ? data.projects : [],
         lastResetDate: typeof data.lastResetDate === 'string' ? data.lastResetDate : '',
       })
     } catch (e) {

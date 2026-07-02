@@ -24,36 +24,30 @@ Minimalistische Single-Page Todo-App. Kein Backend, kein Server, kein Login. All
 
 ```typescript
 interface Tag {
-  id: string        // crypto.randomUUID()
+  id: string        // uuid() mit Math.random()-Fallback für HTTP
   label: string
   color: string     // hex
 }
 
-interface Project {
-  id: string        // crypto.randomUUID()
-  name: string
-  visible: boolean
-}
-
 interface Todo {
-  id: string            // crypto.randomUUID()
+  id: string            // uuid() mit Math.random()-Fallback für HTTP
   title: string
   note?: string
   tags: string[]        // Tag-IDs
-  projectId?: string    // optional, max. ein Projekt
   createdAt: string     // ISO-Timestamp
   inToday: boolean
   completedAt?: string  // ISO-Timestamp → landet im Archiv
-  workLog: string[]     // ISO-Timestamps: je ein Eintrag pro "Für heute fertig"-Tag
+  workLog: string[]     // ISO-Timestamps: je ein Eintrag pro "Done for today"-Tag
 }
 
 interface AppState {
   todos: Todo[]
   tags: Tag[]
-  projects: Project[]
   lastResetDate: string // ISO-Date, für 4-Uhr-Reset-Logik
 }
 ```
+
+> **Projekte wurden entfernt.** Das Datenmodell kennt keine `Project`-Entität mehr. Tags sind das einzige Kategorisierungs-Feature.
 
 ## Projektstruktur
 
@@ -98,7 +92,6 @@ todo-app/
 
 - **Today-Reset:** Täglich um 04:00 Uhr – alle `inToday = true` Flags werden zurückgesetzt. Beim App-Start wird `lastResetDate` geprüft.
 - **Dark/Light Toggle:** Keins. Fixes Design (eine Variante).
-- **Projekt-Zuordnung:** Max. ein Projekt pro Todo.
 - **Todo-Erstellung:** Add-Input in App.vue (Main-Head), immer sichtbar. Enter speichert. Bei vorhandenen Tags öffnet sich TagSelectModal zur direkten Tag-Zuweisung.
 - **Zusatzfelder:** Tags direkt im Add-Input via TagSelectModal. Edit per Klick auf den Todo-Titel in der Karte (öffnet TagSelectModal).
 - **Mobile:** Vollständig responsive, mobile-first CSS.
@@ -132,7 +125,7 @@ Auf `design/poppy` wird frei experimentiert. Rückkehr zu `main` jederzeit via `
 
 ## Entwicklungshinweise
 
-- Todos sind durch `crypto.randomUUID()` eindeutig – gleiche Titel kein Problem.
+- IDs werden via `uuid()` in den Stores erzeugt – `crypto.randomUUID()` mit `Math.random()`-Fallback, damit die App auch über HTTP (non-secure context) funktioniert.
 - `pinia-plugin-persistedstate` übernimmt localStorage-Sync automatisch.
 - File API: `showSaveFilePicker`/`showOpenFilePicker` mit Fallback auf `a[download]` / `<input type="file">`.
 - Kein TypeScript-Strict erforderlich, aber Interfaces aus dem Datenmodell konsequent verwenden.

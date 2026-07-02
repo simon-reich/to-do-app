@@ -1,16 +1,18 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+function uuid(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+  })
+}
+
 export interface Tag {
   id: string
   label: string
   color: string
-}
-
-export interface Project {
-  id: string
-  name: string
-  visible: boolean
 }
 
 export interface Todo {
@@ -18,7 +20,6 @@ export interface Todo {
   title: string
   note?: string
   tags: string[]
-  projectId?: string
   createdAt: string
   inToday: boolean
   completedAt?: string
@@ -28,7 +29,6 @@ export interface Todo {
 export const useTodosStore = defineStore('todos', () => {
   const todos = ref<Todo[]>([])
   const tags = ref<Tag[]>([])
-  const projects = ref<Project[]>([])
   const lastResetDate = ref<string>('')
 
   // ── Getters ──
@@ -45,18 +45,13 @@ export const useTodosStore = defineStore('todos', () => {
       .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))
   )
 
-  const visibleProjectIds = computed(() =>
-    new Set(projects.value.filter(p => p.visible).map(p => p.id))
-  )
-
   // ── Todo Actions ──
-  function addTodo(title: string, extra: Partial<Pick<Todo, 'note' | 'tags' | 'projectId'>> = {}): Todo {
+  function addTodo(title: string, extra: Partial<Pick<Todo, 'note' | 'tags'>> = {}): Todo {
     const todo: Todo = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       title: title.trim(),
       note: extra.note,
       tags: extra.tags ?? [],
-      projectId: extra.projectId,
       createdAt: new Date().toISOString(),
       inToday: false,
       workLog: [],
@@ -65,13 +60,12 @@ export const useTodosStore = defineStore('todos', () => {
     return todo
   }
 
-  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'note' | 'tags' | 'projectId'>>) {
+  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'note' | 'tags'>>) {
     const todo = todos.value.find(t => t.id === id)
     if (!todo) return
     if (patch.title !== undefined) todo.title = patch.title.trim()
     if (patch.note !== undefined) todo.note = patch.note
     if (patch.tags !== undefined) todo.tags = patch.tags
-    if (patch.projectId !== undefined) todo.projectId = patch.projectId
   }
 
   function deleteTodo(id: string) {
@@ -106,7 +100,7 @@ export const useTodosStore = defineStore('todos', () => {
 
   // ── Tag Actions ──
   function addTag(label: string, color: string): Tag {
-    const tag: Tag = { id: crypto.randomUUID(), label: label.trim(), color }
+    const tag: Tag = { id: uuid(), label: label.trim(), color }
     tags.value.push(tag)
     return tag
   }
@@ -125,27 +119,6 @@ export const useTodosStore = defineStore('todos', () => {
     })
   }
 
-  // ── Project Actions ──
-  function addProject(name: string): Project {
-    const project: Project = { id: crypto.randomUUID(), name: name.trim(), visible: true }
-    projects.value.push(project)
-    return project
-  }
-
-  function updateProject(id: string, patch: Partial<Pick<Project, 'name' | 'visible'>>) {
-    const project = projects.value.find(p => p.id === id)
-    if (!project) return
-    if (patch.name !== undefined) project.name = patch.name.trim()
-    if (patch.visible !== undefined) project.visible = patch.visible
-  }
-
-  function deleteProject(id: string) {
-    projects.value = projects.value.filter(p => p.id !== id)
-    todos.value.forEach(todo => {
-      if (todo.projectId === id) todo.projectId = undefined
-    })
-  }
-
   // ── Reset ──
   function resetToday() {
     todos.value.forEach(todo => { todo.inToday = false })
@@ -153,22 +126,20 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   // ── Import ──
-  function importData(data: { todos: Todo[]; tags: Tag[]; projects: Project[]; lastResetDate: string }) {
+  function importData(data: { todos: Todo[]; tags: Tag[]; lastResetDate: string }) {
     todos.value = data.todos
     tags.value = data.tags
-    projects.value = data.projects
     lastResetDate.value = data.lastResetDate
   }
 
   return {
     // state
-    todos, tags, projects, lastResetDate,
+    todos, tags, lastResetDate,
     // getters
-    activeTodos, todayTodos, archivedTodos, visibleProjectIds,
+    activeTodos, todayTodos, archivedTodos,
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
     addTag, updateTag, deleteTag,
-    addProject, updateProject, deleteProject,
     resetToday, importData,
   }
 }, {
