@@ -83,12 +83,15 @@ todo-app/
 │   ├── composables/
 │   │   ├── useStorage.ts        // Import/Export Logik (File API + Fallback)
 │   │   ├── useReset.ts          // 4-Uhr-Reset Logik
-│   │   └── useTheme.ts          // applyTheme() – CSS-Custom-Properties setzen
+│   │   ├── useTheme.ts          // applyTheme() – CSS-Custom-Properties setzen
+│   │   └── useTodoFonts.ts      // Font-Zuweisung: deterministic hash, kein Duplikat nebeneinander
 │   ├── styles/
 │   │   ├── base.css             // Resets, Design Tokens, Scrollbar
+│   │   ├── fonts.css            // @font-face für alle 17 Schriftfamilien (./fonts/)
 │   │   ├── layout.css           // Grid-Layout, Sidebar, Head, Content
 │   │   ├── mobile.css           // Mobile Bottom-Nav, Tag-Panel, Breakpoints
 │   │   └── calendar.css         // v-calendar Overrides
+│   ├── styles/fonts/            // TTF-Dateien, benannt nach Schema FontName-Style.ttf
 │   ├── dev/
 │   │   └── seed.ts              // Dev-only: befüllt localStorage mit Dummy-Todos
 │   ├── router/
@@ -99,6 +102,24 @@ todo-app/
 ├── vite.config.ts
 └── package.json
 ```
+
+## Kalender-View
+
+`Calendar.vue` nutzt das `v-calendar`-Plugin und zeigt eine Monatsübersicht. Auf Tagen mit Aktivität erscheinen farbige Dots:
+
+- **Ausgefüllter Dot** – Todo wurde an diesem Tag als *Done* abgehakt (`completedAt` fällt auf diesen Tag).
+- **Umriss-Dot** – Todo hatte an diesem Tag einen *Done for today*-Eintrag (Datum in `workLog[]`).
+
+Ein Klick auf einen Tag öffnet eine Detail-Liste der zugehörigen Todos. Die Overrides für v-calendar (Farben, Abstände) stehen in `src/styles/calendar.css`.
+
+## Typografie – Zufällige Schriftarten pro Todo
+
+Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Familien zugewiesen. Die Logik liegt in `src/composables/useTodoFonts.ts`:
+
+- **Deterministic:** Der Font wird per Hash der Todo-ID bestimmt — gleiche ID → gleicher Font, stabil über Re-Renders.
+- **Kein Duplikat nebeneinander:** Wenn zwei benachbarte Todos denselben Font bekämen, wird der zweite automatisch um einen Slot verschoben.
+- **17 Schriftfamilien** (alle selbst gehostet in `src/styles/fonts/`): Aleo, Amarante, Bodoni Moda, Cardo, EB Garamond, Faustina, Karla, Lora, Manrope, Merienda, Merriweather, Montserrat, Patrick Hand, Roboto, Roboto Condensed, Roboto Slab, Sorts Mill Goudy.
+- Dateibenennung: `FontName-Style.ttf` (z.B. `BodoniModa-Italic.ttf`). `@font-face`-Deklarationen in `src/styles/fonts.css`.
 
 ## Entschiedene Design-Fragen
 

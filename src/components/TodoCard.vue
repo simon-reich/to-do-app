@@ -26,7 +26,7 @@ function particle(cx: number, cy: number, content: string, css: string): HTMLEle
   return el
 }
 
-function animateOut(el: HTMLElement, dx: number, dy: number, endTransform: string, dur: number) {
+function animateOut(el: HTMLElement, _dx: number, _dy: number, endTransform: string, dur: number) {
   el.animate(
     [
       { transform: el.style.transform, opacity: 1 },
@@ -86,9 +86,9 @@ export function effectConfetti(cx: number, cy: number) {
   }
 }
 
-import { ref } from 'vue'
+import { ref as vueRef } from 'vue'
 // Shared across all instances – only one tag menu open at a time
-const openTagMenuId = ref<string | null>(null)
+const openTagMenuId = vueRef<string | null>(null)
 </script>
 
 <script setup lang="ts">
@@ -100,6 +100,7 @@ import TagSelectModal from './TagSelectModal.vue'
 const props = defineProps<{
   todo: Todo
   mode: 'all' | 'today'
+  font?: string
 }>()
 
 const store = useTodosStore()
@@ -150,17 +151,6 @@ function spawnEffect() {
   else effectConfetti(cx, cy)
 }
 
-function spawnEffectFromCard() {
-  const el = swipeContainerRef.value
-  if (!el) return
-  const rect = el.getBoundingClientRect()
-  const cx = rect.left + rect.width / 2
-  const cy = rect.top + rect.height / 2
-  const effect = nextEffect()
-  if (effect === 'hearts') effectHearts(cx, cy)
-  else if (effect === 'stars') effectStars(cx, cy)
-  else effectConfetti(cx, cy)
-}
 
 function handleComplete(id: string) {
   spawnEffect()
@@ -219,7 +209,7 @@ function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
         { transform: 'translateX(150vw)', opacity: 0 },
       ],
       { duration: 240, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'forwards' },
-    ).finished
+    ).finished.then(() => {})
   } else {
     return el.animate(
       [
@@ -228,7 +218,7 @@ function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
         { transform: 'scale(0)', opacity: 0 },
       ],
       { duration: 300, easing: 'ease-in', fill: 'forwards' },
-    ).finished
+    ).finished.then(() => {})
   }
 }
 
@@ -309,7 +299,11 @@ onUnmounted(() => {
           transition: activelySwiping ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
         }"
       >
-        <span class="todo-title" @click.stop="toggleTagMenu()">{{ todo.title }}</span>
+        <span
+          class="todo-title"
+          :style="font ? { fontFamily: font } : {}"
+          @click.stop="toggleTagMenu()"
+        >{{ todo.title }}</span>
 
         <button
           v-if="mode === 'all'"

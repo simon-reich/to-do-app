@@ -39,8 +39,9 @@ const val = ref(100)
 
 watch(() => props.modelValue, (hex) => {
   if (!hex || hex.length !== 7) return
-  if (hex.toLowerCase() !== hsvToHex(hue.value, sat.value, val.value).toLowerCase())
+  if (hex.toLowerCase() !== hsvToHex(hue.value, sat.value, val.value).toLowerCase()) {
     ;[hue.value, sat.value, val.value] = rgbToHsv(...hexToRgb(hex))
+  }
 }, { immediate: true })
 
 const currentHex = computed(() => hsvToHex(hue.value, sat.value, val.value))

@@ -3,6 +3,7 @@ import { inject, computed } from 'vue'
 import type { Ref } from 'vue'
 import { useTodosStore } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
+import { assignFonts } from '../composables/useTodoFonts'
 
 const store = useTodosStore()
 const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
@@ -14,6 +15,8 @@ const filteredTodos = computed(() => {
   }
   return result
 })
+
+const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 </script>
 
 <template>
@@ -23,6 +26,7 @@ const filteredTodos = computed(() => {
         v-for="todo in filteredTodos"
         :key="todo.id"
         :todo="todo"
+        :font="fontMap.get(todo.id)"
         mode="today"
         @remove-from-today="store.removeFromToday($event)"
         @complete="store.completeTodo($event)"
