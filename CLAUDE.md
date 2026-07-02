@@ -4,7 +4,19 @@
 
 Minimalistische Single-Page Todo-App. Kein Backend, kein Server, kein Login. Alles läuft im Browser via localStorage. Exportierbar als JSON.
 
-**Confluence Projektplan:** https://allmyplaygrounds.atlassian.net/wiki/spaces/TDA/pages/32833538/Projektplan+Todo+App
+### Kernidee
+
+Der Fokus liegt auf **Geschwindigkeit und Reibungslosigkeit** beim Anlegen und Verwalten von Todos — nicht auf Feature-Breite.
+
+**Das Pool-Konzept:** Todos leben in einem persistenten Pool. Jeden Tag wählt man aus diesem Pool, was heute dran ist, und baut sich eine fokussierte Tagesliste. Der Pool eignet sich auch für wiederkehrende Aufgaben, weil ein Todo nicht zwingend "erledigt" werden muss — man kann es einfach wieder zurück in den Pool legen.
+
+**Die zwei Abhak-Modi** sind der zentrale Unterschied zu normalen Todo-Apps:
+- **Done** — Todo ist wirklich erledigt, wandert ins Archiv.
+- **Done for today** — Heute fertig, aber das Todo bleibt im Pool. Nächste Mal wieder verfügbar. Ideal für Routinen und wiederkehrende Tasks.
+
+**Design-Philosophie:** Stylisch, aber nicht überladen. Jedes Feature muss sich rechtfertigen. Die App soll sich anfühlen wie ein gutes Notizbuch — immer griffbereit, nie im Weg.
+
+**Personalisierung ohne Komplexität:** Zwei Farben steuern das gesamte visuelle System — Background und Ink. Aus der Ink werden automatisch eine dunklere und eine hellere Variante für Highlighting und Dimming abgeleitet. Dazu wählbarer Corner-Radius (rund oder eckig). Mehr Optionen gibt es nicht — das ist bewusst.
 
 ## Tech Stack
 
