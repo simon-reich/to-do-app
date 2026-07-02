@@ -113,7 +113,7 @@
 }
 
 .nav-icon {
-  color: var(--gray-light);
+  color: var(--ink);
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -129,9 +129,6 @@
   color: var(--gray-dark);
 }
 
-.mobile-tags-open .mobile-bottom-nav .nav-icon.router-link-active {
-  color: var(--gray-light);
-}
 
 /* ── Sidebar body ── */
 .sidebar {
@@ -232,7 +229,7 @@
   align-items: center;
   background: none;
   border: none;
-  color: var(--gray-light);
+  color: var(--ink);
   cursor: pointer;
   padding: 4px;
   transition: color 0.15s;

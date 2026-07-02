@@ -151,4 +151,8 @@
     pointer-events: none;
     opacity: 0.35;
   }
+
+  .mobile-tags-open .mobile-bottom-nav .nav-icon.router-link-active {
+    color: var(--ink);
+  }
 }
