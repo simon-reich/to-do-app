@@ -82,7 +82,7 @@ export function useStorage() {
       })
     } catch (e) {
       if ((e as Error).message !== 'No file selected') {
-        alert('Import fehlgeschlagen: Ungültige oder beschädigte JSON-Datei.')
+        alert('Import failed: invalid or corrupted JSON file.')
       }
     }
   }

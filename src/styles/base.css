@@ -40,14 +40,3 @@ input, button, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--gray-light); }
-
-/* ══ Modal overlay (Teleport target) ══ */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}

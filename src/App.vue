@@ -80,11 +80,6 @@ function toggleSettings() {
 // ── Mobile tag panel ──
 const showMobileTags = ref(false)
 
-function closeMobileTags(path?: string) {
-  showMobileTags.value = false
-  if (path) router.push(path)
-}
-
 provide('activeTagIds', activeTagIds)
 provide('sortKey', sortKey)
 
