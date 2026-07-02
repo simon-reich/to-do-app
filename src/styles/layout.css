@@ -168,6 +168,10 @@
   border-color: var(--gray-dark);
 }
 
+.all-btn.dimmed {
+  opacity: 0.35;
+}
+
 .tag-chip {
   display: inline-flex;
   align-items: center;
@@ -188,8 +192,7 @@
 }
 
 .tag-chip.dimmed {
-  color: var(--gray-light);
-  border-color: var(--gray-light);
+  opacity: 0.35;
 }
 
 .tag-label {

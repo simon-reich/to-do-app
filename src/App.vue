@@ -170,7 +170,7 @@ function onScroll() { checkScrollState() }
         <button
           v-if="store.tags.length"
           class="all-btn"
-          :class="{ active: activeTagIds.length === 0 }"
+          :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
           @click="activeTagIds = []"
         >
           all
@@ -221,7 +221,7 @@ function onScroll() { checkScrollState() }
         <button
           v-if="store.tags.length"
           class="all-btn"
-          :class="{ active: activeTagIds.length === 0 }"
+          :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
           @click="activeTagIds = []"
         >
           all
