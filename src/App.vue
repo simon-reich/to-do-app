@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, provide, onMounted, useTemplateRef } from 'vue'
+import { ref, provide, onMounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight } from '@lucide/vue'
 import { useTodosStore } from './stores/todos'
@@ -12,6 +12,7 @@ const themeStore = useThemeStore()
 onMounted(() => {
   checkAndReset()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
+  nextTick(checkScrollState)
 })
 
 const store = useTodosStore()
@@ -83,12 +84,19 @@ const showMobileTags = ref(false)
 provide('activeTagIds', activeTagIds)
 provide('sortKey', sortKey)
 
-// ── Scroll divider ──
+// ── Scroll dividers ──
 const mainContentRef = useTemplateRef<HTMLElement>('mainContent')
 const isScrolled = ref(false)
-function onScroll() {
-  isScrolled.value = (mainContentRef.value?.scrollTop ?? 0) > 0
+const isScrolledToBottom = ref(true)
+
+function checkScrollState() {
+  const el = mainContentRef.value
+  if (!el) return
+  isScrolled.value = el.scrollTop > 0
+  isScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
 }
+
+function onScroll() { checkScrollState() }
 </script>
 
 <template>
@@ -241,6 +249,9 @@ function onScroll() {
         <RouterView />
       </div>
     </main>
+
+    <!-- ══ MOBILE: Bottom scroll divider (above bottom nav) ══ -->
+    <div class="scroll-divider-bottom mobile-only" :class="{ visible: !isScrolledToBottom }" />
 
     <!-- ══ MOBILE: Bottom nav ══ -->
     <nav class="mobile-bottom-nav mobile-only">
