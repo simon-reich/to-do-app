@@ -10,6 +10,7 @@ import './styles/layout.css'
 import './styles/mobile.css'
 import App from './App.vue'
 import { applyTheme } from './composables/useTheme'
+import { seedDevData } from './dev/seed'
 
 // Apply persisted theme before mount to avoid flash of default colors
 try {
@@ -20,6 +21,8 @@ try {
   }
 } catch { /* ignore */ }
 
+if (import.meta.env.DEV) seedDevData()
+
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
@@ -27,4 +30,4 @@ const app = createApp(App)
 app.use(pinia)
 app.use(router)
 app.use(VCalendar, {})
-app.mount('#app')
+app.mount('#vue-root')

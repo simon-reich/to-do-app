@@ -1,6 +1,10 @@
-@media (max-width: 700px) {
-  .desktop-only { display: none !important; }
-  .mobile-only { display: flex; }
+@media (max-width: 900px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex;
+  }
 
   /* ── App: switch from grid to flex column ── */
   #app {
@@ -12,7 +16,7 @@
 
   /* ── Top bar ── */
   .main-head {
-    padding: 12px 14px;
+    padding: 12px 14px 17px;
     background: var(--bg);
     position: sticky;
     top: 0;
@@ -29,7 +33,9 @@
     max-width: none;
   }
 
-  .add-wrapper { margin-left: 0; }
+  .add-wrapper {
+    margin-left: 0;
+  }
 
   .add-input {
     font-size: 16px;
@@ -49,7 +55,9 @@
     transition: color 0.15s;
   }
 
-  .mobile-tags-btn:hover { color: var(--gray-dark); }
+  .mobile-tags-btn:hover {
+    color: var(--gray-dark);
+  }
 
   /* ── Tag panel (full screen overlay) ── */
   .mobile-tags-panel {
@@ -65,7 +73,9 @@
     overflow-y: auto;
   }
 
-  .mobile-tags-open .mobile-tags-panel { display: flex; }
+  .mobile-tags-open .mobile-tags-panel {
+    display: flex;
+  }
 
   .mobile-tags-head {
     display: flex;
@@ -79,7 +89,9 @@
     z-index: 1;
   }
 
-  .mobile-tags-head .tag-new-input { flex: 1; }
+  .mobile-tags-head .tag-new-input {
+    flex: 1;
+  }
 
   .mobile-tag-list {
     padding: 16px 14px;
@@ -93,7 +105,9 @@
     overflow-y: auto;
   }
 
-  .content-inner { padding: 21px 14px 120px; }
+  .content-inner {
+    padding: 40px 14px 120px;
+  }
 
   /* ── Bottom nav ── */
   .mobile-bottom-nav {

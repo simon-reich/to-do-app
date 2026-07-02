@@ -14,20 +14,23 @@ function toggle(id: string) {
 </script>
 
 <template>
-  <div class="tag-modal" v-if="store.tags.length">
-    <label
-      v-for="tag in store.tags"
-      :key="tag.id"
-      class="tag-option"
-      :class="{ checked: modelValue.includes(tag.id) }"
-    >
-      <input
-        type="checkbox"
-        :checked="modelValue.includes(tag.id)"
-        @change="toggle(tag.id)"
-      />
-      <span>{{ tag.label }}</span>
-    </label>
+  <div class="tag-modal">
+    <template v-if="store.tags.length">
+      <label
+        v-for="tag in store.tags"
+        :key="tag.id"
+        class="tag-option"
+        :class="{ checked: modelValue.includes(tag.id) }"
+      >
+        <input
+          type="checkbox"
+          :checked="modelValue.includes(tag.id)"
+          @change="toggle(tag.id)"
+        />
+        <span>{{ tag.label }}</span>
+      </label>
+    </template>
+    <span v-else class="tag-empty">No tags yet</span>
   </div>
 </template>
 
@@ -72,5 +75,11 @@ function toggle(id: string) {
 .tag-option input[type='checkbox'] {
   accent-color: var(--gray-dark);
   cursor: pointer;
+}
+
+.tag-empty {
+  font-size: 12px;
+  color: var(--gray-light);
+  padding: 2px 6px;
 }
 </style>

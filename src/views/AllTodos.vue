@@ -53,7 +53,10 @@ const filteredTodos = computed(() => {
   justify-content: center;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+  .all-todos {
+    max-width: 100%;
+  }
   .todo-wrap {
     flex-direction: column;
     flex-wrap: nowrap;

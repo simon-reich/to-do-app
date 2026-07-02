@@ -92,7 +92,7 @@ const openTagMenuId = ref<string | null>(null)
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { CirclePlus, CircleMinus, Circle, Trash2, CheckCheck, Clock } from '@lucide/vue'
 import { useTodosStore, type Todo } from '../stores/todos'
 import TagSelectModal from './TagSelectModal.vue'
@@ -150,6 +150,18 @@ function spawnEffect() {
   else effectConfetti(cx, cy)
 }
 
+function spawnEffectFromCard() {
+  const el = swipeContainerRef.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const cx = rect.left + rect.width / 2
+  const cy = rect.top + rect.height / 2
+  const effect = nextEffect()
+  if (effect === 'hearts') effectHearts(cx, cy)
+  else if (effect === 'stars') effectStars(cx, cy)
+  else effectConfetti(cx, cy)
+}
+
 function handleComplete(id: string) {
   spawnEffect()
   showMenu.value = false
@@ -161,56 +173,188 @@ function handleDoneForToday(id: string) {
   showMenu.value = false
   emit('done-for-today', id)
 }
+
+// ── Swipe ──────────────────────────────────────────────
+const swipeContainerRef = ref<HTMLElement | null>(null)
+const swipeX = ref(0)
+const activelySwiping = ref(false)
+
+const SWIPE_THRESHOLD = 75
+const SWIPE_MAX = 110
+
+let touchStartX = 0
+let touchStartY = 0
+let swipeDir: 'horizontal' | 'vertical' | null = null
+
+function onTouchStart(e: TouchEvent) {
+  touchStartX = e.touches[0].clientX
+  touchStartY = e.touches[0].clientY
+  swipeDir = null
+}
+
+function onTouchMove(e: TouchEvent) {
+  const dx = e.touches[0].clientX - touchStartX
+  const dy = e.touches[0].clientY - touchStartY
+
+  if (swipeDir === null) {
+    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return
+    swipeDir = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical'
+  }
+
+  if (swipeDir !== 'horizontal') return
+
+  e.preventDefault()
+  activelySwiping.value = true
+  swipeX.value = Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx))
+}
+
+function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
+  const el = swipeContainerRef.value
+  if (!el) return Promise.resolve()
+
+  if (type === 'fly-right') {
+    return el.animate(
+      [
+        { transform: `translateX(${swipeX.value}px)`, opacity: 1 },
+        { transform: 'translateX(150vw)', opacity: 0 },
+      ],
+      { duration: 240, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'forwards' },
+    ).finished
+  } else {
+    return el.animate(
+      [
+        { transform: 'scale(1)', opacity: 1 },
+        { transform: 'scale(1.08)', opacity: 0.6, offset: 0.18 },
+        { transform: 'scale(0)', opacity: 0 },
+      ],
+      { duration: 300, easing: 'ease-in', fill: 'forwards' },
+    ).finished
+  }
+}
+
+async function onTouchEnd() {
+  if (!activelySwiping.value) {
+    swipeDir = null
+    return
+  }
+
+  const x = swipeX.value
+  swipeX.value = 0
+  activelySwiping.value = false
+  swipeDir = null
+
+  if (x < -SWIPE_THRESHOLD) {
+    if (props.mode === 'all') {
+      await animateOut('puff')
+      emit('delete', props.todo.id)
+    } else {
+      showMenu.value = true
+    }
+  } else if (x > SWIPE_THRESHOLD) {
+    await animateOut('fly-right')
+    if (props.mode === 'all') {
+      if (!props.todo.inToday) emit('send-to-today', props.todo.id)
+      else emit('remove-from-today', props.todo.id)
+    } else {
+      emit('remove-from-today', props.todo.id)
+    }
+  }
+}
+
+onMounted(() => {
+  swipeContainerRef.value?.addEventListener('touchmove', onTouchMove, { passive: false })
+})
+
+onUnmounted(() => {
+  swipeContainerRef.value?.removeEventListener('touchmove', onTouchMove)
+})
 </script>
 
 <template>
   <div ref="wrapRef" class="todo-card-wrap">
-    <div class="todo-card" :class="{ 'has-tags': todo.tags.length }">
-      <span class="todo-title" @click.stop="store.tags.length ? toggleTagMenu() : null">{{ todo.title }}</span>
+    <div
+      ref="swipeContainerRef"
+      class="swipe-container"
+      @touchstart="onTouchStart"
+      @touchend="onTouchEnd"
+    >
+      <!-- Revealed when swiping right (left-side background) -->
+      <div class="swipe-bg swipe-bg--right" :class="{ active: swipeX > 30 }">
+        <template v-if="mode === 'all'">
+          <component :is="todo.inToday ? CircleMinus : CirclePlus" :size="18" />
+          <span>{{ todo.inToday ? 'Remove' : 'Today' }}</span>
+        </template>
+        <template v-else>
+          <CircleMinus :size="18" />
+          <span>Remove</span>
+        </template>
+      </div>
+      <!-- Revealed when swiping left (right-side background) -->
+      <div class="swipe-bg swipe-bg--left" :class="{ active: swipeX < -30 }">
+        <template v-if="mode === 'all'">
+          <Trash2 :size="18" />
+          <span>Delete</span>
+        </template>
+        <template v-else>
+          <Circle :size="18" />
+          <span>Complete</span>
+        </template>
+      </div>
 
-      <button
-        v-if="mode === 'all'"
-        class="card-btn card-btn--delete"
-        title="Delete"
-        @click.stop="emit('delete', todo.id)"
+      <div
+        class="todo-card"
+        :class="{ 'has-tags': todo.tags.length }"
+        :style="{
+          transform: `translateX(${swipeX}px)`,
+          transition: activelySwiping ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
+        }"
       >
-        <Trash2 :size="16" />
-      </button>
-      <button
-        v-else
-        class="card-btn"
-        title="Move back to overview"
-        @click.stop="emit('remove-from-today', todo.id)"
-      >
-        <CircleMinus :size="18" />
-      </button>
+        <span class="todo-title" @click.stop="toggleTagMenu()">{{ todo.title }}</span>
 
-      <button
-        v-if="mode === 'all' && !todo.inToday"
-        class="card-btn"
-        title="Add to today"
-        @click.stop="emit('send-to-today', todo.id)"
-      >
-        <CirclePlus :size="18" />
-      </button>
-      <button
-        v-else-if="mode === 'all' && todo.inToday"
-        class="card-btn"
-        title="Remove from today"
-        @click.stop="emit('remove-from-today', todo.id)"
-      >
-        <CircleMinus :size="18" />
-      </button>
-      <button
-        v-else
-        ref="circleBtnRef"
-        class="card-btn"
-        :class="{ active: showMenu }"
-        title="Complete"
-        @click.stop="showMenu = !showMenu"
-      >
-        <Circle :size="18" />
-      </button>
+        <button
+          v-if="mode === 'all'"
+          class="card-btn card-btn--delete"
+          title="Delete"
+          @click.stop="emit('delete', todo.id)"
+        >
+          <Trash2 :size="16" />
+        </button>
+        <button
+          v-else
+          class="card-btn"
+          title="Move back to overview"
+          @click.stop="emit('remove-from-today', todo.id)"
+        >
+          <CircleMinus :size="18" />
+        </button>
+
+        <button
+          v-if="mode === 'all' && !todo.inToday"
+          class="card-btn"
+          title="Add to today"
+          @click.stop="emit('send-to-today', todo.id)"
+        >
+          <CirclePlus :size="18" />
+        </button>
+        <button
+          v-else-if="mode === 'all' && todo.inToday"
+          class="card-btn"
+          title="Remove from today"
+          @click.stop="emit('remove-from-today', todo.id)"
+        >
+          <CircleMinus :size="18" />
+        </button>
+        <button
+          v-else
+          ref="circleBtnRef"
+          class="card-btn"
+          :class="{ active: showMenu }"
+          title="Complete"
+          @click.stop="showMenu = !showMenu"
+        >
+          <Circle :size="18" />
+        </button>
+      </div>
     </div>
 
     <div v-if="showMenu && mode === 'today'" class="check-menu">
@@ -223,7 +367,7 @@ function handleDoneForToday(id: string) {
     </div>
 
     <TagSelectModal
-      v-if="showTagMenu && store.tags.length"
+      v-if="showTagMenu"
       :model-value="todo.tags"
       @update:model-value="updateTags"
       @mousedown.prevent
@@ -239,24 +383,62 @@ function handleDoneForToday(id: string) {
   align-items: stretch;
 }
 
+.swipe-container {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 2px solid var(--gray);
+  box-shadow: 5px 5px 0 var(--gray);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.swipe-container:has(.todo-card:hover) {
+  border-color: var(--gray-dark);
+  box-shadow: 5px 5px 0 var(--gray-dark);
+}
+
+.swipe-bg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--bg);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.swipe-bg.active {
+  opacity: 1;
+}
+
+.swipe-bg--right {
+  left: 0;
+  background: var(--gray-dark);
+}
+
+.swipe-bg--left {
+  right: 0;
+  background: var(--gray-dark);
+}
+
 .todo-card {
   display: inline-flex;
   align-items: center;
   gap: 12px;
   padding: 12px 18px;
-  border: 2px solid var(--gray);
-  border-radius: var(--radius);
-  box-shadow: 5px 5px 0 var(--gray);
   background: var(--bg);
   font-size: 17px;
   color: var(--gray);
   max-width: 600px;
-  transition: border-color 0.12s, box-shadow 0.12s;
-}
-
-.todo-card:hover {
-  border-color: var(--gray-dark);
-  box-shadow: 5px 5px 0 var(--gray-dark);
 }
 
 .todo-title {
@@ -317,5 +499,13 @@ function handleDoneForToday(id: string) {
 .check-opt:hover {
   color: var(--gray-dark);
   background: rgba(135, 128, 128, 0.1);
+}
+
+@media (max-width: 900px) {
+  .todo-card {
+    font-size: 14px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
 }
 </style>

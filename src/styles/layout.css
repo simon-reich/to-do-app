@@ -1,5 +1,7 @@
 /* ══ Responsive helpers ══ */
-.mobile-only { display: none; }
+.mobile-only {
+  display: none;
+}
 
 /* ══ App grid (desktop) ══ */
 #app {
@@ -31,8 +33,12 @@
   transition: border-color 0.15s;
 }
 
-.tag-new-input:focus { border-color: var(--gray-dark); }
-.tag-new-input::placeholder { color: var(--gray); }
+.tag-new-input:focus {
+  border-color: var(--gray-dark);
+}
+.tag-new-input::placeholder {
+  color: var(--gray);
+}
 
 /* ── Main head ── */
 .main-head {
@@ -41,7 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 20px;
+  padding: 12px 20px 17px;
 }
 
 .main-head-inner {
@@ -64,7 +70,9 @@
   transition: color 0.15s;
 }
 
-.sort-btn:hover { color: var(--gray-dark); }
+.sort-btn:hover {
+  color: var(--gray-dark);
+}
 
 .add-wrapper {
   flex: 1;
@@ -82,7 +90,9 @@
   padding: 10px 16px;
   outline: none;
   box-shadow: 0 5px 0 var(--gray);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .add-input:focus {
@@ -90,7 +100,9 @@
   box-shadow: 0 5px 0 var(--gray-dark);
 }
 
-.add-input::placeholder { color: var(--gray); }
+.add-input::placeholder {
+  color: var(--gray);
+}
 
 .top-nav {
   display: flex;
@@ -113,9 +125,13 @@
 }
 
 .nav-icon:hover,
-.nav-icon.router-link-active { color: var(--gray-dark); }
+.nav-icon.router-link-active {
+  color: var(--gray-dark);
+}
 
-.mobile-tags-open .mobile-bottom-nav .nav-icon.router-link-active { color: var(--gray-light); }
+.mobile-tags-open .mobile-bottom-nav .nav-icon.router-link-active {
+  color: var(--gray-light);
+}
 
 /* ── Sidebar body ── */
 .sidebar {
@@ -144,7 +160,9 @@
   padding: 4px 10px;
   cursor: pointer;
   margin-bottom: 21px;
-  transition: color 0.12s, border-color 0.12s;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
 }
 
 .all-btn.active,
@@ -162,7 +180,9 @@
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--gray);
-  transition: color 0.12s, border-color 0.12s;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
 }
 
 .tag-chip.active {
@@ -193,7 +213,9 @@
   transition: color 0.12s;
 }
 
-.tag-x:hover { color: var(--gray-dark); }
+.tag-x:hover {
+  color: var(--gray-dark);
+}
 
 /* ── Settings head ── */
 .settings-head {
@@ -217,7 +239,9 @@
 }
 
 .settings-btn:hover,
-.settings-btn.active { color: var(--gray-dark); }
+.settings-btn.active {
+  color: var(--gray-dark);
+}
 
 /* ── Settings active: dim non-settings UI ── */
 #app.is-settings .sidebar-head,
@@ -237,7 +261,9 @@
   scrollbar-width: none;
 }
 
-.main-content::-webkit-scrollbar { display: none; }
+.main-content::-webkit-scrollbar {
+  display: none;
+}
 
 .scroll-divider {
   position: sticky;
@@ -248,7 +274,9 @@
   z-index: 5;
 }
 
-.scroll-divider.visible { background: var(--gray); }
+.scroll-divider.visible {
+  background: var(--gray);
+}
 
 .content-inner {
   display: flex;
