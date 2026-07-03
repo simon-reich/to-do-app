@@ -310,6 +310,7 @@ function onScroll() { checkScrollState() }
     <nav class="mobile-bottom-nav mobile-only">
       <button
         class="sort-btn"
+        :style="{ visibility: route.path === '/all' ? 'visible' : 'hidden' }"
         :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
         @click="toggleSort"
       >
