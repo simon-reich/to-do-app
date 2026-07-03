@@ -80,7 +80,8 @@ function onTodoBlur() {
 
 function addTodo() {
   if (!todoInput.value.trim()) return
-  store.addTodo(todoInput.value, { tags: [...newTodoTagIds.value] })
+  const todo = store.addTodo(todoInput.value, { tags: [...newTodoTagIds.value] })
+  if (route.path === '/today') store.sendToToday(todo.id)
   todoInput.value = ''
   newTodoTagIds.value = []
 }
