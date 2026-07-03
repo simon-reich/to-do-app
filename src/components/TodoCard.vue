@@ -87,15 +87,16 @@ export function effectConfetti(cx: number, cy: number) {
 }
 
 import { ref as vueRef } from 'vue'
-// Shared across all instances – only one tag menu open at a time
+// Shared across all instances – only one menu open at a time
 const openTagMenuId = vueRef<string | null>(null)
+const openCheckMenuId = vueRef<string | null>(null)
 </script>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { CirclePlus, CircleMinus, Circle, Trash2, CheckCheck, Clock } from '@lucide/vue'
+import { useRoute } from 'vue-router'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock } from '@lucide/vue'
 import { useTodosStore, type Todo } from '../stores/todos'
-import TagSelectModal from './TagSelectModal.vue'
 
 const props = defineProps<{
   todo: Todo
@@ -104,6 +105,8 @@ const props = defineProps<{
 }>()
 
 const store = useTodosStore()
+const route = useRoute()
+
 
 const emit = defineEmits<{
   'send-to-today': [id: string]
@@ -113,14 +116,18 @@ const emit = defineEmits<{
   'delete': [id: string]
 }>()
 
-const showMenu = ref(false)
+const showMenu = computed(() => openCheckMenuId.value === props.todo.id)
 const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
+
+function toggleCheckMenu() {
+  openCheckMenuId.value = openCheckMenuId.value === props.todo.id ? null : props.todo.id
+}
+
 const wrapRef = ref<HTMLElement | null>(null)
-const circleBtnRef = ref<HTMLButtonElement | null>(null)
 
 function closeOnOutside(e: MouseEvent) {
   if (wrapRef.value && !wrapRef.value.contains(e.target as Node)) {
-    showMenu.value = false
+    if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
     if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
   }
 }
@@ -140,9 +147,9 @@ function updateTags(tags: string[]) {
 }
 
 function spawnEffect() {
-  const btn = circleBtnRef.value
-  if (!btn) return
-  const rect = btn.getBoundingClientRect()
+  const el = wrapRef.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
   const effect = nextEffect()
@@ -154,13 +161,13 @@ function spawnEffect() {
 
 function handleComplete(id: string) {
   spawnEffect()
-  showMenu.value = false
+  openCheckMenuId.value = null
   emit('complete', id)
 }
 
 function handleDoneForToday(id: string) {
   spawnEffect()
-  showMenu.value = false
+  openCheckMenuId.value = null
   emit('done-for-today', id)
 }
 
@@ -238,15 +245,17 @@ async function onTouchEnd() {
       await animateOut('puff')
       emit('delete', props.todo.id)
     } else {
-      showMenu.value = true
+      await animateOut('puff')
+      emit('remove-from-today', props.todo.id)
     }
   } else if (x > SWIPE_THRESHOLD) {
-    await animateOut('fly-right')
     if (props.mode === 'all') {
+      await animateOut('fly-right')
       if (!props.todo.inToday) emit('send-to-today', props.todo.id)
       else emit('remove-from-today', props.todo.id)
     } else {
-      emit('remove-from-today', props.todo.id)
+      openCheckMenuId.value = props.todo.id
+      swipeX.value = 0
     }
   }
 }
@@ -257,6 +266,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   swipeContainerRef.value?.removeEventListener('touchmove', onTouchMove)
+  if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
+  if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
 })
 </script>
 
@@ -275,8 +286,8 @@ onUnmounted(() => {
           <span>{{ todo.inToday ? 'Remove' : 'Today' }}</span>
         </template>
         <template v-else>
-          <CircleMinus :size="18" />
-          <span>Remove</span>
+          <Circle :size="18" />
+          <span>Complete</span>
         </template>
       </div>
       <!-- Revealed when swiping left (right-side background) -->
@@ -286,86 +297,86 @@ onUnmounted(() => {
           <span>Delete</span>
         </template>
         <template v-else>
-          <Circle :size="18" />
-          <span>Complete</span>
+          <CircleMinus :size="18" />
+          <span>Remove</span>
         </template>
       </div>
 
       <div
         class="todo-card"
-        :class="{ 'has-tags': todo.tags.length }"
+        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu }"
         :style="{
           transform: `translateX(${swipeX}px)`,
           transition: activelySwiping ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
         }"
       >
-        <span
-          class="todo-title"
-          :style="font ? { fontFamily: font } : {}"
-          @click.stop="toggleTagMenu()"
-        >{{ todo.title }}</span>
+        <div class="todo-card-main" @click.stop="mode === 'today' ? toggleCheckMenu() : toggleTagMenu()">
+          <span
+            class="todo-title"
+            :style="font ? { fontFamily: font } : {}"
+          >{{ todo.title }}</span>
 
-        <button
-          v-if="mode === 'all'"
-          class="card-btn card-btn--delete"
-          title="Delete"
-          @click.stop="emit('delete', todo.id)"
-        >
-          <Trash2 :size="16" />
-        </button>
-        <button
-          v-else
-          class="card-btn"
-          title="Move back to overview"
-          @click.stop="emit('remove-from-today', todo.id)"
-        >
-          <CircleMinus :size="18" />
-        </button>
+          <button
+            v-if="mode === 'all'"
+            class="card-btn card-btn--delete"
+            title="Delete"
+            @click.stop="emit('delete', todo.id)"
+          >
+            <Trash2 :size="16" />
+          </button>
+          <button
+            v-else
+            class="card-btn"
+            title="Move back to overview"
+            @click.stop="emit('remove-from-today', todo.id)"
+          >
+            <CircleMinus :size="18" />
+          </button>
 
-        <button
-          v-if="mode === 'all' && !todo.inToday"
-          class="card-btn"
-          title="Add to today"
-          @click.stop="emit('send-to-today', todo.id)"
-        >
-          <CirclePlus :size="18" />
-        </button>
-        <button
-          v-else-if="mode === 'all' && todo.inToday"
-          class="card-btn"
-          title="Remove from today"
-          @click.stop="emit('remove-from-today', todo.id)"
-        >
-          <CircleMinus :size="18" />
-        </button>
-        <button
-          v-else
-          ref="circleBtnRef"
-          class="card-btn"
-          :class="{ active: showMenu }"
-          title="Complete"
-          @click.stop="showMenu = !showMenu"
-        >
-          <Circle :size="18" />
-        </button>
+          <button
+            v-if="mode === 'all' && !todo.inToday"
+            class="card-btn"
+            title="Add to today"
+            @click.stop="emit('send-to-today', todo.id)"
+          >
+            <CirclePlus :size="18" />
+          </button>
+          <button
+            v-else-if="mode === 'all' && todo.inToday"
+            class="card-btn"
+            title="Remove from today"
+            @click.stop="emit('remove-from-today', todo.id)"
+          >
+            <CircleMinus :size="18" />
+          </button>
+        </div>
+
+        <div v-if="showMenu && mode === 'today'" class="check-row">
+          <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
+            <Clock :size="16" /> Done for today
+          </button>
+          <div class="check-divider" />
+          <button class="check-opt" @click.stop="handleComplete(todo.id)">
+            <CheckCheck :size="16" /> Done
+          </button>
+        </div>
+
+        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop>
+          <template v-if="store.tags.length">
+            <label
+              v-for="tag in store.tags"
+              :key="tag.id"
+              class="tag-row-opt"
+              :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
+            >
+              <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
+              <span>{{ tag.label }}</span>
+            </label>
+          </template>
+          <span v-else class="tag-row-empty">No tags yet</span>
+        </div>
       </div>
     </div>
-
-    <div v-if="showMenu && mode === 'today'" class="check-menu">
-      <button class="check-opt" @click.stop="handleComplete(todo.id)">
-        <CheckCheck :size="16" /> Done
-      </button>
-      <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
-        <Clock :size="16" /> Done for today
-      </button>
-    </div>
-
-    <TagSelectModal
-      v-if="showTagMenu"
-      :model-value="todo.tags"
-      @update:model-value="updateTags"
-      @mousedown.prevent
-    />
   </div>
 </template>
 
@@ -426,13 +437,19 @@ onUnmounted(() => {
 
 .todo-card {
   display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 18px;
+  flex-direction: column;
   background: var(--bg);
   font-size: 17px;
   color: var(--gray);
   max-width: 600px;
+}
+
+.todo-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  cursor: pointer;
 }
 
 .todo-title {
@@ -460,46 +477,64 @@ onUnmounted(() => {
 
 .card-btn--delete:hover { color: var(--gray); }
 
-.check-menu {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  background: var(--bg);
-  border: 2px solid var(--gray);
-  border-radius: var(--radius);
-  box-shadow: 4px 4px 0 var(--gray);
+.check-row {
   display: flex;
-  flex-direction: column;
-  z-index: 20;
-  overflow: hidden;
-  min-width: 100%;
+  flex-direction: row;
+  border-top: 2px solid var(--gray);
 }
 
 .check-opt {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 12px;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
   background: none;
   border: none;
   font-size: 13px;
   color: var(--gray);
   cursor: pointer;
-  text-align: left;
   white-space: nowrap;
-  transition: color 0.1s, background 0.1s;
+  transition: color 0.1s;
 }
 
 .check-opt:hover {
   color: var(--gray-dark);
-  background: rgba(135, 128, 128, 0.1);
+}
+
+.check-divider {
+  width: 2px;
+  background: var(--gray);
+  flex-shrink: 0;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  border-top: 2px solid var(--gray);
+}
+
+.tag-row-empty {
+  font-size: 12px;
+  color: var(--gray);
+  padding: 3px 0;
 }
 
 @media (max-width: 900px) {
   .todo-card {
     font-size: 14px;
+  }
+
+  .todo-card-main {
     padding: 8px 12px;
     gap: 8px;
+  }
+
+  .card-btn {
+    display: none;
   }
 }
 </style>

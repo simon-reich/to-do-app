@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, provide, onMounted, nextTick, useTemplateRef } from 'vue'
+import { ref, provide, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight } from '@lucide/vue'
 import { useTodosStore } from './stores/todos'
@@ -9,10 +9,28 @@ import TagSelectModal from './components/TagSelectModal.vue'
 
 const { checkAndReset } = useReset()
 const themeStore = useThemeStore()
+
+let lastViewportHeight = 0
+function onViewportResize() {
+  const vv = window.visualViewport
+  if (!vv) return
+  const shrunk = lastViewportHeight > 0 && vv.height > lastViewportHeight + 100
+  lastViewportHeight = vv.height
+  if (shrunk && document.activeElement === todoInputRef.value) {
+    todoInputRef.value?.blur()
+  }
+}
+
 onMounted(() => {
   checkAndReset()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
   nextTick(checkScrollState)
+  lastViewportHeight = window.visualViewport?.height ?? 0
+  window.visualViewport?.addEventListener('resize', onViewportResize)
+})
+
+onUnmounted(() => {
+  window.visualViewport?.removeEventListener('resize', onViewportResize)
 })
 
 const store = useTodosStore()
@@ -43,6 +61,7 @@ function toggleTag(id: string) {
 
 // ── Add todo ──
 const todoInput = ref('')
+const todoInputRef = ref<HTMLInputElement | null>(null)
 const showTagModal = ref(false)
 const newTodoTagIds = ref<string[]>([])
 
@@ -63,7 +82,6 @@ function addTodo() {
   store.addTodo(todoInput.value, { tags: [...newTodoTagIds.value] })
   todoInput.value = ''
   newTodoTagIds.value = []
-  showTagModal.value = false
 }
 
 // ── Sort: toggle between date (newest first) and A–Z ──
@@ -125,8 +143,9 @@ function onScroll() { checkScrollState() }
         </button>
 
         <!-- Add todo input -->
-        <div class="add-wrapper">
+        <div class="add-wrapper" :class="{ 'add-wrapper--open': showTagModal && store.tags.length }">
           <input
+            ref="todoInputRef"
             v-model="todoInput"
             class="add-input"
             placeholder="add + enter"
@@ -134,14 +153,19 @@ function onScroll() { checkScrollState() }
             @input="onTodoInput"
             @blur="onTodoBlur"
             @keydown.enter.prevent="addTodo"
-            @keydown.escape="showTagModal = false"
+            @keydown.escape="showTagModal = false; todoInputRef?.blur()"
           />
-          <TagSelectModal
-            v-if="showTagModal && store.tags.length"
-            :model-value="newTodoTagIds"
-            @update:model-value="newTodoTagIds = $event"
-            @mousedown.prevent
-          />
+          <div v-if="showTagModal && store.tags.length" class="add-tag-row" @mousedown.prevent>
+            <label
+              v-for="tag in store.tags"
+              :key="tag.id"
+              class="tag-row-opt"
+              :class="{ checked: newTodoTagIds.includes(tag.id), dimmed: newTodoTagIds.length > 0 && !newTodoTagIds.includes(tag.id) }"
+            >
+              <input type="checkbox" :checked="newTodoTagIds.includes(tag.id)" @change="newTodoTagIds = newTodoTagIds.includes(tag.id) ? newTodoTagIds.filter(i => i !== tag.id) : [...newTodoTagIds, tag.id]" />
+              <span>{{ tag.label }}</span>
+            </label>
+          </div>
         </div>
 
         <!-- Desktop nav icons -->
