@@ -150,6 +150,7 @@ function onScroll() { checkScrollState() }
 
         <!-- Sort button (desktop only) -->
         <button
+          v-if="route.path === '/all'"
           class="sort-btn desktop-only"
           :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
           @click="toggleSort"
