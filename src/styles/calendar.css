@@ -114,7 +114,7 @@
 }
 
 .vc-weekday {
-  color: var(--ink) !important;
+  color: var(--ink-dark) !important;
   font-size: 14px !important;
 }
 
