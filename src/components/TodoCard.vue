@@ -438,12 +438,12 @@ onUnmounted(() => {
 
 .swipe-bg--right {
   left: 0;
-  background: var(--ink-dark);
+  background: var(--ink);
 }
 
 .swipe-bg--left {
   right: 0;
-  background: var(--ink-dark);
+  background: var(--ink);
 }
 
 .todo-card {
