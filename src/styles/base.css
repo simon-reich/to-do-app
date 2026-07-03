@@ -11,6 +11,7 @@
   --gray: #878080;
   --gray-dark: #4a4545;
   --gray-light: #b5b0b0;
+  --ink: var(--gray);
   --radius: 6px;
 
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;

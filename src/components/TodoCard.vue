@@ -107,6 +107,13 @@ const props = defineProps<{
 const store = useTodosStore()
 const route = useRoute()
 
+const isPriority = computed(() =>
+  props.todo.tags.some(tid => {
+    const tag = store.tags.find(t => t.id === tid)
+    return tag?.label.toLowerCase() === 'priority'
+  })
+)
+
 
 const emit = defineEmits<{
   'send-to-today': [id: string]
@@ -276,6 +283,7 @@ onUnmounted(() => {
     <div
       ref="swipeContainerRef"
       class="swipe-container"
+      :class="{ priority: isPriority }"
       @touchstart="onTouchStart"
       @touchend="onTouchEnd"
     >
@@ -442,6 +450,51 @@ onUnmounted(() => {
   font-size: 17px;
   color: var(--gray);
   max-width: 600px;
+}
+
+.priority {
+  border-color: var(--gray);
+  box-shadow: 5px 5px 0 var(--gray);
+}
+
+.priority .todo-card {
+  background: var(--gray);
+  color: var(--bg);
+}
+
+.priority .card-btn {
+  color: var(--bg);
+}
+
+.priority .card-btn:hover {
+  color: var(--gray-light);
+}
+
+.priority .check-row {
+  border-top-color: var(--bg);
+}
+
+.priority .check-opt {
+  background: var(--gray-dark);
+  color: var(--bg);
+}
+
+.priority .check-divider {
+  background: var(--bg);
+}
+
+.priority .tag-row {
+  border-top-color: var(--bg);
+}
+
+.priority .tag-row-opt {
+  color: var(--bg);
+  border-color: var(--bg);
+}
+
+.priority .tag-row-opt.checked {
+  color: var(--gray-light);
+  border-color: var(--gray-light);
 }
 
 .todo-card-main {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import type { Ref } from 'vue'
-import { useTodosStore } from '../stores/todos'
+import { useTodosStore, PRIORITY_TAG_ID } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 
@@ -13,7 +13,11 @@ const filteredTodos = computed(() => {
   if (activeTagIds.value.length > 0) {
     result = result.filter(t => t.tags.some(tid => activeTagIds.value.includes(tid)))
   }
-  return result
+  return [...result].sort((a, b) => {
+    const aPrio = a.tags.includes(PRIORITY_TAG_ID) ? 0 : 1
+    const bPrio = b.tags.includes(PRIORITY_TAG_ID) ? 0 : 1
+    return aPrio - bPrio
+  })
 })
 
 const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))

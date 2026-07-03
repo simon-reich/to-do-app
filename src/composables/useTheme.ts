@@ -37,5 +37,6 @@ export function applyTheme(bg: string, gray: string, rounded = true) {
   root.style.setProperty('--gray', gray)
   root.style.setProperty('--gray-dark', grayDark)
   root.style.setProperty('--gray-light', grayLight)
+  root.style.setProperty('--ink', gray)
   root.style.setProperty('--radius', rounded ? '6px' : '0px')
 }

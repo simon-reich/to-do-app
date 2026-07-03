@@ -9,6 +9,8 @@ function uuid(): string {
   })
 }
 
+export const PRIORITY_TAG_ID = '__priority__'
+
 export interface Tag {
   id: string
   label: string
@@ -98,6 +100,15 @@ export const useTodosStore = defineStore('todos', () => {
     }
   }
 
+  // ── System tags ──
+  const userTags = computed(() => tags.value.filter(t => t.id !== PRIORITY_TAG_ID))
+
+  function ensureSystemTags() {
+    if (!tags.value.find(t => t.id === PRIORITY_TAG_ID)) {
+      tags.value.unshift({ id: PRIORITY_TAG_ID, label: 'priority', color: '#878080' })
+    }
+  }
+
   // ── Tag Actions ──
   function addTag(label: string, color: string): Tag {
     const tag: Tag = { id: uuid(), label: label.trim(), color }
@@ -113,6 +124,7 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   function deleteTag(id: string) {
+    if (id === PRIORITY_TAG_ID) return
     tags.value = tags.value.filter(t => t.id !== id)
     todos.value.forEach(todo => {
       todo.tags = todo.tags.filter(tid => tid !== id)
@@ -136,10 +148,10 @@ export const useTodosStore = defineStore('todos', () => {
     // state
     todos, tags, lastResetDate,
     // getters
-    activeTodos, todayTodos, archivedTodos,
+    activeTodos, todayTodos, archivedTodos, userTags,
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
-    addTag, updateTag, deleteTag,
+    addTag, updateTag, deleteTag, ensureSystemTags,
     resetToday, importData,
   }
 }, {

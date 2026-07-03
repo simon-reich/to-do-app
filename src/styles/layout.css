@@ -222,6 +222,10 @@
   border-color: var(--gray-dark);
 }
 
+.priority-btn {
+  margin-bottom: 14px;
+}
+
 .all-btn.dimmed {
   opacity: 0.35;
 }

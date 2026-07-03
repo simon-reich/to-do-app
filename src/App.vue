@@ -2,7 +2,7 @@
 import { ref, provide, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, LayoutList, LayoutGrid } from '@lucide/vue'
-import { useTodosStore } from './stores/todos'
+import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useReset } from './composables/useReset'
 import TagSelectModal from './components/TagSelectModal.vue'
@@ -23,6 +23,7 @@ function onViewportResize() {
 
 onMounted(() => {
   checkAndReset()
+  store.ensureSystemTags()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
   nextTick(checkScrollState)
   lastViewportHeight = window.visualViewport?.height ?? 0
@@ -206,7 +207,6 @@ function onScroll() { checkScrollState() }
     <aside class="sidebar desktop-only">
       <div class="tag-list">
         <button
-          v-if="store.tags.length"
           class="all-btn"
           :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
           @click="activeTagIds = []"
@@ -214,8 +214,16 @@ function onScroll() { checkScrollState() }
           all
         </button>
 
+        <button
+          class="all-btn priority-btn"
+          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
+          @click="toggleTag(PRIORITY_TAG_ID)"
+        >
+          priority
+        </button>
+
         <div
-          v-for="tag in store.tags"
+          v-for="tag in store.userTags"
           :key="tag.id"
           class="tag-chip"
           :class="{
@@ -257,7 +265,6 @@ function onScroll() { checkScrollState() }
 
       <div class="tag-list mobile-tag-list">
         <button
-          v-if="store.tags.length"
           class="all-btn"
           :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
           @click="activeTagIds = []"
@@ -265,8 +272,16 @@ function onScroll() { checkScrollState() }
           all
         </button>
 
+        <button
+          class="all-btn priority-btn"
+          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
+          @click="toggleTag(PRIORITY_TAG_ID)"
+        >
+          priority
+        </button>
+
         <div
-          v-for="tag in store.tags"
+          v-for="tag in store.userTags"
           :key="tag.id"
           class="tag-chip"
           :class="{
