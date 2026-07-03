@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import { useTodosStore } from '../stores/todos'
 
 const store = useTodosStore()
-const selectedDate = ref<string | null>(null)
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+const selectedDate = ref<string>(todayStr())
+
+onBeforeRouteLeave(() => {
+  selectedDate.value = todayStr()
+})
 
 const activeDates = computed(() => {
   const days = new Set<string>()
@@ -54,7 +64,7 @@ const attributes = computed(() => {
 })
 
 function onDayClick(day: { id: string }) {
-  selectedDate.value = selectedDate.value === day.id ? null : day.id
+  selectedDate.value = day.id
 }
 
 const selectedDateLabel = computed(() => {
@@ -88,7 +98,7 @@ const activityOnDay = computed(() => {
     />
 
     <transition name="fade">
-      <div v-if="selectedDate" class="day-detail">
+      <div class="day-detail">
         <p class="day-label">{{ selectedDateLabel }}</p>
 
         <div v-if="activityOnDay.length" class="day-items">
