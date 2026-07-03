@@ -454,7 +454,7 @@ onUnmounted(() => {
 
 .priority {
   border-color: var(--gray);
-  box-shadow: 5px 5px 0 var(--gray);
+  box-shadow: 5px 5px 0 var(--gray-dark);
 }
 
 .priority .todo-card {
