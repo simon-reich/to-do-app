@@ -156,7 +156,7 @@ const activityOnDay = computed(() => {
 }
 
 .cal :deep(.vc-weekday) {
-  color: var(--ink-light) !important;
+  color: var(--ink) !important;
   font-size: 14px !important;
 }
 
@@ -214,7 +214,7 @@ const activityOnDay = computed(() => {
 
 .no-activity {
   font-size: 15px;
-  color: var(--ink-light);
+  color: var(--ink);
 }
 
 .fade-enter-active,

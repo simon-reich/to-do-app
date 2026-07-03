@@ -468,7 +468,7 @@ onUnmounted(() => {
 }
 
 .priority .card-btn:hover {
-  color: var(--ink-light);
+  color: var(--ink);
 }
 
 .priority .check-row {

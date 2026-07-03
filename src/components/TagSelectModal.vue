@@ -79,7 +79,7 @@ function toggle(id: string) {
 
 .tag-empty {
   font-size: 12px;
-  color: var(--ink-light);
+  color: var(--ink);
   padding: 2px 6px;
 }
 </style>

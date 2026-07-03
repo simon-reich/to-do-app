@@ -83,7 +83,7 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 }
 
 .empty {
-  color: var(--ink-light);
+  color: var(--ink);
   font-size: 15px;
   text-align: center;
   margin-top: 24px;

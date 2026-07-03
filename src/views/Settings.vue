@@ -235,7 +235,7 @@ function saveTheme() {
   display: flex;
   align-items: center;
   margin-left: 2px;
-  color: var(--ink-light);
+  color: var(--ink);
   cursor: pointer;
   transition: color 0.1s;
 }
