@@ -26,7 +26,7 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 </script>
 
 <template>
-  <div class="all-todos">
+  <div class="all-todos" :class="{ 'list-view': listView }">
     <div v-if="filteredTodos.length" class="todo-wrap" :class="{ 'list-view': listView }">
       <TodoCard
         v-for="todo in filteredTodos"
@@ -49,6 +49,10 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 .all-todos {
   width: 100%;
   max-width: min(70vw, 1100px);
+}
+
+.all-todos.list-view {
+  max-width: 640px;
 }
 
 .todo-wrap {

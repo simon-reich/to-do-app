@@ -137,15 +137,6 @@ function onScroll() { checkScrollState() }
     <!-- ══ Main head: add todo input (hidden on settings + mobile-tags-open) ══ -->
     <div class="main-head">
       <div class="main-head-inner">
-        <!-- Sort button (desktop only) -->
-        <button
-          class="sort-btn desktop-only"
-          :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
-          @click="toggleSort"
-        >
-          <ArrowUpDown :size="22" />
-        </button>
-
         <!-- List/grid toggle (desktop, overview only) -->
         <button
           v-if="route.path === '/all'"
@@ -154,6 +145,15 @@ function onScroll() { checkScrollState() }
           @click="listView = !listView"
         >
           <component :is="listView ? LayoutGrid : LayoutList" :size="22" />
+        </button>
+
+        <!-- Sort button (desktop only) -->
+        <button
+          class="sort-btn desktop-only"
+          :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
+          @click="toggleSort"
+        >
+          <ArrowUpDown :size="22" />
         </button>
 
         <!-- Add todo input -->
