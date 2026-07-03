@@ -91,6 +91,26 @@
   font-weight: 600;
 }
 
+.vc-nav-item,
+.vc-nav-title,
+.vc-nav-arrow {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.vc-nav-item:focus,
+.vc-nav-item:focus-visible,
+.vc-nav-item:active,
+.vc-nav-title:focus,
+.vc-nav-title:focus-visible,
+.vc-nav-arrow:focus,
+.vc-nav-arrow:focus-visible {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 .vc-highlight-content-solid { color: var(--bg) !important; }
 
 .vc-day-content:focus,
@@ -101,7 +121,7 @@
 }
 
 .vc-day-content:hover {
-  background: color-mix(in srgb, var(--ink) 15%, transparent) !important;
+  background: transparent !important;
 }
 
 .vc-header .vc-title,
