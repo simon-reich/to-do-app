@@ -540,12 +540,11 @@ onUnmounted(() => {
 .card-btn--delete:hover { color: var(--ink); }
 
 .check-row {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
 .check-opt {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
