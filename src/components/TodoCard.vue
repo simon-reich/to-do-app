@@ -475,7 +475,7 @@ onUnmounted(() => {
 }
 
 .priority .check-opt {
-  background: var(--gray-dark);
+  background: var(--gray);
   color: var(--bg);
 }
 
@@ -533,7 +533,6 @@ onUnmounted(() => {
 .check-row {
   display: flex;
   flex-direction: row;
-  border-top: 2px solid var(--gray);
 }
 
 .check-opt {
@@ -557,8 +556,7 @@ onUnmounted(() => {
 }
 
 .check-divider {
-  width: 2px;
-  background: var(--gray);
+  display: none;
   flex-shrink: 0;
 }
 
@@ -567,7 +565,15 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 4px;
   padding: 8px 12px;
-  border-top: 2px solid var(--gray);
+}
+
+.tag-row-opt.checked {
+  color: var(--gray-dark);
+  border-color: var(--gray-dark);
+}
+
+.tag-row-opt.dimmed {
+  opacity: 0.35;
 }
 
 .tag-row-empty {

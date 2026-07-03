@@ -110,7 +110,7 @@
 
 .add-tag-row {
   position: absolute;
-  top: 100%;
+  top: calc(100% - 2px);
   left: 0;
   right: 0;
   display: flex;
