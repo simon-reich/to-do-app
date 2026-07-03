@@ -141,7 +141,10 @@ function closeOnOutside(e: MouseEvent) {
 
 watch([showMenu, showTagMenu], ([m, t]) => {
   if (m || t) document.addEventListener('click', closeOnOutside)
-  else document.removeEventListener('click', closeOnOutside)
+  else {
+    document.removeEventListener('click', closeOnOutside)
+    requestAnimationFrame(() => { (document.activeElement as HTMLElement | null)?.blur() })
+  }
 })
 
 function toggleTagMenu() {
@@ -283,7 +286,7 @@ onUnmounted(() => {
     <div
       ref="swipeContainerRef"
       class="swipe-container"
-      :class="{ priority: isPriority }"
+      :class="{ priority: isPriority, open: showMenu || showTagMenu }"
       @touchstart="onTouchStart"
       @touchend="onTouchEnd"
     >
@@ -406,7 +409,7 @@ onUnmounted(() => {
   transition: border-color 0.12s, box-shadow 0.12s;
 }
 
-.swipe-container:has(.todo-card:hover) {
+.swipe-container.open {
   border-color: var(--ink-dark);
   box-shadow: 5px 5px 0 var(--ink-dark);
 }
@@ -508,6 +511,7 @@ onUnmounted(() => {
   gap: 12px;
   padding: 12px 18px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .todo-title {
