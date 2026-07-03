@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, provide, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
+import { ref, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
@@ -121,6 +121,12 @@ function checkScrollState() {
 }
 
 function onScroll() { checkScrollState() }
+
+watch(() => route.path, () => {
+  const el = mainContentRef.value
+  if (el) el.scrollTop = 0
+  nextTick(checkScrollState)
+})
 </script>
 
 <template>
