@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, provide, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight } from '@lucide/vue'
+import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useReset } from './composables/useReset'
@@ -90,6 +90,10 @@ function toggleSort() {
   sortKey.value = sortKey.value === 'createdAt' ? 'title' : 'createdAt'
 }
 
+// ── List view toggle (desktop, overview only) ──
+const listView = ref(false)
+provide('listView', listView)
+
 // ── Settings toggle ──
 function toggleSettings() {
   if (route.path === '/settings') router.push('/all')
@@ -140,6 +144,16 @@ function onScroll() { checkScrollState() }
           @click="toggleSort"
         >
           <ArrowUpDown :size="22" />
+        </button>
+
+        <!-- List/grid toggle (desktop, overview only) -->
+        <button
+          v-if="route.path === '/all'"
+          class="sort-btn desktop-only"
+          :title="listView ? 'Switch to grid view' : 'Switch to list view'"
+          @click="listView = !listView"
+        >
+          <component :is="listView ? LayoutGrid : LayoutList" :size="22" />
         </button>
 
         <!-- Add todo input -->

@@ -8,6 +8,7 @@ import { assignFonts } from '../composables/useTodoFonts'
 const store = useTodosStore()
 const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
 const sortKey = inject<Ref<'createdAt' | 'title'>>('sortKey')!
+const listView = inject<Ref<boolean>>('listView')!
 
 const filteredTodos = computed(() => {
   let result = store.activeTodos.filter(t => !t.inToday)
@@ -26,7 +27,7 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 
 <template>
   <div class="all-todos">
-    <div v-if="filteredTodos.length" class="todo-wrap">
+    <div v-if="filteredTodos.length" class="todo-wrap" :class="{ 'list-view': listView }">
       <TodoCard
         v-for="todo in filteredTodos"
         :key="todo.id"
@@ -55,6 +56,14 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
+}
+
+.todo-wrap.list-view {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  max-width: 640px;
 }
 
 @media (max-width: 900px) {
