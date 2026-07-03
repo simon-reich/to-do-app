@@ -34,9 +34,9 @@ export function applyTheme(bg: string, gray: string, rounded = true) {
   const grayDark = hslToHex(h, Math.min(s + 8, 100), Math.max(l - 22, 5))
   const grayLight = hslToHex(h, Math.max(s - 2, 0), Math.min(l + 15, 94))
   root.style.setProperty('--bg', bg)
-  root.style.setProperty('--gray', gray)
-  root.style.setProperty('--gray-dark', grayDark)
-  root.style.setProperty('--gray-light', grayLight)
+  root.style.setProperty('--ink', gray)
+  root.style.setProperty('--ink-dark', grayDark)
+  root.style.setProperty('--ink-light', grayLight)
   root.style.setProperty('--ink', gray)
   root.style.setProperty('--radius', rounded ? '6px' : '0px')
 }

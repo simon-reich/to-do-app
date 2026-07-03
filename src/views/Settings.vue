@@ -119,7 +119,7 @@ function saveTheme() {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gray-light);
+  color: var(--ink-light);
 }
 
 .color-picker-group {
@@ -145,22 +145,22 @@ function saveTheme() {
 .color-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--gray);
+  color: var(--ink);
 }
 
 .name-input {
   width: 100%;
   padding: 9px 12px;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
   background: transparent;
-  color: var(--gray-dark);
+  color: var(--ink-dark);
   font-size: 15px;
   outline: none;
 }
 
-.name-input:focus { border-color: var(--gray-dark); }
-.name-input::placeholder { color: var(--gray); }
+.name-input:focus { border-color: var(--ink-dark); }
+.name-input::placeholder { color: var(--ink); }
 
 .themes-list {
   display: flex;
@@ -175,22 +175,22 @@ function saveTheme() {
   align-items: center;
   gap: 7px;
   padding: 7px 12px 7px 10px;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
   background: transparent;
-  color: var(--gray);
+  color: var(--ink);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
-  box-shadow: 4px 4px 0 var(--gray);
+  box-shadow: 4px 4px 0 var(--ink);
 }
 
 .theme-chip:hover,
 .theme-chip.active {
-  border-color: var(--gray-dark);
-  color: var(--gray-dark);
-  box-shadow: 4px 4px 0 var(--gray-dark);
+  border-color: var(--ink-dark);
+  color: var(--ink-dark);
+  box-shadow: 4px 4px 0 var(--ink-dark);
 }
 
 .chip-swatches {
@@ -210,12 +210,12 @@ function saveTheme() {
   display: flex;
   align-items: center;
   margin-left: 2px;
-  color: var(--gray-light);
+  color: var(--ink-light);
   cursor: pointer;
   transition: color 0.1s;
 }
 
-.chip-delete:hover { color: var(--gray-dark); }
+.chip-delete:hover { color: var(--ink-dark); }
 
 .btn-row {
   display: flex;
@@ -225,19 +225,19 @@ function saveTheme() {
 
 .action-btn {
   padding: 10px 20px;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
   background: transparent;
-  color: var(--gray);
+  color: var(--ink);
   font-size: 15px;
   cursor: pointer;
-  box-shadow: 4px 4px 0 var(--gray);
+  box-shadow: 4px 4px 0 var(--ink);
   transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .action-btn:hover {
-  border-color: var(--gray-dark);
-  color: var(--gray-dark);
-  box-shadow: 4px 4px 0 var(--gray-dark);
+  border-color: var(--ink-dark);
+  color: var(--ink-dark);
+  box-shadow: 4px 4px 0 var(--ink-dark);
 }
 </style>

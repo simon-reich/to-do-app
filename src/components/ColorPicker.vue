@@ -124,8 +124,8 @@ function onHue(e: PointerEvent) {
   position: relative;
   width: 100%;
   height: 140px;
-  border: 2px solid var(--gray);
-  box-shadow: 4px 4px 0 var(--gray);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
   border-radius: var(--radius);
   cursor: crosshair;
   touch-action: none;
@@ -148,8 +148,8 @@ function onHue(e: PointerEvent) {
   width: 100%;
   height: 12px;
   border-radius: var(--radius);
-  border: 2px solid var(--gray);
-  box-shadow: 4px 4px 0 var(--gray);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
   background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
   cursor: pointer;
   touch-action: none;
@@ -162,7 +162,7 @@ function onHue(e: PointerEvent) {
   width: 4px;
   height: calc(100% + 8px);
   background: #fff;
-  border: 1px solid var(--gray-dark);
+  border: 1px solid var(--ink-dark);
   border-radius: 2px;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -179,14 +179,14 @@ function onHue(e: PointerEvent) {
   width: 22px;
   height: 22px;
   border-radius: var(--radius);
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   flex-shrink: 0;
 }
 
 .result-hex {
   font-size: 14px;
   font-family: monospace;
-  color: var(--gray);
+  color: var(--ink);
   background: none;
   border: none;
   outline: none;
@@ -195,6 +195,6 @@ function onHue(e: PointerEvent) {
   cursor: text;
 }
 .result-hex:focus {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 </style>

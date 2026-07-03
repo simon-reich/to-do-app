@@ -24,9 +24,9 @@
 .tag-new-input {
   width: 100%;
   font-size: 13px;
-  color: var(--gray);
+  color: var(--ink);
   background: transparent;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
   padding: 9px 12px;
   outline: none;
@@ -34,10 +34,10 @@
 }
 
 .tag-new-input:focus {
-  border-color: var(--gray-dark);
+  border-color: var(--ink-dark);
 }
 .tag-new-input::placeholder {
-  color: var(--gray);
+  color: var(--ink);
 }
 
 /* ── Main head ── */
@@ -61,7 +61,7 @@
 .sort-btn {
   background: none;
   border: none;
-  color: var(--gray);
+  color: var(--ink);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -71,7 +71,7 @@
 }
 
 .sort-btn:hover {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 .add-wrapper {
@@ -83,29 +83,29 @@
 .add-input {
   width: 100%;
   font-size: 17px;
-  color: var(--gray);
+  color: var(--ink);
   background: transparent;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
   padding: 10px 16px;
   outline: none;
-  box-shadow: 0 5px 0 var(--gray);
+  box-shadow: 0 5px 0 var(--ink);
   transition: border-color 0.15s, box-shadow 0.15s, border-radius 0.15s;
 }
 
 .add-input:focus {
-  border-color: var(--gray-dark);
-  box-shadow: 0 5px 0 var(--gray-dark);
+  border-color: var(--ink-dark);
+  box-shadow: 0 5px 0 var(--ink-dark);
 }
 
 .add-wrapper--open .add-input {
-  border-color: var(--gray-dark);
+  border-color: var(--ink-dark);
   border-radius: var(--radius) var(--radius) 0 0;
   box-shadow: none;
 }
 
 .add-input::placeholder {
-  color: var(--gray);
+  color: var(--ink);
 }
 
 .add-tag-row {
@@ -118,10 +118,10 @@
   gap: 4px;
   padding: 8px 12px;
   background: var(--bg);
-  border: 2px solid var(--gray-dark);
+  border: 2px solid var(--ink-dark);
   border-top: none;
   border-radius: 0 0 var(--radius) var(--radius);
-  box-shadow: 0 5px 0 var(--gray-dark);
+  box-shadow: 0 5px 0 var(--ink-dark);
   z-index: 30;
 }
 
@@ -130,18 +130,18 @@
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: var(--gray);
+  color: var(--ink);
   cursor: pointer;
   padding: 3px 8px;
-  border: 1px solid var(--gray);
+  border: 1px solid var(--ink);
   border-radius: var(--radius);
   user-select: none;
   transition: color 0.1s, border-color 0.1s, opacity 0.1s;
 }
 
 .tag-row-opt.checked {
-  color: var(--gray-dark);
-  border-color: var(--gray-dark);
+  color: var(--ink-dark);
+  border-color: var(--ink-dark);
 }
 
 .tag-row-opt.dimmed {
@@ -149,8 +149,8 @@
 }
 
 .tag-row-opt:hover {
-  color: var(--gray-dark);
-  border-color: var(--gray-dark);
+  color: var(--ink-dark);
+  border-color: var(--ink-dark);
   opacity: 1;
 }
 
@@ -180,7 +180,7 @@
 
 .nav-icon:hover,
 .nav-icon.router-link-active {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 
@@ -204,9 +204,9 @@
 
 .all-btn {
   background: none;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
-  color: var(--gray);
+  color: var(--ink);
   font-size: 13px;
   padding: 4px 10px;
   cursor: pointer;
@@ -218,8 +218,8 @@
 
 .all-btn.active,
 .all-btn:hover {
-  color: var(--gray-dark);
-  border-color: var(--gray-dark);
+  color: var(--ink-dark);
+  border-color: var(--ink-dark);
 }
 
 .priority-btn {
@@ -235,18 +235,18 @@
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--ink);
   border-radius: var(--radius);
   font-size: 13px;
-  color: var(--gray);
+  color: var(--ink);
   transition:
     color 0.12s,
     border-color 0.12s;
 }
 
 .tag-chip.active {
-  color: var(--gray-dark);
-  border-color: var(--gray-dark);
+  color: var(--ink-dark);
+  border-color: var(--ink-dark);
 }
 
 .tag-chip.dimmed {
@@ -263,7 +263,7 @@
 .tag-x {
   background: none;
   border: none;
-  color: var(--gray);
+  color: var(--ink);
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
@@ -272,7 +272,7 @@
 }
 
 .tag-x:hover {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 /* ── Settings head ── */
@@ -298,7 +298,7 @@
 
 .settings-btn:hover,
 .settings-btn.active {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 /* ── Settings active: dim non-settings UI ── */
@@ -333,7 +333,7 @@
 }
 
 .scroll-divider.visible {
-  background: var(--gray);
+  background: var(--ink);
 }
 
 .content-inner {

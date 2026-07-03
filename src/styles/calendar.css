@@ -5,27 +5,27 @@
   --vc-font-size-sm: 16px;
   --vc-font-size-base: 16px;
   --vc-color-gray-50: var(--bg);
-  --vc-color-gray-100: var(--gray-light);
-  --vc-color-gray-200: var(--gray-light);
-  --vc-color-gray-900: var(--gray-dark);
+  --vc-color-gray-100: var(--ink-light);
+  --vc-color-gray-200: var(--ink-light);
+  --vc-color-gray-900: var(--ink-dark);
   --vc-color-white: var(--bg);
   --vc-rounded-full: 6px;
   --vc-bg: var(--bg);
   --vc-border: none;
-  --vc-gray-900: var(--gray-dark);
-  --vc-gray-500: var(--gray);
-  --vc-gray-300: var(--gray-light);
-  --vc-header-title-color: var(--gray-dark);
+  --vc-gray-900: var(--ink-dark);
+  --vc-gray-500: var(--ink);
+  --vc-gray-300: var(--ink-light);
+  --vc-header-title-color: var(--ink-dark);
 
   --vc-popover-content-bg: var(--bg);
-  --vc-popover-content-border: var(--gray);
-  --vc-popover-content-color: var(--gray);
-  --vc-nav-title-color: var(--gray-dark);
-  --vc-nav-hover-bg: color-mix(in srgb, var(--gray) 15%, transparent);
-  --vc-nav-item-active-bg: var(--gray-dark);
+  --vc-popover-content-border: var(--ink);
+  --vc-popover-content-color: var(--ink);
+  --vc-nav-title-color: var(--ink-dark);
+  --vc-nav-hover-bg: color-mix(in srgb, var(--ink) 15%, transparent);
+  --vc-nav-item-active-bg: var(--ink-dark);
   --vc-nav-item-active-color: var(--bg);
   --vc-nav-item-active-box-shadow: none;
-  --vc-nav-item-current-color: var(--gray-dark);
+  --vc-nav-item-current-color: var(--ink-dark);
   --vc-nav-item-hover-box-shadow: none;
 }
 
@@ -48,46 +48,46 @@
 
 .vc-popover-content {
   background-color: var(--bg) !important;
-  border-color: var(--gray) !important;
+  border-color: var(--ink) !important;
   border-width: 2px !important;
-  color: var(--gray) !important;
-  box-shadow: 5px 5px 0 var(--gray) !important;
+  color: var(--ink) !important;
+  box-shadow: 5px 5px 0 var(--ink) !important;
 }
 
 .vc-popover-caret { display: none !important; }
 
 .vc-nav-title,
 .vc-nav-arrow {
-  color: var(--gray-dark) !important;
+  color: var(--ink-dark) !important;
   background: transparent !important;
   font-size: 16px !important;
 }
 
 .vc-nav-title:hover,
 .vc-nav-arrow:hover {
-  background: color-mix(in srgb, var(--gray) 15%, transparent) !important;
+  background: color-mix(in srgb, var(--ink) 15%, transparent) !important;
 }
 
 .vc-nav-item {
-  color: var(--gray) !important;
+  color: var(--ink) !important;
   background: transparent !important;
   font-size: 15px !important;
 }
 
 .vc-nav-item:hover {
-  background: color-mix(in srgb, var(--gray) 15%, transparent) !important;
-  color: var(--gray-dark) !important;
+  background: color-mix(in srgb, var(--ink) 15%, transparent) !important;
+  color: var(--ink-dark) !important;
   box-shadow: none !important;
 }
 
 .vc-nav-item.is-active {
-  background: var(--gray-dark) !important;
+  background: var(--ink-dark) !important;
   color: var(--bg) !important;
   box-shadow: none !important;
 }
 
 .vc-nav-item.is-current {
-  color: var(--gray-dark) !important;
+  color: var(--ink-dark) !important;
   font-weight: 600;
 }
 
@@ -101,12 +101,12 @@
 }
 
 .vc-day-content:hover {
-  background: color-mix(in srgb, var(--gray) 15%, transparent) !important;
+  background: color-mix(in srgb, var(--ink) 15%, transparent) !important;
 }
 
 .vc-header .vc-title,
 .vc-header .vc-title:hover {
-  color: var(--gray-dark) !important;
+  color: var(--ink-dark) !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   opacity: 1 !important;
@@ -114,20 +114,20 @@
 }
 
 .vc-weekday {
-  color: var(--gray-light) !important;
+  color: var(--ink-light) !important;
   font-size: 14px !important;
 }
 
 .vc-day-content {
-  color: var(--gray) !important;
+  color: var(--ink) !important;
   font-size: 16px !important;
 }
 
-.vc-day-content.is-disabled { color: var(--gray-light) !important; }
+.vc-day-content.is-disabled { color: var(--ink-light) !important; }
 
 .vc-arrow,
 .vc-nav-arrow {
-  color: var(--gray-light) !important;
+  color: var(--ink-light) !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -135,6 +135,6 @@
 
 .vc-arrow:hover,
 .vc-nav-arrow:hover {
-  background: color-mix(in srgb, var(--gray) 15%, transparent) !important;
-  color: var(--gray-dark) !important;
+  background: color-mix(in srgb, var(--ink) 15%, transparent) !important;
+  color: var(--ink-dark) !important;
 }

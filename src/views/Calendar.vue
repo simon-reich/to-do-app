@@ -32,7 +32,7 @@ const attributes = computed(() => {
       highlight: {
         style: {
           backgroundColor: 'transparent',
-          border: '2px solid var(--gray)',
+          border: '2px solid var(--ink)',
           borderRadius: '4px',
           width: '28px',
           height: '20px',
@@ -45,7 +45,7 @@ const attributes = computed(() => {
     key: 'today',
     highlight: {
       style: {
-        backgroundColor: 'var(--gray-dark)',
+        backgroundColor: 'var(--ink-dark)',
         borderRadius: '4px',
         width: '28px',
         height: '20px',
@@ -58,7 +58,7 @@ const attributes = computed(() => {
     dates: new Date(),
   })
   if (activeDates.value.length) {
-    attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--gray)' } }, dates: activeDates.value })
+    attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
   return attrs
 })
@@ -141,7 +141,7 @@ const activityOnDay = computed(() => {
 }
 
 .cal :deep(.vc-day-content) {
-  color: var(--gray) !important;
+  color: var(--ink) !important;
   font-size: 16px !important;
 }
 
@@ -150,13 +150,13 @@ const activityOnDay = computed(() => {
 }
 
 .cal :deep(.vc-title) {
-  color: var(--gray-dark) !important;
+  color: var(--ink-dark) !important;
   font-size: 18px !important;
   font-weight: 700 !important;
 }
 
 .cal :deep(.vc-weekday) {
-  color: var(--gray-light) !important;
+  color: var(--ink-light) !important;
   font-size: 14px !important;
 }
 
@@ -186,7 +186,7 @@ const activityOnDay = computed(() => {
 .day-label {
   font-size: 15px;
   font-weight: 600;
-  color: var(--gray-dark);
+  color: var(--ink-dark);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -202,19 +202,19 @@ const activityOnDay = computed(() => {
   align-items: center;
   gap: 10px;
   font-size: 16px;
-  color: var(--gray);
+  color: var(--ink);
 }
 
 .icon {
   font-size: 13px;
-  color: var(--gray-dark);
+  color: var(--ink-dark);
   flex-shrink: 0;
   letter-spacing: -1px;
 }
 
 .no-activity {
   font-size: 15px;
-  color: var(--gray-light);
+  color: var(--ink-light);
 }
 
 .fade-enter-active,

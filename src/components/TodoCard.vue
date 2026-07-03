@@ -1,6 +1,6 @@
 <script lang="ts">
 // Module-level: shared across all TodoCard instances so the bag persists between card completions
-const COLOR = 'var(--gray)'
+const COLOR = 'var(--ink)'
 function randColor() { return COLOR }
 
 type EffectName = 'hearts' | 'stars' | 'confetti'
@@ -401,14 +401,14 @@ onUnmounted(() => {
   display: inline-flex;
   overflow: hidden;
   border-radius: var(--radius);
-  border: 2px solid var(--gray);
-  box-shadow: 5px 5px 0 var(--gray);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
   transition: border-color 0.12s, box-shadow 0.12s;
 }
 
 .swipe-container:has(.todo-card:hover) {
-  border-color: var(--gray-dark);
-  box-shadow: 5px 5px 0 var(--gray-dark);
+  border-color: var(--ink-dark);
+  box-shadow: 5px 5px 0 var(--ink-dark);
 }
 
 .swipe-bg {
@@ -435,12 +435,12 @@ onUnmounted(() => {
 
 .swipe-bg--right {
   left: 0;
-  background: var(--gray-dark);
+  background: var(--ink-dark);
 }
 
 .swipe-bg--left {
   right: 0;
-  background: var(--gray-dark);
+  background: var(--ink-dark);
 }
 
 .todo-card {
@@ -448,17 +448,18 @@ onUnmounted(() => {
   flex-direction: column;
   background: var(--bg);
   font-size: 17px;
-  color: var(--gray);
+  color: var(--ink);
   max-width: 600px;
 }
 
 .priority {
-  border-color: var(--gray);
-  box-shadow: 5px 5px 0 var(--gray-dark);
+  border-color: var(--ink);
+  box-shadow: 5px 5px 0 var(--ink-dark);
+  background: var(--ink);
 }
 
 .priority .todo-card {
-  background: var(--gray);
+  background: var(--ink);
   color: var(--bg);
 }
 
@@ -467,7 +468,7 @@ onUnmounted(() => {
 }
 
 .priority .card-btn:hover {
-  color: var(--gray-light);
+  color: var(--ink-light);
 }
 
 .priority .check-row {
@@ -475,7 +476,7 @@ onUnmounted(() => {
 }
 
 .priority .check-opt {
-  background: var(--gray);
+  background: var(--ink);
   color: var(--bg);
 }
 
@@ -522,7 +523,7 @@ onUnmounted(() => {
   align-items: center;
   background: none;
   border: none;
-  color: var(--gray);
+  color: var(--ink);
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
@@ -530,9 +531,9 @@ onUnmounted(() => {
 }
 
 .card-btn:hover,
-.card-btn.active { color: var(--gray-dark); }
+.card-btn.active { color: var(--ink-dark); }
 
-.card-btn--delete:hover { color: var(--gray); }
+.card-btn--delete:hover { color: var(--ink); }
 
 .check-row {
   display: flex;
@@ -549,14 +550,14 @@ onUnmounted(() => {
   background: none;
   border: none;
   font-size: 13px;
-  color: var(--gray);
+  color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.1s;
 }
 
 .check-opt:hover {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 .check-divider {
@@ -572,8 +573,8 @@ onUnmounted(() => {
 }
 
 .tag-row-opt.checked {
-  color: var(--gray-dark);
-  border-color: var(--gray-dark);
+  color: var(--ink-dark);
+  border-color: var(--ink-dark);
 }
 
 .tag-row-opt.dimmed {
@@ -582,7 +583,7 @@ onUnmounted(() => {
 
 .tag-row-empty {
   font-size: 12px;
-  color: var(--gray);
+  color: var(--ink);
   padding: 3px 0;
 }
 

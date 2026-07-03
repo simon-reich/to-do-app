@@ -41,14 +41,14 @@ function toggle(id: string) {
   left: 0;
   right: 0;
   background: var(--bg);
-  border: 1px solid var(--gray);
+  border: 1px solid var(--ink);
   border-radius: var(--radius);
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   z-index: 50;
-  box-shadow: 2px 2px 0 var(--gray);
+  box-shadow: 2px 2px 0 var(--ink);
 }
 
 .tag-option {
@@ -56,7 +56,7 @@ function toggle(id: string) {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--gray);
+  color: var(--ink);
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
@@ -65,21 +65,21 @@ function toggle(id: string) {
 }
 
 .tag-option.checked {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 .tag-option:hover {
-  color: var(--gray-dark);
+  color: var(--ink-dark);
 }
 
 .tag-option input[type='checkbox'] {
-  accent-color: var(--gray-dark);
+  accent-color: var(--ink-dark);
   cursor: pointer;
 }
 
 .tag-empty {
   font-size: 12px;
-  color: var(--gray-light);
+  color: var(--ink-light);
   padding: 2px 6px;
 }
 </style>
