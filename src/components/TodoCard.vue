@@ -493,8 +493,12 @@ onUnmounted(() => {
 }
 
 .priority .tag-row-opt.checked {
-  color: var(--gray-light);
-  border-color: var(--gray-light);
+  color: var(--bg);
+  border-color: var(--bg);
+}
+
+.priority .tag-row-opt.dimmed {
+  opacity: 0.35;
 }
 
 .todo-card-main {
