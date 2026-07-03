@@ -21,7 +21,7 @@ const themeName = ref('')
 
 // Live preview only – does NOT persist to store
 watch([pickerBg, pickerGray], ([bg, gray]) => {
-  applyTheme(bg, gray, themeStore.rounded)
+  applyTheme(bg, gray, themeStore.rounded, themeStore.priorityShadow)
 })
 
 function saveTheme() {
@@ -82,17 +82,19 @@ function saveTheme() {
     <!-- Corner style -->
     <section class="section">
       <h2 class="section-title">Corners</h2>
-      <button class="action-btn" @click="themeStore.toggleRounded()">
-        {{ themeStore.rounded ? 'Rounded (active)' : 'Square (active)' }}
-      </button>
+      <div class="option-row">
+        <button class="action-btn" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
+        <button class="action-btn" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
+      </div>
     </section>
 
     <!-- Priority shadow -->
     <section class="section">
       <h2 class="section-title">Priority shadow</h2>
-      <button class="action-btn" @click="themeStore.togglePriorityShadow()">
-        {{ themeStore.priorityShadow === 'dark' ? 'Dark shadow (active)' : 'Mono shadow (active)' }}
-      </button>
+      <div class="option-row">
+        <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
+        <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
+      </div>
     </section>
 
     <!-- Data -->
@@ -123,11 +125,11 @@ function saveTheme() {
 }
 
 .section-title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-light);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink-dark);
+  align-self: flex-start;
 }
 
 .color-picker-group {
@@ -194,11 +196,26 @@ function saveTheme() {
   box-shadow: 4px 4px 0 var(--ink);
 }
 
-.theme-chip:hover,
-.theme-chip.active {
+.theme-chip:hover {
   border-color: var(--ink-dark);
   color: var(--ink-dark);
   box-shadow: 4px 4px 0 var(--ink-dark);
+}
+
+.theme-chip.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink-dark);
+}
+
+.theme-chip.active .chip-delete {
+  color: var(--bg);
+  opacity: 0.6;
+}
+
+.theme-chip.active .chip-delete:hover {
+  opacity: 1;
 }
 
 .chip-swatches {
@@ -225,6 +242,11 @@ function saveTheme() {
 
 .chip-delete:hover { color: var(--ink-dark); }
 
+.option-row {
+  display: flex;
+  gap: 10px;
+}
+
 .btn-row {
   display: flex;
   flex-direction: column;
@@ -240,12 +262,19 @@ function saveTheme() {
   font-size: 15px;
   cursor: pointer;
   box-shadow: 4px 4px 0 var(--ink);
-  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.12s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .action-btn:hover {
   border-color: var(--ink-dark);
   color: var(--ink-dark);
+  box-shadow: 4px 4px 0 var(--ink-dark);
+}
+
+.action-btn.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
   box-shadow: 4px 4px 0 var(--ink-dark);
 }
 </style>
