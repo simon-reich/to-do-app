@@ -454,7 +454,7 @@ onUnmounted(() => {
 
 .priority {
   border-color: var(--ink);
-  box-shadow: 5px 5px 0 var(--ink-dark);
+  box-shadow: 5px 5px 0 var(--priority-shadow);
   background: var(--ink);
 }
 

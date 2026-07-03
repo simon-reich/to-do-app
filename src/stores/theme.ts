@@ -21,17 +21,23 @@ export const useThemeStore = defineStore('theme', () => {
   const activeBg = ref('#E2E790')
   const activeGray = ref('#878080')
   const rounded = ref(true)
+  const priorityShadow = ref<'mono' | 'dark'>('dark')
   const savedThemes = ref<ColorTheme[]>([])
 
   function apply(bg: string, gray: string) {
     activeBg.value = bg
     activeGray.value = gray
-    applyTheme(bg, gray, rounded.value)
+    applyTheme(bg, gray, rounded.value, priorityShadow.value)
   }
 
   function toggleRounded() {
     rounded.value = !rounded.value
-    applyTheme(activeBg.value, activeGray.value, rounded.value)
+    applyTheme(activeBg.value, activeGray.value, rounded.value, priorityShadow.value)
+  }
+
+  function togglePriorityShadow() {
+    priorityShadow.value = priorityShadow.value === 'dark' ? 'mono' : 'dark'
+    applyTheme(activeBg.value, activeGray.value, rounded.value, priorityShadow.value)
   }
 
   function saveTheme(name: string) {
@@ -51,5 +57,5 @@ export const useThemeStore = defineStore('theme', () => {
     apply(theme.bg, theme.gray)
   }
 
-  return { activeBg, activeGray, rounded, savedThemes, apply, toggleRounded, saveTheme, deleteTheme, loadTheme }
+  return { activeBg, activeGray, rounded, priorityShadow, savedThemes, apply, toggleRounded, togglePriorityShadow, saveTheme, deleteTheme, loadTheme }
 }, { persist: true })

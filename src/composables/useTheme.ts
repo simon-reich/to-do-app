@@ -28,7 +28,7 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`
 }
 
-export function applyTheme(bg: string, gray: string, rounded = true) {
+export function applyTheme(bg: string, gray: string, rounded = true, priorityShadow: 'mono' | 'dark' = 'dark') {
   const root = document.documentElement
   const [h, s, l] = hexToHsl(gray)
   const grayDark = hslToHex(h, Math.min(s + 8, 100), Math.max(l - 22, 5))
@@ -37,5 +37,6 @@ export function applyTheme(bg: string, gray: string, rounded = true) {
   root.style.setProperty('--ink', gray)
   root.style.setProperty('--ink-dark', grayDark)
   root.style.setProperty('--ink-light', grayLight)
+  root.style.setProperty('--priority-shadow', priorityShadow === 'mono' ? gray : grayDark)
   root.style.setProperty('--radius', rounded ? '6px' : '0px')
 }

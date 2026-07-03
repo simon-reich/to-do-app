@@ -87,6 +87,14 @@ function saveTheme() {
       </button>
     </section>
 
+    <!-- Priority shadow -->
+    <section class="section">
+      <h2 class="section-title">Priority shadow</h2>
+      <button class="action-btn" @click="themeStore.togglePriorityShadow()">
+        {{ themeStore.priorityShadow === 'dark' ? 'Dark shadow (active)' : 'Mono shadow (active)' }}
+      </button>
+    </section>
+
     <!-- Data -->
     <section class="section">
       <h2 class="section-title">Data</h2>
