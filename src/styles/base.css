@@ -10,7 +10,6 @@
   --bg: #E2E790;
   --ink: #878080;
   --ink-dark: #4a4545;
-  --ink-light: #b5b0b0;
   --radius: 6px;
 
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -39,4 +38,4 @@ input, button, select, textarea { font-family: inherit; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--ink-light); }
+::-webkit-scrollbar-thumb { background: var(--ink); }

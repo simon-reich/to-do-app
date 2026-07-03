@@ -16,7 +16,7 @@ Der Fokus liegt auf **Geschwindigkeit und Reibungslosigkeit** beim Anlegen und V
 
 **Design-Philosophie:** Stylisch, aber nicht überladen. Jedes Feature muss sich rechtfertigen. Die App soll sich anfühlen wie ein gutes Notizbuch — immer griffbereit, nie im Weg.
 
-**Personalisierung ohne Komplexität:** Zwei Farben steuern das gesamte visuelle System — Background und Ink. Aus der Ink werden automatisch eine dunklere und eine hellere Variante für Highlighting und Dimming abgeleitet. Dazu wählbarer Corner-Radius (rund oder eckig). Mehr Optionen gibt es nicht — das ist bewusst.
+**Personalisierung ohne Komplexität:** Zwei Farben steuern das gesamte visuelle System — Background und Ink. Aus der Ink wird automatisch eine dunklere Variante (`--ink-dark`) für Highlighting abgeleitet. Dimming erfolgt über Opacity (z.B. 0.35), nicht über eine eigene Farbvariante. Dazu wählbarer Corner-Radius (rund oder eckig) und Priority-Shadow-Stil (dark/mono). Mehr Optionen gibt es nicht — das ist bewusst.
 
 ## Tech Stack
 
