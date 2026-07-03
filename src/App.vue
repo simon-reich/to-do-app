@@ -138,25 +138,23 @@ function onScroll() { checkScrollState() }
     <!-- ══ Main head: add todo input (hidden on settings + mobile-tags-open) ══ -->
     <div class="main-head">
       <div class="main-head-inner">
-        <!-- List/grid toggle (desktop, overview only) -->
-        <button
-          v-if="route.path === '/all'"
-          class="sort-btn desktop-only"
-          :title="listView ? 'Switch to grid view' : 'Switch to list view'"
-          @click="listView = !listView"
-        >
-          <component :is="listView ? LayoutGrid : LayoutList" :size="22" />
-        </button>
-
-        <!-- Sort button (desktop only) -->
-        <button
-          v-if="route.path === '/all'"
-          class="sort-btn desktop-only"
-          :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
-          @click="toggleSort"
-        >
-          <ArrowUpDown :size="22" />
-        </button>
+        <!-- Layout + sort buttons (desktop, overview only) -->
+        <div v-if="route.path === '/all'" class="sort-nav desktop-only">
+          <button
+            :title="listView ? 'Switch to grid view' : 'Switch to list view'"
+            class="sort-btn"
+            @click="listView = !listView"
+          >
+            <component :is="listView ? LayoutGrid : LayoutList" :size="22" />
+          </button>
+          <button
+            :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
+            class="sort-btn"
+            @click="toggleSort"
+          >
+            <ArrowUpDown :size="22" />
+          </button>
+        </div>
 
         <!-- Add todo input -->
         <div class="add-wrapper" :class="{ 'add-wrapper--open': showTagModal && store.tags.length }">

@@ -53,7 +53,7 @@
 .main-head-inner {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 25px;
   width: 100%;
   max-width: 640px;
 }
@@ -157,12 +157,18 @@
   display: none;
 }
 
+.sort-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .top-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   flex-shrink: 0;
-  margin-left: 16px;
 }
 
 .nav-icon {
