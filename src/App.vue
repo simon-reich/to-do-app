@@ -47,7 +47,7 @@ function showToast(msg: string) {
   toastMessage.value = msg
   toastVisible.value = true
   if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toastVisible.value = false }, 2500)
+  toastTimer = setTimeout(() => { toastVisible.value = false }, 1600)
 }
 
 // ── Tag sidebar ──
@@ -372,7 +372,5 @@ watch(() => route.path, () => {
   </div>
 
   <!-- Toast notification -->
-  <transition name="toast">
-    <div v-if="toastVisible" class="toast">{{ toastMessage }}</div>
-  </transition>
+  <div v-if="toastVisible" class="toast">{{ toastMessage }}</div>
 </template>
