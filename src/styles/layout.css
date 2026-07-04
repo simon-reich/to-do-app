@@ -390,7 +390,6 @@
   padding: 8px 14px;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
-  box-shadow: 4px 4px 0 var(--priority-shadow);
   z-index: 9999;
   white-space: nowrap;
   pointer-events: none;
