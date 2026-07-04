@@ -88,9 +88,9 @@ function saveTheme() {
       </div>
     </section>
 
-    <!-- Priority shadow -->
+    <!-- Drop shadow -->
     <section class="section">
-      <h2 class="section-title">Priority shadow</h2>
+      <h2 class="section-title">Drop shadow</h2>
       <div class="option-row">
         <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
         <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
@@ -212,7 +212,7 @@ function saveTheme() {
   background: var(--ink);
   color: var(--bg);
   border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink-dark);
+  box-shadow: 4px 4px 0 var(--priority-shadow);
 }
 
 .theme-chip.active .chip-delete {
@@ -281,6 +281,6 @@ function saveTheme() {
   background: var(--ink);
   color: var(--bg);
   border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink-dark);
+  box-shadow: 4px 4px 0 var(--priority-shadow);
 }
 </style>
