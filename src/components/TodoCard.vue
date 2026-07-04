@@ -156,6 +156,18 @@ function updateTags(tags: string[]) {
   store.updateTodo(props.todo.id, { tags })
 }
 
+// ── Tag row scroll indicator ────────────────────────────
+const tagRowRef = ref<HTMLElement | null>(null)
+const tagRowScrolled = ref(false)
+
+function onTagRowScroll() {
+  tagRowScrolled.value = (tagRowRef.value?.scrollTop ?? 0) > 0
+}
+
+watch(showTagMenu, (open) => {
+  if (!open) tagRowScrolled.value = false
+})
+
 // ── Edit title ──────────────────────────────────────────
 const isEditing = ref(false)
 const editTitle = ref('')
@@ -419,19 +431,22 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop>
-          <template v-if="store.tags.length">
-            <label
-              v-for="tag in store.tags"
-              :key="tag.id"
-              class="tag-row-opt"
-              :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
-            >
-              <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
-              <span>{{ tag.label }}</span>
-            </label>
-          </template>
-          <span v-else class="tag-row-empty">No tags yet</span>
+        <div v-if="showTagMenu && mode === 'all'" ref="tagRowRef" class="tag-row" @click.stop @scroll="onTagRowScroll">
+          <div class="tag-row-divider" :class="{ visible: tagRowScrolled }" />
+          <div class="tag-row-inner">
+            <template v-if="store.tags.length">
+              <label
+                v-for="tag in store.tags"
+                :key="tag.id"
+                class="tag-row-opt"
+                :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
+              >
+                <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
+                <span>{{ tag.label }}</span>
+              </label>
+            </template>
+            <span v-else class="tag-row-empty">No tags yet</span>
+          </div>
         </div>
       </div>
     </div>
@@ -538,6 +553,10 @@ onUnmounted(() => {
   border-top-color: var(--bg);
 }
 
+.priority .tag-row-divider.visible {
+  background: var(--bg);
+}
+
 .priority .tag-row-opt {
   color: var(--bg);
   border-color: var(--bg);
@@ -630,10 +649,48 @@ onUnmounted(() => {
 }
 
 .tag-row {
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.tag-row::-webkit-scrollbar {
+  display: none;
+}
+
+.tag-row-divider {
+  position: sticky;
+  top: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.2s;
+  z-index: 1;
+}
+
+.tag-row-divider.visible {
+  background: var(--ink);
+}
+
+.tag-row-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   padding: 8px 12px;
+}
+
+.tag-row-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 160px;
+  cursor: pointer;
+}
+
+.tag-row-opt span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .tag-row-opt.checked {
