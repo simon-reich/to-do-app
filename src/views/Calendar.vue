@@ -4,6 +4,7 @@ import { onBeforeRouteLeave } from 'vue-router'
 import { useTodosStore } from '../stores/todos'
 
 const store = useTodosStore()
+const calendarRef = ref<any>(null)
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -14,6 +15,20 @@ const selectedDate = ref<string>(todayStr())
 onBeforeRouteLeave(() => {
   selectedDate.value = todayStr()
 })
+
+function shiftDate(days: number) {
+  const d = new Date(selectedDate.value + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  selectedDate.value = d.toISOString().slice(0, 10)
+  calendarRef.value?.move(d)
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); shiftDate(-1) }
+  if (e.key === 'ArrowRight') { e.preventDefault(); shiftDate(1) }
+  if (e.key === 'ArrowUp')    { e.preventDefault(); shiftDate(-7) }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); shiftDate(7) }
+}
 
 const activeDates = computed(() => {
   const days = new Set<string>()
@@ -93,8 +108,9 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 </script>
 
 <template>
-  <div class="calendar-view">
+  <div class="calendar-view" tabindex="0" @keydown="onKeydown">
     <VCalendar
+      ref="calendarRef"
       class="cal"
       :attributes="attributes"
       expanded
