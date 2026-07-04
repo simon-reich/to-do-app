@@ -18,6 +18,7 @@ async function handleImport() {
 const pickerBg = ref(themeStore.activeBg)
 const pickerGray = ref(themeStore.activeGray)
 const themeName = ref('')
+const nameInputRef = ref<HTMLInputElement | null>(null)
 
 // Live preview only – does NOT persist to store
 watch([pickerBg, pickerGray], ([bg, gray]) => {
@@ -28,6 +29,7 @@ function saveTheme() {
   themeStore.apply(pickerBg.value, pickerGray.value)
   themeStore.saveTheme(themeName.value)
   themeName.value = ''
+  nameInputRef.value?.blur()
 }
 
 const deleteThemeConfirm = ref<{ id: string; name: string } | null>(null)
@@ -62,6 +64,7 @@ function confirmDeleteTheme() {
         </div>
 
         <input
+          ref="nameInputRef"
           v-model="themeName"
           class="name-input"
           placeholder="Theme name + Enter to save…"
