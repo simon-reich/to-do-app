@@ -173,10 +173,12 @@ function saveEdit() {
     store.updateTodo(props.todo.id, { title: trimmed })
   }
   isEditing.value = false
+  openTagMenuId.value = null
 }
 
 function cancelEdit() {
   isEditing.value = false
+  openTagMenuId.value = null
 }
 
 function spawnEffect() {
@@ -362,12 +364,48 @@ onUnmounted(() => {
             :style="font ? { fontFamily: font } : {}"
           >{{ todo.title }}</span>
 
+          <!-- When card is open (all mode): show edit icon -->
+          <template v-if="showTagMenu && mode === 'all'">
+            <button class="card-btn card-btn--edit" title="Edit" @click.stop="startEdit">
+              <Pencil :size="15" />
+            </button>
+          </template>
+
+          <!-- When card is closed (all mode): show original action icons -->
+          <template v-else-if="mode === 'all'">
+            <button
+              class="card-btn card-btn--delete"
+              title="Delete"
+              @click.stop="emit('delete', todo.id)"
+            >
+              <Trash2 :size="16" />
+            </button>
+            <button
+              v-if="!todo.inToday"
+              class="card-btn"
+              title="Add to today"
+              @click.stop="emit('send-to-today', todo.id)"
+            >
+              <CirclePlus :size="18" />
+            </button>
+            <button
+              v-else
+              class="card-btn"
+              title="Remove from today"
+              @click.stop="emit('remove-from-today', todo.id)"
+            >
+              <CircleMinus :size="18" />
+            </button>
+          </template>
+
+          <!-- Today mode: remove from today button -->
           <button
-            class="card-btn card-btn--edit"
-            title="Edit"
-            @click.stop="startEdit"
+            v-else
+            class="card-btn"
+            title="Move back to overview"
+            @click.stop="emit('remove-from-today', todo.id)"
           >
-            <Pencil :size="15" />
+            <CircleMinus :size="18" />
           </button>
         </div>
 
