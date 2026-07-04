@@ -129,6 +129,7 @@ provide('listView', listView)
 
 // ── Settings toggle ──
 function toggleSettings() {
+  showMobileTags.value = false
   if (route.path === '/settings') router.push('/all')
   else router.push('/settings')
 }

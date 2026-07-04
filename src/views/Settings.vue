@@ -29,6 +29,17 @@ function saveTheme() {
   themeStore.saveTheme(themeName.value)
   themeName.value = ''
 }
+
+const deleteThemeConfirm = ref<{ id: string; name: string } | null>(null)
+
+function handleDeleteTheme(id: string, name: string) {
+  deleteThemeConfirm.value = { id, name }
+}
+
+function confirmDeleteTheme() {
+  if (deleteThemeConfirm.value) themeStore.deleteTheme(deleteThemeConfirm.value.id)
+  deleteThemeConfirm.value = null
+}
 </script>
 
 <template>
@@ -72,7 +83,7 @@ function saveTheme() {
             <span class="swatch" :style="{ background: t.gray }" />
           </span>
           {{ t.name }}
-          <span class="chip-delete" role="button" @click.stop="themeStore.deleteTheme(t.id)">
+          <span class="chip-delete" role="button" @click.stop="handleDeleteTheme(t.id, t.name)">
             <X :size="14" />
           </span>
         </button>
@@ -107,6 +118,17 @@ function saveTheme() {
     </section>
 
   </div>
+
+  <template v-if="deleteThemeConfirm">
+    <div class="modal-backdrop" @click="deleteThemeConfirm = null" />
+    <div class="modal-box" role="dialog">
+      <p class="modal-text">Delete theme <strong>{{ deleteThemeConfirm.name }}</strong>?</p>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn--cancel" @click="deleteThemeConfirm = null">Cancel</button>
+        <button class="modal-btn modal-btn--delete" @click="confirmDeleteTheme">Delete</button>
+      </div>
+    </div>
+  </template>
 </template>
 
 <style scoped>
