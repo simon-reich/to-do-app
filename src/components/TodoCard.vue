@@ -554,7 +554,7 @@ onUnmounted(() => {
 
 .todo-card-main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px 18px;
   cursor: pointer;
