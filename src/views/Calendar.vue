@@ -74,17 +74,22 @@ const selectedDateLabel = computed(() => {
   })
 })
 
-// Merge completed + worked into one list (both get ✓✓)
-const activityOnDay = computed(() => {
+const doneOnDay = computed(() => {
   if (!selectedDate.value) return []
   const dateStr = selectedDate.value
-  const touchedIds = new Set<string>()
-  store.todos.forEach(t => {
-    if (t.completedAt?.slice(0, 10) === dateStr) touchedIds.add(t.id)
-    if (t.workLog.some(ts => ts.slice(0, 10) === dateStr)) touchedIds.add(t.id)
-  })
-  return store.todos.filter(t => touchedIds.has(t.id))
+  return store.todos.filter(t => t.completedAt?.slice(0, 10) === dateStr)
 })
+
+const workedOnDay = computed(() => {
+  if (!selectedDate.value) return []
+  const dateStr = selectedDate.value
+  const doneIds = new Set(doneOnDay.value.map(t => t.id))
+  return store.todos.filter(t =>
+    !doneIds.has(t.id) && t.workLog.some(ts => ts.slice(0, 10) === dateStr)
+  )
+})
+
+const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.value.length > 0)
 </script>
 
 <template>
@@ -101,9 +106,13 @@ const activityOnDay = computed(() => {
       <div class="day-detail">
         <p class="day-label">{{ selectedDateLabel }}</p>
 
-        <div v-if="activityOnDay.length" class="day-items">
-          <div v-for="todo in activityOnDay" :key="todo.id" class="day-item">
-            <span class="icon">✓✓</span>{{ todo.title }}
+        <div v-if="hasActivity" class="day-items">
+          <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
+            <span class="icon icon--done">✓✓</span>{{ todo.title }}
+          </div>
+          <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
+          <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
+            <span class="icon icon--worked">✓</span>{{ todo.title }}
           </div>
         </div>
 
@@ -207,9 +216,24 @@ const activityOnDay = computed(() => {
 
 .icon {
   font-size: 13px;
-  color: var(--ink-dark);
   flex-shrink: 0;
   letter-spacing: -1px;
+}
+
+.icon--done {
+  color: var(--ink-dark);
+}
+
+.icon--worked {
+  color: var(--ink);
+  opacity: 0.4;
+}
+
+.day-divider {
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.12;
+  margin: 2px 0;
 }
 
 .no-activity {
