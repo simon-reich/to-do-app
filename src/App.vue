@@ -40,11 +40,11 @@ const route = useRoute()
 
 // ── Toast bubbles ──
 let toastIdCounter = 0
-const toasts = ref<{ id: number; label: string }[]>([])
+const toasts = ref<{ id: number; label: string; offsetY: number }[]>([])
 
-function spawnToast(label: string) {
+function spawnToast(label: string, offsetY: number) {
   const id = ++toastIdCounter
-  toasts.value.push({ id, label })
+  toasts.value.push({ id, label, offsetY })
   setTimeout(() => {
     const idx = toasts.value.findIndex(t => t.id === id)
     if (idx !== -1) toasts.value.splice(idx, 1)
@@ -57,11 +57,13 @@ const tagInput = ref('')
 function handleTagKey(e: KeyboardEvent) {
   if (e.key !== 'Enter') return
   const labels = tagInput.value.split(',').map(s => s.trim()).filter(Boolean)
-  labels.forEach((label, i) => {
+  let dupIndex = 0
+  labels.forEach(label => {
     if (!store.tags.find(t => t.label.toLowerCase() === label.toLowerCase())) {
       store.addTag(label)
     } else {
-      setTimeout(() => spawnToast(label), i * 120)
+      const i = dupIndex++
+      setTimeout(() => spawnToast(label, i * 14), i * 300)
     }
   })
   tagInput.value = ''
@@ -371,5 +373,10 @@ watch(() => route.path, () => {
   </div>
 
   <!-- Toast bubbles -->
-  <div v-for="toast in toasts" :key="toast.id" class="toast">{{ toast.label }}</div>
+  <div
+    v-for="toast in toasts"
+    :key="toast.id"
+    class="toast"
+    :style="{ top: (168 + toast.offsetY) + 'px' }"
+  >already exists: {{ toast.label }}</div>
 </template>
