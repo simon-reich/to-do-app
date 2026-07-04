@@ -180,6 +180,12 @@ function saveTheme() {
   justify-content: center;
 }
 
+@media (max-width: 900px) {
+  .themes-list {
+    justify-content: flex-start;
+  }
+}
+
 .theme-chip {
   display: inline-flex;
   align-items: center;
