@@ -38,17 +38,33 @@ const store = useTodosStore()
 const router = useRouter()
 const route = useRoute()
 
+// ── Toast ──
+const toastMessage = ref('')
+const toastVisible = ref(false)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+function showToast(msg: string) {
+  toastMessage.value = msg
+  toastVisible.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toastVisible.value = false }, 2500)
+}
+
 // ── Tag sidebar ──
 const tagInput = ref('')
 
 function handleTagKey(e: KeyboardEvent) {
   if (e.key !== 'Enter') return
   const labels = tagInput.value.split(',').map(s => s.trim()).filter(Boolean)
+  const duplicates: string[] = []
   labels.forEach(label => {
     if (!store.tags.find(t => t.label.toLowerCase() === label.toLowerCase())) {
       store.addTag(label)
+    } else {
+      duplicates.push(label)
     }
   })
+  if (duplicates.length) showToast(`Already exists: ${duplicates.join(', ')}`)
   tagInput.value = ''
 }
 
@@ -354,4 +370,9 @@ watch(() => route.path, () => {
     </nav>
 
   </div>
+
+  <!-- Toast notification -->
+  <transition name="toast">
+    <div v-if="toastVisible" class="toast">{{ toastMessage }}</div>
+  </transition>
 </template>
