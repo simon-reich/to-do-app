@@ -382,7 +382,7 @@
 .toast {
   position: fixed;
   top: 168px;
-  left: 50%;
+  left: 151px;
   background: var(--ink);
   color: var(--bg);
   font-size: 13px;
