@@ -223,7 +223,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 }
 
 .icon--done {
-  color: var(--ink-dark);
+  color: var(--ink);
 }
 
 .icon--worked {

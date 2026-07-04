@@ -18,6 +18,19 @@ Der Fokus liegt auf **Geschwindigkeit und Reibungslosigkeit** beim Anlegen und V
 
 **Personalisierung ohne Komplexität:** Zwei Farben steuern das gesamte visuelle System — Background und Ink. Aus der Ink wird automatisch eine dunklere Variante (`--ink-dark`) für Highlighting abgeleitet. Dimming erfolgt über Opacity (z.B. 0.35), nicht über eine eigene Farbvariante. Dazu wählbarer Corner-Radius (rund oder eckig) und Priority-Shadow-Stil (dark/mono). Mehr Optionen gibt es nicht — das ist bewusst.
 
+### Oberstes Designprinzip: Nur vier Farbwerte
+
+Das gesamte UI verwendet ausschließlich diese vier Werte — keine Ausnahmen:
+
+| Token | Bedeutung |
+|---|---|
+| `--bg` | Hintergrundfarbe (vom Nutzer gewählt) |
+| `--ink` | Hauptfarbe für Text und Elemente (vom Nutzer gewählt) |
+| `--ink-dark` | Berechnete dunklere Ink-Variante für Highlighting/Akzente |
+| `opacity` | Dimming über Transparenz (z.B. `0.35`), niemals als eigene Farbvariante |
+
+**Verboten:** Eigene Hex-Werte, `rgba()`-Zwischenwerte, neue CSS-Variablen für Farben, Grau-Töne, Weiß, Schwarz oder jede andere Farbe die nicht aus diesen vier Werten ableitbar ist. Jede neue Farbe im CSS ist ein Fehler.
+
 ## Tech Stack
 
 | Bereich | Entscheidung |
