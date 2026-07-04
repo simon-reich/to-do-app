@@ -155,4 +155,9 @@
   .mobile-tags-open .mobile-bottom-nav .nav-icon.router-link-active {
     color: var(--ink);
   }
+
+  .toast {
+    left: 50%;
+    top: 72px;
+  }
 }
