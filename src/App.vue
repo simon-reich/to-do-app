@@ -54,10 +54,18 @@ function spawnToast(label: string, offsetY: number) {
 // ── Tag sidebar ──
 const tagInput = ref('')
 
+// ── Delete tag confirmation ──
+const deleteConfirm = ref<{ id: string; label: string } | null>(null)
+
 function handleDeleteTag(id: string, label: string) {
   const inUse = store.todos.some(t => t.tags.includes(id))
-  if (inUse && !window.confirm(`Delete tag "${label}"? It is still assigned to some todos.`)) return
+  if (inUse) { deleteConfirm.value = { id, label }; return }
   store.deleteTag(id)
+}
+
+function confirmDeleteTag() {
+  if (deleteConfirm.value) store.deleteTag(deleteConfirm.value.id)
+  deleteConfirm.value = null
 }
 
 function handleTagKey(e: KeyboardEvent) {
@@ -385,4 +393,16 @@ watch(() => route.path, () => {
     class="toast"
     :style="{ top: (168 + toast.offsetY) + 'px' }"
   >already exists: {{ toast.label }}</div>
+
+  <!-- Delete tag confirmation modal -->
+  <template v-if="deleteConfirm">
+    <div class="modal-backdrop" @click="deleteConfirm = null" />
+    <div class="modal-box" role="dialog">
+      <p class="modal-text">Delete tag <strong>{{ deleteConfirm.label }}</strong>? It is still assigned to some todos.</p>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn--cancel" @click="deleteConfirm = null">Cancel</button>
+        <button class="modal-btn modal-btn--delete" @click="confirmDeleteTag">Delete</button>
+      </div>
+    </div>
+  </template>
 </template>
