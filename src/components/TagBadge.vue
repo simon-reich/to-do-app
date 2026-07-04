@@ -4,10 +4,7 @@ defineProps<{ tag: Tag }>()
 </script>
 
 <template>
-  <span
-    class="tag-badge"
-    :style="{ background: tag.color, color: '#fff' }"
-  >{{ tag.label }}</span>
+  <span class="tag-badge">{{ tag.label }}</span>
 </template>
 
 <style scoped>
@@ -19,5 +16,7 @@ defineProps<{ tag: Tag }>()
   white-space: nowrap;
   letter-spacing: 0.4px;
   text-transform: uppercase;
+  color: var(--bg);
+  background: var(--ink);
 }
 </style>

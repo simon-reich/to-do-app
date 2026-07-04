@@ -14,7 +14,6 @@ export const PRIORITY_TAG_ID = '__priority__'
 export interface Tag {
   id: string
   label: string
-  color: string
 }
 
 export interface Todo {
@@ -105,22 +104,21 @@ export const useTodosStore = defineStore('todos', () => {
 
   function ensureSystemTags() {
     if (!tags.value.find(t => t.id === PRIORITY_TAG_ID)) {
-      tags.value.unshift({ id: PRIORITY_TAG_ID, label: 'priority', color: '#878080' })
+      tags.value.unshift({ id: PRIORITY_TAG_ID, label: 'priority' })
     }
   }
 
   // ── Tag Actions ──
-  function addTag(label: string, color: string): Tag {
-    const tag: Tag = { id: uuid(), label: label.trim(), color }
+  function addTag(label: string): Tag {
+    const tag: Tag = { id: uuid(), label: label.trim() }
     tags.value.push(tag)
     return tag
   }
 
-  function updateTag(id: string, patch: Partial<Pick<Tag, 'label' | 'color'>>) {
+  function updateTag(id: string, patch: Partial<Pick<Tag, 'label'>>) {
     const tag = tags.value.find(t => t.id === id)
     if (!tag) return
     if (patch.label !== undefined) tag.label = patch.label.trim()
-    if (patch.color !== undefined) tag.color = patch.color
   }
 
   function deleteTag(id: string) {

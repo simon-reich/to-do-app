@@ -46,7 +46,7 @@ function handleTagKey(e: KeyboardEvent) {
   const labels = tagInput.value.split(',').map(s => s.trim()).filter(Boolean)
   labels.forEach(label => {
     if (!store.tags.find(t => t.label.toLowerCase() === label.toLowerCase())) {
-      store.addTag(label, '#878080')
+      store.addTag(label)
     }
   })
   tagInput.value = ''

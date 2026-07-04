@@ -51,7 +51,6 @@ Das gesamte UI verwendet ausschließlich diese vier Werte — keine Ausnahmen:
 interface Tag {
   id: string        // uuid() mit Math.random()-Fallback für HTTP
   label: string
-  color: string     // hex
 }
 
 interface Todo {
