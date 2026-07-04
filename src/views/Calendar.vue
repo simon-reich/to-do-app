@@ -218,6 +218,8 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   font-size: 13px;
   flex-shrink: 0;
   letter-spacing: -1px;
+  width: 1.4em;
+  text-align: right;
 }
 
 .icon--done {
@@ -226,7 +228,6 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 .icon--worked {
   color: var(--ink);
-  letter-spacing: -1px;
 }
 
 .day-divider {
