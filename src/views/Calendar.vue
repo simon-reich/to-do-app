@@ -226,13 +226,13 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 .icon--worked {
   color: var(--ink);
-  opacity: 0.4;
+  letter-spacing: -1px;
 }
 
 .day-divider {
   height: 1px;
-  background: var(--ink);
-  opacity: 0.12;
+  border-top: 1px dashed var(--ink);
+  opacity: 0.25;
   margin: 2px 0;
 }
 
