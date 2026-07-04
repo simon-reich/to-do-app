@@ -54,6 +54,12 @@ function spawnToast(label: string, offsetY: number) {
 // ── Tag sidebar ──
 const tagInput = ref('')
 
+function handleDeleteTag(id: string, label: string) {
+  const inUse = store.todos.some(t => t.tags.includes(id))
+  if (inUse && !window.confirm(`Delete tag "${label}"? It is still assigned to some todos.`)) return
+  store.deleteTag(id)
+}
+
 function handleTagKey(e: KeyboardEvent) {
   if (e.key !== 'Enter') return
   const labels = tagInput.value.split(',').map(s => s.trim()).filter(Boolean)
@@ -263,7 +269,7 @@ watch(() => route.path, () => {
           }"
         >
           <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
-          <button class="tag-x" title="Delete" @click="store.deleteTag(tag.id)">×</button>
+          <button class="tag-x" title="Delete" @click="handleDeleteTag(tag.id, tag.label)">×</button>
         </div>
       </div>
     </aside>
@@ -321,7 +327,7 @@ watch(() => route.path, () => {
           }"
         >
           <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
-          <button class="tag-x" title="Delete" @click="store.deleteTag(tag.id)">×</button>
+          <button class="tag-x" title="Delete" @click="handleDeleteTag(tag.id, tag.label)">×</button>
         </div>
       </div>
     </div>
