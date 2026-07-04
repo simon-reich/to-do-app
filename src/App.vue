@@ -38,16 +38,17 @@ const store = useTodosStore()
 const router = useRouter()
 const route = useRoute()
 
-// ── Toast ──
-const toastMessage = ref('')
-const toastVisible = ref(false)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
+// ── Toast bubbles ──
+let toastIdCounter = 0
+const toasts = ref<{ id: number; label: string }[]>([])
 
-function showToast(msg: string) {
-  toastMessage.value = msg
-  toastVisible.value = true
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toastVisible.value = false }, 1600)
+function spawnToast(label: string) {
+  const id = ++toastIdCounter
+  toasts.value.push({ id, label })
+  setTimeout(() => {
+    const idx = toasts.value.findIndex(t => t.id === id)
+    if (idx !== -1) toasts.value.splice(idx, 1)
+  }, 1400)
 }
 
 // ── Tag sidebar ──
@@ -56,15 +57,13 @@ const tagInput = ref('')
 function handleTagKey(e: KeyboardEvent) {
   if (e.key !== 'Enter') return
   const labels = tagInput.value.split(',').map(s => s.trim()).filter(Boolean)
-  const duplicates: string[] = []
-  labels.forEach(label => {
+  labels.forEach((label, i) => {
     if (!store.tags.find(t => t.label.toLowerCase() === label.toLowerCase())) {
       store.addTag(label)
     } else {
-      duplicates.push(label)
+      setTimeout(() => spawnToast(label), i * 120)
     }
   })
-  if (duplicates.length) showToast(`Already exists: ${duplicates.join(', ')}`)
   tagInput.value = ''
 }
 
@@ -371,6 +370,6 @@ watch(() => route.path, () => {
 
   </div>
 
-  <!-- Toast notification -->
-  <div v-if="toastVisible" class="toast">{{ toastMessage }}</div>
+  <!-- Toast bubbles -->
+  <div v-for="toast in toasts" :key="toast.id" class="toast">{{ toast.label }}</div>
 </template>
