@@ -93,9 +93,9 @@ const openCheckMenuId = vueRef<string | null>(null)
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock } from '@lucide/vue'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil } from '@lucide/vue'
 import { useTodosStore, type Todo } from '../stores/todos'
 
 const props = defineProps<{
@@ -154,6 +154,29 @@ function toggleTagMenu() {
 
 function updateTags(tags: string[]) {
   store.updateTodo(props.todo.id, { tags })
+}
+
+// ── Edit title ──────────────────────────────────────────
+const isEditing = ref(false)
+const editTitle = ref('')
+const editInputRef = ref<HTMLInputElement | null>(null)
+
+function startEdit() {
+  editTitle.value = props.todo.title
+  isEditing.value = true
+  nextTick(() => editInputRef.value?.focus())
+}
+
+function saveEdit() {
+  const trimmed = editTitle.value.trim()
+  if (trimmed && trimmed !== props.todo.title) {
+    store.updateTodo(props.todo.id, { title: trimmed })
+  }
+  isEditing.value = false
+}
+
+function cancelEdit() {
+  isEditing.value = false
 }
 
 function spawnEffect() {
@@ -322,43 +345,29 @@ onUnmounted(() => {
         }"
       >
         <div class="todo-card-main" @click.stop="mode === 'today' ? toggleCheckMenu() : toggleTagMenu()">
+          <input
+            v-if="isEditing"
+            ref="editInputRef"
+            v-model="editTitle"
+            class="title-input"
+            :style="font ? { fontFamily: font } : {}"
+            @keydown.enter="saveEdit"
+            @keydown.escape="cancelEdit"
+            @blur="saveEdit"
+            @click.stop
+          />
           <span
+            v-else
             class="todo-title"
             :style="font ? { fontFamily: font } : {}"
           >{{ todo.title }}</span>
 
           <button
-            v-if="mode === 'all'"
-            class="card-btn card-btn--delete"
-            title="Delete"
-            @click.stop="emit('delete', todo.id)"
+            class="card-btn card-btn--edit"
+            title="Edit"
+            @click.stop="startEdit"
           >
-            <Trash2 :size="16" />
-          </button>
-          <button
-            v-else
-            class="card-btn"
-            title="Move back to overview"
-            @click.stop="emit('remove-from-today', todo.id)"
-          >
-            <CircleMinus :size="18" />
-          </button>
-
-          <button
-            v-if="mode === 'all' && !todo.inToday"
-            class="card-btn"
-            title="Add to today"
-            @click.stop="emit('send-to-today', todo.id)"
-          >
-            <CirclePlus :size="18" />
-          </button>
-          <button
-            v-else-if="mode === 'all' && todo.inToday"
-            class="card-btn"
-            title="Remove from today"
-            @click.stop="emit('remove-from-today', todo.id)"
-          >
-            <CircleMinus :size="18" />
+            <Pencil :size="15" />
           </button>
         </div>
 
@@ -539,6 +548,20 @@ onUnmounted(() => {
 
 .card-btn--delete:hover { color: var(--ink); }
 
+.title-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  outline: none;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  padding: 0;
+  line-height: 1.35;
+}
+
 .check-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -602,6 +625,10 @@ onUnmounted(() => {
 
   .card-btn {
     display: none;
+  }
+
+  .card-btn--edit {
+    display: flex;
   }
 }
 </style>
