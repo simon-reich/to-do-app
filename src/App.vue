@@ -122,6 +122,13 @@ function checkScrollState() {
 
 function onScroll() { checkScrollState() }
 
+// ── Sidebar scroll divider ──
+const sidebarRef = ref<HTMLElement | null>(null)
+const sidebarScrolled = ref(false)
+function onSidebarScroll() {
+  sidebarScrolled.value = (sidebarRef.value?.scrollTop ?? 0) > 0
+}
+
 watch(() => route.path, () => {
   const el = mainContentRef.value
   if (el) el.scrollTop = 0
@@ -210,7 +217,8 @@ watch(() => route.path, () => {
     </div>
 
     <!-- ══ DESKTOP: Sidebar body (tag list) ══ -->
-    <aside class="sidebar desktop-only">
+    <aside ref="sidebarRef" class="sidebar desktop-only" @scroll="onSidebarScroll">
+      <div class="sidebar-scroll-divider" :class="{ visible: sidebarScrolled }" />
       <div class="tag-list">
         <button
           class="all-btn"
