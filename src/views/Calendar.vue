@@ -231,8 +231,8 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 .day-divider {
   height: 1px;
-  border-top: 1px dashed var(--ink);
-  opacity: 0.25;
+  border-top: 2px dashed var(--ink);
+  opacity: 1;
   margin: 2px 0;
 }
 
