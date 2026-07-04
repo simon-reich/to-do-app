@@ -63,7 +63,7 @@ function handleTagKey(e: KeyboardEvent) {
       store.addTag(label)
     } else {
       const i = dupIndex++
-      setTimeout(() => spawnToast(label, i * 14), i * 300)
+      setTimeout(() => spawnToast(label, i * 22), i * 300)
     }
   })
   tagInput.value = ''
