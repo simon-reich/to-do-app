@@ -229,3 +229,228 @@
   font-style: italic;
   font-display: swap;
 }
+
+/* ══ App font stack ══
+   For styling the app UI itself (not per-todo item fonts).
+   Two pools, picked via Settings → Fonts (test):
+   - mono/     → monospace, for inputs/tags/buttons/values
+   - playful/  → eccentric display fonts, for everything else
+   ══════════════════════════════════════════════════════ */
+
+/* ── Mono pool ── */
+
+@font-face {
+  font-family: 'Anonymous Pro';
+  src: url('./fonts/app/mono/AnonymousPro-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Anonymous Pro';
+  src: url('./fonts/app/mono/AnonymousPro-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Anonymous Pro';
+  src: url('./fonts/app/mono/AnonymousPro-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Anonymous Pro';
+  src: url('./fonts/app/mono/AnonymousPro-BoldItalic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('./fonts/app/mono/CourierPrime-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('./fonts/app/mono/CourierPrime-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('./fonts/app/mono/CourierPrime-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Courier Prime';
+  src: url('./fonts/app/mono/CourierPrime-BoldItalic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cutive Mono';
+  src: url('./fonts/app/mono/CutiveMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('./fonts/app/mono/Inconsolata-Regular.ttf') format('truetype');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lekton';
+  src: url('./fonts/app/mono/Lekton-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lekton';
+  src: url('./fonts/app/mono/Lekton-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lekton';
+  src: url('./fonts/app/mono/Lekton-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Playful pool ── */
+
+@font-face {
+  font-family: 'Amatic SC';
+  src: url('./fonts/app/playful/AmaticSC-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amatic SC';
+  src: url('./fonts/app/playful/AmaticSC-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Boogaloo';
+  src: url('./fonts/app/playful/Boogaloo-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cause';
+  src: url('./fonts/app/playful/Cause-Regular.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('./fonts/app/playful/Caveat-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fuzzy Bubbles';
+  src: url('./fonts/app/playful/FuzzyBubbles-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fuzzy Bubbles';
+  src: url('./fonts/app/playful/FuzzyBubbles-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Indie Flower';
+  src: url('./fonts/app/playful/IndieFlower-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nothing You Could Do';
+  src: url('./fonts/app/playful/NothingYouCouldDo-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Permanent Marker';
+  src: url('./fonts/app/playful/PermanentMarker-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playpen Sans';
+  src: url('./fonts/app/playful/PlaypenSans-Regular.ttf') format('truetype');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playwrite AU TAS';
+  src: url('./fonts/app/playful/PlaywriteAUTAS-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playwrite NZ';
+  src: url('./fonts/app/playful/PlaywriteNZ-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Rock Salt';
+  src: url('./fonts/app/playful/RockSalt-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Shadows Into Light Two';
+  src: url('./fonts/app/playful/ShadowsIntoLightTwo-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

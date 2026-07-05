@@ -4,11 +4,13 @@ import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
+import { useFontLabStore } from './stores/fontlab'
 import { useReset } from './composables/useReset'
 import TagSelectModal from './components/TagSelectModal.vue'
 
 const { checkAndReset } = useReset()
 const themeStore = useThemeStore()
+useFontLabStore()
 
 let lastViewportHeight = 0
 function onViewportResize() {

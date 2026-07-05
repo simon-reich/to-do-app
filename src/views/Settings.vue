@@ -3,11 +3,14 @@ import { ref, watch } from 'vue'
 import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
+import { useFontLabStore } from '../stores/fontlab'
 import { applyTheme } from '../composables/useTheme'
+import { PLAYFUL_FONTS, MONO_FONTS } from '../composables/useAppFonts'
 import ColorPicker from '../components/ColorPicker.vue'
 
 const { exportData, importData, exportThemes, importThemes } = useStorage()
 const themeStore = useThemeStore()
+const fontLabStore = useFontLabStore()
 
 async function handleImport() {
   const confirmed = window.confirm('Import will replace all current data. Continue?')
@@ -122,6 +125,25 @@ function confirmDeleteTheme() {
       <div class="btn-row">
         <button class="action-btn" @click="exportData">Export JSON</button>
         <button class="action-btn" @click="handleImport">Import JSON</button>
+      </div>
+    </section>
+
+    <!-- Fonts (test) -->
+    <section class="section">
+      <h2 class="section-title">Fonts (test)</h2>
+      <div class="font-lab">
+        <label class="font-lab-field">
+          <span class="color-label">Playful (calendar + everything else)</span>
+          <select v-model="fontLabStore.playfulFont" class="font-lab-select">
+            <option v-for="f in PLAYFUL_FONTS" :key="f" :value="f">{{ f }}</option>
+          </select>
+        </label>
+        <label class="font-lab-field">
+          <span class="color-label">Mono (inputs, tags, values, buttons)</span>
+          <select v-model="fontLabStore.monoFont" class="font-lab-select">
+            <option v-for="f in MONO_FONTS" :key="f" :value="f">{{ f }}</option>
+          </select>
+        </label>
       </div>
     </section>
 
@@ -339,4 +361,29 @@ function confirmDeleteTheme() {
   border-color: var(--ink);
   box-shadow: 4px 4px 0 var(--priority-shadow);
 }
+
+.font-lab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.font-lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.font-lab-select {
+  padding: 9px 12px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-dark);
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+}
+
+.font-lab-select:focus { border-color: var(--ink-dark); }
 </style>

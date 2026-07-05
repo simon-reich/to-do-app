@@ -185,7 +185,7 @@ function onHue(e: PointerEvent) {
 
 .result-hex {
   font-size: 14px;
-  font-family: monospace;
+  font-family: var(--font-mono, monospace);
   color: var(--ink);
   background: none;
   border: none;

@@ -12,7 +12,7 @@
   --ink-dark: #4a4545;
   --radius: 6px;
 
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-playful, system-ui, -apple-system, 'Segoe UI', sans-serif);
   font-size: 16px;
   color: var(--ink);
   background: var(--bg);
@@ -29,7 +29,13 @@ body {
 
 input, textarea { cursor: text; }
 
-input, button, select, textarea { font-family: inherit; }
+input, button, select, textarea {
+  font-family: var(--font-mono, monospace);
+}
+
+input::placeholder, textarea::placeholder {
+  font-family: var(--font-mono, monospace);
+}
 
 :focus-visible {
   outline: 1px solid var(--ink);

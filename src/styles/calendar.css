@@ -1,6 +1,6 @@
 /* ══ v-calendar overrides ══ */
 :root {
-  --vc-font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --vc-font-family: var(--font-playful, sans-serif);
   --vc-font-size-xs: 14px;
   --vc-font-size-sm: 16px;
   --vc-font-size-base: 16px;
@@ -52,6 +52,8 @@
   border-width: 2px !important;
   color: var(--ink) !important;
   box-shadow: 5px 5px 0 var(--ink) !important;
+  font-family: var(--font-playful, sans-serif) !important;
+  font-weight: bold !important;
 }
 
 .vc-popover-caret { display: none !important; }
@@ -61,6 +63,8 @@
   color: var(--ink-dark) !important;
   background: transparent !important;
   font-size: 16px !important;
+  font-family: var(--font-playful, sans-serif) !important;
+  font-weight: bold !important;
 }
 
 .vc-nav-title:hover,
@@ -72,6 +76,8 @@
   color: var(--ink) !important;
   background: transparent !important;
   font-size: 15px !important;
+  font-family: var(--font-playful, sans-serif) !important;
+  font-weight: bold !important;
 }
 
 .vc-nav-item:hover {
@@ -127,20 +133,25 @@
 .vc-header .vc-title,
 .vc-header .vc-title:hover {
   color: var(--ink-dark) !important;
-  font-size: 18px !important;
+  font-size: 24px !important;
   font-weight: 700 !important;
   opacity: 1 !important;
   background: transparent !important;
+  font-family: var(--font-playful, sans-serif) !important;
 }
 
 .vc-weekday {
   color: var(--ink-dark) !important;
-  font-size: 14px !important;
+  font-size: 18px !important;
+  font-family: var(--font-playful, sans-serif) !important;
+  font-weight: bold !important;
 }
 
 .vc-day-content {
   color: var(--ink) !important;
-  font-size: 16px !important;
+  font-size: 20px !important;
+  font-family: var(--font-playful, sans-serif) !important;
+  font-weight: bold !important;
 }
 
 .vc-day-content.is-disabled { color: var(--ink) !important; }

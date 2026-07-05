@@ -18,5 +18,6 @@ defineProps<{ tag: Tag }>()
   text-transform: uppercase;
   color: var(--bg);
   background: var(--ink);
+  font-family: var(--font-mono, monospace);
 }
 </style>

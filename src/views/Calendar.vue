@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useTodosStore } from '../stores/todos'
 
 const store = useTodosStore()
 const calendarRef = ref<any>(null)
+const viewRef = ref<HTMLElement | null>(null)
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
 
 const selectedDate = ref<string>(todayStr())
+
+onMounted(async () => {
+  await nextTick()
+  calendarRef.value?.move(new Date())
+  viewRef.value?.focus()
+})
 
 onBeforeRouteLeave(() => {
   selectedDate.value = todayStr()
@@ -108,7 +115,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 </script>
 
 <template>
-  <div class="calendar-view" tabindex="0" @keydown="onKeydown">
+  <div ref="viewRef" class="calendar-view" tabindex="0" @keydown="onKeydown">
     <VCalendar
       ref="calendarRef"
       class="cal"
@@ -145,6 +152,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   display: flex;
   flex-direction: column;
   gap: 20px;
+  outline: none;
 }
 
 .cal {
@@ -167,7 +175,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 .cal :deep(.vc-day-content) {
   color: var(--ink) !important;
-  font-size: 16px !important;
+  font-size: 20px !important;
 }
 
 .cal :deep(.vc-day-content:hover) {
@@ -176,13 +184,13 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 .cal :deep(.vc-title) {
   color: var(--ink-dark) !important;
-  font-size: 18px !important;
+  font-size: 26px !important;
   font-weight: 700 !important;
 }
 
 .cal :deep(.vc-weekday) {
   color: var(--ink) !important;
-  font-size: 14px !important;
+  font-size: 18px !important;
 }
 
 .cal :deep(.vc-arrow) {
@@ -198,22 +206,23 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 .cal :deep(.vc-day-content) {
   width: 36px !important;
   height: 36px !important;
-  font-size: 16px !important;
+  font-size: 20px !important;
 }
 
 .day-detail {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 28px;
 }
 
 .day-label {
-  font-size: 15px;
+  font-size: 24px;
   font-weight: 600;
   color: var(--ink-dark);
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  font-family: var(--font-playful, sans-serif);
 }
 
 .day-items {
@@ -224,14 +233,18 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 .day-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  font-size: 16px;
+  font-size: 22px;
+  font-weight: bold;
   color: var(--ink);
+  font-family: var(--font-playful, sans-serif);
 }
 
 .icon {
   font-size: 13px;
+  line-height: 27px;
+  margin-top: 4px;
   flex-shrink: 0;
   letter-spacing: -1px;
   width: 1.4em;
@@ -254,8 +267,10 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 }
 
 .no-activity {
-  font-size: 15px;
+  font-size: 18px;
+  font-weight: bold;
   color: var(--ink);
+  font-family: var(--font-playful, sans-serif);
 }
 
 .fade-enter-active,
