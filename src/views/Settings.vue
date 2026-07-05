@@ -6,7 +6,7 @@ import { useThemeStore } from '../stores/theme'
 import { applyTheme } from '../composables/useTheme'
 import ColorPicker from '../components/ColorPicker.vue'
 
-const { exportData, importData } = useStorage()
+const { exportData, importData, exportThemes, importThemes } = useStorage()
 const themeStore = useThemeStore()
 
 async function handleImport() {
@@ -90,6 +90,11 @@ function confirmDeleteTheme() {
             <X :size="14" />
           </span>
         </button>
+      </div>
+
+      <div class="btn-row">
+        <button class="action-btn" @click="exportThemes">Export themes</button>
+        <button class="action-btn" @click="importThemes">Import themes</button>
       </div>
     </section>
 
