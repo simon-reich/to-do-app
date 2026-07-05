@@ -213,26 +213,27 @@ function confirmDeleteTheme() {
 
 .theme-io-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  justify-content: center;
 }
 
 .theme-io-btn {
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 10px 20px;
+  font-size: 15px;
   font-weight: 700;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
   transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
 }
 
 .theme-io-btn:hover {
   border-color: var(--ink-dark);
   color: var(--ink-dark);
-  box-shadow: 3px 3px 0 var(--ink-dark);
+  box-shadow: 4px 4px 0 var(--ink-dark);
 }
 
 @media (max-width: 900px) {
