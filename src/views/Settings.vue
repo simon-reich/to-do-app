@@ -92,9 +92,9 @@ function confirmDeleteTheme() {
         </button>
       </div>
 
-      <div class="btn-row">
-        <button class="action-btn" @click="exportThemes">Export themes</button>
-        <button class="action-btn" @click="importThemes">Import themes</button>
+      <div class="theme-io-row">
+        <button class="theme-io-btn" @click="exportThemes">Export themes</button>
+        <button class="theme-io-btn" @click="importThemes">Import themes</button>
       </div>
     </section>
 
@@ -206,8 +206,33 @@ function confirmDeleteTheme() {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 18px;
+  margin-bottom: 18px;
   justify-content: center;
+}
+
+.theme-io-row {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-io-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
+}
+
+.theme-io-btn:hover {
+  border-color: var(--ink-dark);
+  color: var(--ink-dark);
+  box-shadow: 3px 3px 0 var(--ink-dark);
 }
 
 @media (max-width: 900px) {
