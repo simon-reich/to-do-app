@@ -135,12 +135,17 @@
     padding: 40px 14px 120px;
   }
 
+  /* ── Top scroll divider: inset like Calendar's, not edge-to-edge ── */
+  .scroll-divider {
+    margin: 0 14px;
+  }
+
   /* ── Bottom scroll divider ── */
   .scroll-divider-bottom {
     position: fixed;
     bottom: 60px;
-    left: 0;
-    right: 0;
+    left: 14px;
+    right: 14px;
     height: 2px;
     background: transparent;
     transition: background 0.2s;

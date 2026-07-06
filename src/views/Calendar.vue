@@ -8,9 +8,17 @@ const calendarRef = ref<any>(null)
 const viewRef = ref<HTMLElement | null>(null)
 const dayDetailScrollRef = ref<HTMLElement | null>(null)
 const dayDetailScrolled = ref(false)
+const dayDetailScrolledToBottom = ref(true)
+
+function checkDayDetailScrollState() {
+  const el = dayDetailScrollRef.value
+  if (!el) return
+  dayDetailScrolled.value = el.scrollTop > 0
+  dayDetailScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+}
 
 function onDayDetailScroll() {
-  dayDetailScrolled.value = (dayDetailScrollRef.value?.scrollTop ?? 0) > 0
+  checkDayDetailScrollState()
 }
 
 function todayStr() {
@@ -23,6 +31,7 @@ onMounted(async () => {
   await nextTick()
   calendarRef.value?.move(new Date())
   viewRef.value?.focus()
+  checkDayDetailScrollState()
 })
 
 onBeforeRouteLeave(() => {
@@ -184,8 +193,10 @@ function onDayClick(day: { id: string }) {
   selectedDate.value = day.id
 }
 
-watch(selectedDate, () => {
+watch(selectedDate, async () => {
   if (dayDetailScrollRef.value) dayDetailScrollRef.value.scrollTop = 0
+  await nextTick()
+  checkDayDetailScrollState()
 })
 
 const selectedDateLabel = computed(() => {
@@ -256,6 +267,8 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
       </div>
     </transition>
     </div>
+
+    <div class="day-scroll-divider-bottom" :class="{ visible: !dayDetailScrolledToBottom }" />
   </div>
 </template>
 
@@ -392,7 +405,8 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 .fade-enter-from,
 .fade-leave-to { opacity: 0; transform: translateY(4px); }
 
-.day-scroll-divider {
+.day-scroll-divider,
+.day-scroll-divider-bottom {
   display: none;
 }
 
@@ -427,6 +441,22 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-top: 20px;
+  }
+
+  .day-scroll-divider-bottom {
+    display: block;
+    position: fixed;
+    bottom: 60px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    background: transparent;
+    transition: background 0.2s;
+    pointer-events: none;
+  }
+
+  .day-scroll-divider-bottom.visible {
+    background: var(--ink);
   }
 }
 </style>
