@@ -332,14 +332,23 @@
   color: var(--ink-dark);
 }
 
-/* ── Settings active: dim non-settings UI ── */
+/* ── Settings/Calendar active: dim + lock unrelated UI ── */
 #app.is-settings .sidebar-head,
 #app.is-settings .tag-list,
 #app.is-settings .all-btn,
 #app.is-settings .sort-btn,
-#app.is-settings .add-wrapper {
+#app.is-settings .add-wrapper,
+#app.is-calendar .sidebar-head,
+#app.is-calendar .tag-list,
+#app.is-calendar .all-btn,
+#app.is-calendar .add-wrapper {
   pointer-events: none;
   opacity: 0.35;
+}
+
+#app.is-settings .sidebar,
+#app.is-calendar .sidebar {
+  overflow-y: hidden;
 }
 
 /* ── Main content ── */

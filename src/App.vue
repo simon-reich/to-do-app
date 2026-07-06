@@ -175,12 +175,13 @@ function onSidebarScroll() {
 watch(() => route.path, () => {
   const el = mainContentRef.value
   if (el) el.scrollTop = 0
+  if (sidebarRef.value) sidebarRef.value.scrollTop = 0
   nextTick(checkScrollState)
 })
 </script>
 
 <template>
-  <div id="app" :class="{ 'is-settings': route.path === '/settings', 'mobile-tags-open': showMobileTags }">
+  <div id="app" :class="{ 'is-settings': route.path === '/settings', 'is-calendar': route.path === '/calendar', 'mobile-tags-open': showMobileTags }">
 
     <!-- ══ DESKTOP: Sidebar head (tag input) ══ -->
     <div class="sidebar-head desktop-only">
