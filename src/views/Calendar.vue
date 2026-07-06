@@ -37,12 +37,26 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ArrowDown')  { e.preventDefault(); shiftDate(7) }
 }
 
+const sessionDateSet = computed(() => {
+  const set = new Set<string>()
+  store.sessions.forEach(s => {
+    const d = new Date(s.startDate + 'T12:00:00')
+    const end = new Date(s.endDate + 'T12:00:00')
+    while (d <= end) {
+      set.add(d.toISOString().slice(0, 10))
+      d.setDate(d.getDate() + 1)
+    }
+  })
+  return set
+})
+
 const activeDates = computed(() => {
   const days = new Set<string>()
   store.todos.forEach(t => {
     if (t.completedAt) days.add(t.completedAt.slice(0, 10))
     t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
   })
+  sessionDateSet.value.forEach(d => days.delete(d))
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
@@ -85,7 +99,7 @@ const attributes = computed(() => {
   store.sessions.forEach(s => {
     attrs.push({
       key: `session-${s.id}`,
-      highlight: { style: { backgroundColor: 'var(--ink-dark)', opacity: 0.35 } },
+      bar: { style: { backgroundColor: 'var(--ink-dark)' } },
       dates: { start: new Date(s.startDate + 'T12:00:00'), end: new Date(s.endDate + 'T12:00:00') },
     })
   })
@@ -237,6 +251,14 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   width: 36px !important;
   height: 36px !important;
   font-size: 20px !important;
+}
+
+.cal :deep(.vc-bars) {
+  width: 100% !important;
+}
+
+.cal :deep(.vc-bar) {
+  height: 2px !important;
 }
 
 .day-detail {
