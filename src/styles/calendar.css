@@ -171,12 +171,6 @@
 }
 
 /* Achievement marks: cross out the day, like on a paper calendar */
-.vc-strike-mark {
-  text-decoration: line-through !important;
-  text-decoration-color: var(--ink-dark) !important;
-  text-decoration-thickness: 1.5px !important;
-}
-
 .vc-x-mark {
   position: relative;
 }
@@ -187,7 +181,7 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 28px;
+  width: 18px;
   height: 1.5px;
   background: var(--ink-dark);
   pointer-events: none;

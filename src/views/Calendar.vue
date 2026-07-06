@@ -109,9 +109,21 @@ const attributes = computed(() => {
       dates: new Date(s.startDate + 'T12:00:00'),
     })
   })
-  // Multi-day achievements: strike a line through each day's number, like
-  // crossing off entries on a paper calendar.
+  // Multi-day achievements: one continuous line struck through the numbers,
+  // like crossing off entries on a paper calendar. Built one day at a time
+  // (rather than as a single date-range attribute) so each day can be
+  // styled individually:
+  // - The session's first/last day starts/ends a little before/after that
+  //   day's number (NUMBER_PAD) so the line runs through the whole digit
+  //   instead of splitting exactly at its center.
+  // - A Sunday or Saturday in the middle of a session would otherwise touch
+  //   the calendar's outer edge (they're the leftmost/rightmost columns), so
+  //   it overshoots the number further (EDGE_OVERSHOOT) instead of stopping
+  //   flush at it — short of the edge, not flush against it.
+  const NUMBER_PAD = 8
+  const EDGE_OVERSHOOT = 25
   multiDaySessions.value.forEach(s => {
+    const color = { backgroundColor: 'var(--ink-dark)' }
     const days: Date[] = []
     const cursor = new Date(s.startDate + 'T12:00:00')
     const end = new Date(s.endDate + 'T12:00:00')
@@ -119,10 +131,19 @@ const attributes = computed(() => {
       days.push(new Date(cursor))
       cursor.setDate(cursor.getDate() + 1)
     }
-    days.forEach(day => {
+    days.forEach((day, i) => {
+      const dow = day.getDay() // 0 = Sunday, 6 = Saturday
+      const isFirst = i === 0
+      const isLast = i === days.length - 1
+      let style: Record<string, string>
+      if (isFirst) style = { ...color, width: `${50 + NUMBER_PAD}%`, marginLeft: `${50 - NUMBER_PAD}%` }
+      else if (isLast) style = { ...color, width: `${50 + NUMBER_PAD}%` }
+      else if (dow === 0) style = { ...color, width: `${50 + EDGE_OVERSHOOT}%`, marginLeft: `${50 - EDGE_OVERSHOOT}%` }
+      else if (dow === 6) style = { ...color, width: `${50 + EDGE_OVERSHOOT}%` }
+      else style = { ...color, width: '100%' }
       attrs.push({
         key: `session-strike-${s.id}-${day.toISOString().slice(0, 10)}`,
-        content: { class: 'vc-strike-mark' },
+        highlight: { style: { ...style, height: '1.5px' } },
         dates: new Date(day),
       })
     })
