@@ -38,12 +38,13 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 const multiDaySessions = computed(() => store.sessions.filter(s => s.startDate !== s.endDate))
+const singleDaySessions = computed(() => store.sessions.filter(s => s.startDate === s.endDate))
 
-// Days already covered by a multi-day achievement line don't also get the
-// plain activity dot — the line already tells that story for that day.
-const multiDaySessionDates = computed(() => {
+// Days already covered by an achievement mark (X or strike-through) don't
+// also get the plain activity dot — the mark already tells that story.
+const sessionDates = computed(() => {
   const set = new Set<string>()
-  multiDaySessions.value.forEach(s => {
+  store.sessions.forEach(s => {
     const d = new Date(s.startDate + 'T12:00:00')
     const end = new Date(s.endDate + 'T12:00:00')
     while (d <= end) {
@@ -60,7 +61,7 @@ const activeDates = computed(() => {
     if (t.completedAt) days.add(t.completedAt.slice(0, 10))
     t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
   })
-  multiDaySessionDates.value.forEach(d => days.delete(d))
+  sessionDates.value.forEach(d => days.delete(d))
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
@@ -100,22 +101,17 @@ const attributes = computed(() => {
   if (activeDates.value.length) {
     attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
-  // Single-day achievements are shown via the plain activity dot only (see
-  // activeDates) — no line for a session that lasted a single day.
-  // Multi-day achievements get a thin continuous line, built one day at a
-  // time (rather than as a single date-range attribute) so each day can be
-  // styled individually:
-  // - The session's first/last day starts/ends a little before/after that
-  //   day's number (NUMBER_PAD) so the line runs under the whole digit
-  //   instead of splitting exactly at its center.
-  // - A Sunday or Saturday in the middle of a session would otherwise touch
-  //   the calendar's outer edge (they're the leftmost/rightmost columns), so
-  //   it overshoots the number further (EDGE_OVERSHOOT) instead of stopping
-  //   flush at it — short of the edge, not flush against it.
-  const NUMBER_PAD = 8
-  const EDGE_OVERSHOOT = 25
+  // Single-day achievements: cross the day out with a handwritten-style X.
+  singleDaySessions.value.forEach(s => {
+    attrs.push({
+      key: `session-x-${s.id}`,
+      content: { class: 'vc-x-mark' },
+      dates: new Date(s.startDate + 'T12:00:00'),
+    })
+  })
+  // Multi-day achievements: strike a line through each day's number, like
+  // crossing off entries on a paper calendar.
   multiDaySessions.value.forEach(s => {
-    const color = { backgroundColor: 'var(--ink-dark)' }
     const days: Date[] = []
     const cursor = new Date(s.startDate + 'T12:00:00')
     const end = new Date(s.endDate + 'T12:00:00')
@@ -123,19 +119,10 @@ const attributes = computed(() => {
       days.push(new Date(cursor))
       cursor.setDate(cursor.getDate() + 1)
     }
-    days.forEach((day, i) => {
-      const dow = day.getDay() // 0 = Sunday, 6 = Saturday
-      const isFirst = i === 0
-      const isLast = i === days.length - 1
-      let style: Record<string, string>
-      if (isFirst) style = { ...color, width: `${50 + NUMBER_PAD}%`, marginLeft: `${50 - NUMBER_PAD}%` }
-      else if (isLast) style = { ...color, width: `${50 + NUMBER_PAD}%` }
-      else if (dow === 0) style = { ...color, width: `${50 + EDGE_OVERSHOOT}%`, marginLeft: `${50 - EDGE_OVERSHOOT}%` }
-      else if (dow === 6) style = { ...color, width: `${50 + EDGE_OVERSHOOT}%` }
-      else style = { ...color, width: '100%' }
+    days.forEach(day => {
       attrs.push({
-        key: `session-${s.id}-${day.toISOString().slice(0, 10)}`,
-        bar: { style },
+        key: `session-strike-${s.id}-${day.toISOString().slice(0, 10)}`,
+        content: { class: 'vc-strike-mark' },
         dates: new Date(day),
       })
     })

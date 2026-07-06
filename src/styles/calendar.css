@@ -170,13 +170,33 @@
   color: var(--ink-dark) !important;
 }
 
-/* Achievement session line: thin, continuous, sits under the day number */
-.vc-bars {
-  width: 100% !important;
+/* Achievement marks: cross out the day, like on a paper calendar */
+.vc-strike-mark {
+  text-decoration: line-through !important;
+  text-decoration-color: var(--ink-dark) !important;
+  text-decoration-thickness: 1.5px !important;
 }
 
-.vc-bar {
-  height: 1px !important;
-  flex-grow: 0 !important;
-  flex-shrink: 0 !important;
+.vc-x-mark {
+  position: relative;
+}
+
+.vc-x-mark::before,
+.vc-x-mark::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 1.5px;
+  background: var(--ink-dark);
+  pointer-events: none;
+}
+
+.vc-x-mark::before {
+  transform: translate(-50%, -50%) rotate(40deg);
+}
+
+.vc-x-mark::after {
+  transform: translate(-50%, -50%) rotate(-40deg);
 }
