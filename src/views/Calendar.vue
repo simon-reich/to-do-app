@@ -122,6 +122,17 @@ const attributes = computed(() => {
   //   flush at it — short of the edge, not flush against it.
   const NUMBER_PAD = 8
   const EDGE_OVERSHOOT = 25
+  // Adjacent days' segments are sized independently as percentages of their
+  // own cell, so sub-pixel rounding can leave a hairline (1-2px) gap where
+  // they should touch. Bleeding each segment a couple pixels past its
+  // logical edges on both sides guarantees an overlap instead of a gap.
+  const BLEED = 2
+  function segmentStyle(widthPct: number, marginPct: number) {
+    return {
+      width: `calc(${widthPct}% + ${BLEED}px)`,
+      marginLeft: `calc(${marginPct}% - ${BLEED / 2}px)`,
+    }
+  }
   multiDaySessions.value.forEach(s => {
     const color = { backgroundColor: 'var(--ink-dark)' }
     const days: Date[] = []
@@ -135,15 +146,15 @@ const attributes = computed(() => {
       const dow = day.getDay() // 0 = Sunday, 6 = Saturday
       const isFirst = i === 0
       const isLast = i === days.length - 1
-      let style: Record<string, string>
-      if (isFirst) style = { ...color, width: `${50 + NUMBER_PAD}%`, marginLeft: `${50 - NUMBER_PAD}%` }
-      else if (isLast) style = { ...color, width: `${50 + NUMBER_PAD}%` }
-      else if (dow === 0) style = { ...color, width: `${50 + EDGE_OVERSHOOT}%`, marginLeft: `${50 - EDGE_OVERSHOOT}%` }
-      else if (dow === 6) style = { ...color, width: `${50 + EDGE_OVERSHOOT}%` }
-      else style = { ...color, width: '100%' }
+      let bounds: { width: string; marginLeft: string }
+      if (isFirst) bounds = segmentStyle(50 + NUMBER_PAD, 50 - NUMBER_PAD)
+      else if (isLast) bounds = segmentStyle(50 + NUMBER_PAD, 0)
+      else if (dow === 0) bounds = segmentStyle(50 + EDGE_OVERSHOOT, 50 - EDGE_OVERSHOOT)
+      else if (dow === 6) bounds = segmentStyle(50 + EDGE_OVERSHOOT, 0)
+      else bounds = segmentStyle(100, 0)
       attrs.push({
         key: `session-strike-${s.id}-${day.toISOString().slice(0, 10)}`,
-        highlight: { class: 'vc-session-strike', style: { ...style, height: '1.5px' } },
+        highlight: { class: 'vc-session-strike', style: { ...color, ...bounds, height: '1.5px' } },
         dates: new Date(day),
       })
     })
