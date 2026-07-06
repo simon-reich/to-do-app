@@ -235,7 +235,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: bold;
   color: var(--ink);
   font-family: var(--font-playful, sans-serif);

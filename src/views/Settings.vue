@@ -12,6 +12,9 @@ const { exportData, importData, exportThemes, importThemes } = useStorage()
 const themeStore = useThemeStore()
 const fontLabStore = useFontLabStore()
 
+// Font lab picker is hidden for now (fonts settled on Caveat + Anonymous Pro) — flip to re-show.
+const SHOW_FONT_LAB = false
+
 async function handleImport() {
   const confirmed = window.confirm('Import will replace all current data. Continue?')
   if (!confirmed) return
@@ -129,7 +132,7 @@ function confirmDeleteTheme() {
     </section>
 
     <!-- Fonts (test) -->
-    <section class="section">
+    <section v-if="SHOW_FONT_LAB" class="section">
       <h2 class="section-title">Fonts (test)</h2>
       <div class="font-lab">
         <label class="font-lab-field">
@@ -241,15 +244,14 @@ function confirmDeleteTheme() {
 
 .theme-io-btn {
   padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 700;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
   background: transparent;
   color: var(--ink);
+  font-size: 15px;
   cursor: pointer;
   box-shadow: 4px 4px 0 var(--ink);
-  transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
+  transition: background 0.12s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .theme-io-btn:hover {

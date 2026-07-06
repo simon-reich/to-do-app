@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { applyAppFonts, PLAYFUL_FONTS, MONO_FONTS } from '../composables/useAppFonts'
+import { applyAppFonts } from '../composables/useAppFonts'
 
 export const useFontLabStore = defineStore('fontlab', () => {
-  const playfulFont = ref<string>(PLAYFUL_FONTS[0])
-  const monoFont = ref<string>(MONO_FONTS[0])
+  const playfulFont = ref<string>('Caveat')
+  const monoFont = ref<string>('Anonymous Pro')
 
   watch([playfulFont, monoFont], ([playful, mono]) => {
     applyAppFonts(playful, mono)
