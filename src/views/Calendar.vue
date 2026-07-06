@@ -440,7 +440,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-top: 20px;
+    padding: 20px 0 60px;
   }
 
   .day-scroll-divider-bottom {
