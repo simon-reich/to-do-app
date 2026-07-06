@@ -37,26 +37,12 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ArrowDown')  { e.preventDefault(); shiftDate(7) }
 }
 
-const sessionDateSet = computed(() => {
-  const set = new Set<string>()
-  store.sessions.forEach(s => {
-    const d = new Date(s.startDate + 'T12:00:00')
-    const end = new Date(s.endDate + 'T12:00:00')
-    while (d <= end) {
-      set.add(d.toISOString().slice(0, 10))
-      d.setDate(d.getDate() + 1)
-    }
-  })
-  return set
-})
-
 const activeDates = computed(() => {
   const days = new Set<string>()
   store.todos.forEach(t => {
     if (t.completedAt) days.add(t.completedAt.slice(0, 10))
     t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
   })
-  sessionDateSet.value.forEach(d => days.delete(d))
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
@@ -97,9 +83,19 @@ const attributes = computed(() => {
     attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
   store.sessions.forEach(s => {
+    const color = { backgroundColor: 'var(--ink-dark)' }
+    const isSingleDay = s.startDate === s.endDate
     attrs.push({
       key: `session-${s.id}`,
-      bar: { style: { backgroundColor: 'var(--ink-dark)' } },
+      bar: isSingleDay
+        ? { style: { ...color, width: '60%' } }
+        : {
+            // Starts exactly under the day's number and fills rightward,
+            // so multi-day sessions read as one continuous line.
+            start: { style: { ...color, width: '50%', marginLeft: '50%' } },
+            base: { style: { ...color, width: '100%' } },
+            end: { style: { ...color, width: '50%' } },
+          },
       dates: { start: new Date(s.startDate + 'T12:00:00'), end: new Date(s.endDate + 'T12:00:00') },
     })
   })
@@ -251,14 +247,6 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   width: 36px !important;
   height: 36px !important;
   font-size: 20px !important;
-}
-
-.cal :deep(.vc-bars) {
-  width: 100% !important;
-}
-
-.cal :deep(.vc-bar) {
-  height: 2px !important;
 }
 
 .day-detail {
