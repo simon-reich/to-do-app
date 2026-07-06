@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useTodosStore } from '../stores/todos'
 
 const store = useTodosStore()
 const calendarRef = ref<any>(null)
 const viewRef = ref<HTMLElement | null>(null)
+const dayDetailScrollRef = ref<HTMLElement | null>(null)
+const dayDetailScrolled = ref(false)
+
+function onDayDetailScroll() {
+  dayDetailScrolled.value = (dayDetailScrollRef.value?.scrollTop ?? 0) > 0
+}
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -178,6 +184,10 @@ function onDayClick(day: { id: string }) {
   selectedDate.value = day.id
 }
 
+watch(selectedDate, () => {
+  if (dayDetailScrollRef.value) dayDetailScrollRef.value.scrollTop = 0
+})
+
 const selectedDateLabel = computed(() => {
   if (!selectedDate.value) return ''
   return new Date(selectedDate.value + 'T12:00:00').toLocaleDateString('en-US', {
@@ -214,6 +224,9 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
       @dayclick="onDayClick"
     />
 
+    <div class="day-scroll-divider" :class="{ visible: dayDetailScrolled }" />
+
+    <div ref="dayDetailScrollRef" class="day-detail-scroll" @scroll="onDayDetailScroll">
     <transition name="fade">
       <div class="day-detail">
         <template v-if="activeSession">
@@ -242,6 +255,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
         </template>
       </div>
     </transition>
+    </div>
   </div>
 </template>
 
@@ -377,4 +391,42 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 .fade-leave-active { transition: opacity 0.12s, transform 0.12s; }
 .fade-enter-from,
 .fade-leave-to { opacity: 0; transform: translateY(4px); }
+
+.day-scroll-divider {
+  display: none;
+}
+
+/* Mobile: pin the calendar in place, scroll the day's entries underneath
+   it instead of scrolling the whole page — the calendar grid otherwise
+   travels out of view along with everything else. */
+@media (max-width: 900px) {
+  .calendar-view {
+    height: 100%;
+    gap: 0;
+  }
+
+  .cal {
+    flex-shrink: 0;
+  }
+
+  .day-scroll-divider {
+    display: block;
+    height: 2px;
+    background: transparent;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .day-scroll-divider.visible {
+    background: var(--ink);
+  }
+
+  .day-detail-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 20px;
+  }
+}
 </style>
