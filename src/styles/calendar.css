@@ -176,7 +176,7 @@
 }
 
 .vc-bar {
-  height: 2px !important;
+  height: 1px !important;
   flex-grow: 0 !important;
   flex-shrink: 0 !important;
 }
