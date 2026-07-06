@@ -24,7 +24,21 @@
   }
 
   #app.is-settings .main-head,
+  #app.is-calendar .main-head,
   #app.mobile-tags-open .main-head {
+    display: none;
+  }
+
+  /* With the top bar gone, pull content back up to where the add-input
+     would otherwise start, and drop the scroll divider meant to mark
+     content scrolling under that (now hidden) bar. */
+  #app.is-settings .content-inner,
+  #app.is-calendar .content-inner {
+    padding-top: 14px;
+  }
+
+  #app.is-settings .scroll-divider,
+  #app.is-calendar .scroll-divider {
     display: none;
   }
 
