@@ -191,6 +191,7 @@ Auf `design/poppy` wird frei experimentiert. Rückkehr zu `main` jederzeit via `
 - `pinia-plugin-persistedstate` übernimmt localStorage-Sync automatisch.
 - File API: `showSaveFilePicker`/`showOpenFilePicker` mit Fallback auf `a[download]` / `<input type="file">`.
 - Kein TypeScript-Strict erforderlich, aber Interfaces aus dem Datenmodell konsequent verwenden.
+- **Scrollbars sind in dieser App niemals sichtbar.** Jeder scrollbare Container (`overflow-y: auto`/`scroll`) braucht `scrollbar-width: none;` plus `&::-webkit-scrollbar { display: none; }`. Gilt für neue scrollbare Bereiche genauso wie für bestehende (`.main-content`, `.sidebar`, `.mobile-tags-panel`, `.day-detail-scroll`).
 
 ## Arbeitsweise mit Claude
 

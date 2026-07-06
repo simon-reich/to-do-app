@@ -97,6 +97,11 @@
     background: var(--bg);
     z-index: 15;
     overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .mobile-tags-panel::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-tags-open .mobile-tags-panel {

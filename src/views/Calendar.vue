@@ -441,6 +441,11 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 20px 0 60px;
+    scrollbar-width: none;
+  }
+
+  .day-detail-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .day-scroll-divider-bottom {
