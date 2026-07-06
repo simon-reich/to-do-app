@@ -355,6 +355,8 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 .day-items {
   display: flex;
   flex-direction: column;
+  align-self: flex-start;
+  width: 100%;
   gap: 6px;
 }
 
