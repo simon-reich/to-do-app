@@ -30,10 +30,16 @@ onMounted(() => {
   nextTick(checkScrollState)
   lastViewportHeight = window.visualViewport?.height ?? 0
   window.visualViewport?.addEventListener('resize', onViewportResize)
+
+  if (contentInnerRef.value) {
+    contentResizeObserver = new ResizeObserver(checkScrollState)
+    contentResizeObserver.observe(contentInnerRef.value)
+  }
 })
 
 onUnmounted(() => {
   window.visualViewport?.removeEventListener('resize', onViewportResize)
+  contentResizeObserver?.disconnect()
 })
 
 const store = useTodosStore()
@@ -155,6 +161,9 @@ function checkScrollState() {
 }
 
 function onScroll() { checkScrollState() }
+
+const contentInnerRef = useTemplateRef<HTMLElement>('contentInner')
+let contentResizeObserver: ResizeObserver | null = null
 
 // ── Sidebar scroll divider ──
 const sidebarRef = ref<HTMLElement | null>(null)
@@ -346,7 +355,7 @@ watch(() => route.path, () => {
     <!-- ══ Main content ══ -->
     <main ref="mainContent" class="main-content" @scroll="onScroll">
       <div class="scroll-divider" :class="{ visible: isScrolled }" />
-      <div class="content-inner">
+      <div ref="contentInner" class="content-inner">
         <RouterView />
       </div>
     </main>
