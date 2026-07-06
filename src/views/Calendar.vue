@@ -102,12 +102,15 @@ const attributes = computed(() => {
   }
   // Single-day achievements are shown via the plain activity dot only (see
   // activeDates) — no line for a session that lasted a single day.
-  // Multi-day achievements get a thin continuous line. It's built one day
-  // at a time (rather than as a single date-range attribute) so it can be
-  // clipped at the calendar's outer edges: on Sundays (leftmost column) it
-  // never reaches past the number to the left, and on Saturdays (rightmost
-  // column) never past the number to the right — otherwise it visually
-  // overhangs the calendar.
+  // Multi-day achievements get a thin continuous line, built one day at a
+  // time (rather than as a single date-range attribute) so each day can be
+  // styled individually:
+  // - The session's first/last day always starts/ends exactly under that
+  //   day's number, no matter the weekday.
+  // - A Sunday or Saturday in the middle of a session would otherwise touch
+  //   the calendar's outer edge (they're the leftmost/rightmost columns), so
+  //   it overshoots the number a little instead of stopping flush at it —
+  //   short of the edge, not flush against it.
   multiDaySessions.value.forEach(s => {
     const color = { backgroundColor: 'var(--ink-dark)' }
     const days: Date[] = []
@@ -119,13 +122,14 @@ const attributes = computed(() => {
     }
     days.forEach((day, i) => {
       const dow = day.getDay() // 0 = Sunday, 6 = Saturday
-      const extendLeft = i > 0 && dow !== 0
-      const extendRight = i < days.length - 1 && dow !== 6
+      const isFirst = i === 0
+      const isLast = i === days.length - 1
       let style: Record<string, string>
-      if (extendLeft && extendRight) style = { ...color, width: '100%' }
-      else if (extendRight) style = { ...color, width: '50%', marginLeft: '50%' }
-      else if (extendLeft) style = { ...color, width: '50%' }
-      else style = { ...color, width: '60%', marginLeft: '20%' }
+      if (isFirst) style = { ...color, width: '50%', marginLeft: '50%' }
+      else if (isLast) style = { ...color, width: '50%' }
+      else if (dow === 0) style = { ...color, width: '65%', marginLeft: '35%' }
+      else if (dow === 6) style = { ...color, width: '65%' }
+      else style = { ...color, width: '100%' }
       attrs.push({
         key: `session-${s.id}-${day.toISOString().slice(0, 10)}`,
         bar: { style },
