@@ -171,6 +171,19 @@
 }
 
 /* Achievement marks: cross out the day, like on a paper calendar */
+
+/* The highlight wrapper centers its content via flexbox, which fights our
+   per-day width/margin math (meant to be measured from the cell's left
+   edge). Taking it out of flow with absolute positioning makes our own
+   left/width/margin values the only thing that matters, so segments from
+   adjacent days line up into one continuous stroke. */
+.vc-session-strike {
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
 .vc-x-mark {
   position: relative;
 }

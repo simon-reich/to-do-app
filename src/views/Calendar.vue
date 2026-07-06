@@ -143,7 +143,7 @@ const attributes = computed(() => {
       else style = { ...color, width: '100%' }
       attrs.push({
         key: `session-strike-${s.id}-${day.toISOString().slice(0, 10)}`,
-        highlight: { style: { ...style, height: '1.5px' } },
+        highlight: { class: 'vc-session-strike', style: { ...style, height: '1.5px' } },
         dates: new Date(day),
       })
     })
