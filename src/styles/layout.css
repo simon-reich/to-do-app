@@ -338,10 +338,12 @@
 #app.is-settings .all-btn,
 #app.is-settings .sort-btn,
 #app.is-settings .add-wrapper,
+#app.is-settings .mobile-tags-btn,
 #app.is-calendar .sidebar-head,
 #app.is-calendar .tag-list,
 #app.is-calendar .all-btn,
-#app.is-calendar .add-wrapper {
+#app.is-calendar .add-wrapper,
+#app.is-calendar .mobile-tags-btn {
   pointer-events: none;
   opacity: 0.35;
 }
