@@ -346,6 +346,19 @@
 #app.is-calendar .mobile-tags-btn {
   pointer-events: none;
   opacity: 0.35;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS Safari can still show the copy/select callout on a long-press of an
+   input even when its wrapper has pointer-events:none, unless the input
+   itself also opts out. */
+#app.is-settings .add-wrapper .add-input,
+#app.is-calendar .add-wrapper .add-input {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #app.is-settings .sidebar,
