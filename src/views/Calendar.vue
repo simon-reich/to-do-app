@@ -82,7 +82,26 @@ const attributes = computed(() => {
   if (activeDates.value.length) {
     attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
+  store.sessions.forEach(s => {
+    attrs.push({
+      key: `session-${s.id}`,
+      highlight: { style: { backgroundColor: 'var(--ink-dark)', opacity: 0.35 } },
+      dates: { start: new Date(s.startDate + 'T12:00:00'), end: new Date(s.endDate + 'T12:00:00') },
+    })
+  })
   return attrs
+})
+
+const activeSession = computed(() => {
+  if (!selectedDate.value) return null
+  return store.sessions.find(s => selectedDate.value! >= s.startDate && selectedDate.value! <= s.endDate) ?? null
+})
+
+const sessionRangeLabel = computed(() => {
+  const s = activeSession.value
+  if (!s) return ''
+  const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return s.startDate === s.endDate ? fmt(s.startDate) : `${fmt(s.startDate)} – ${fmt(s.endDate)}`
 })
 
 function onDayClick(day: { id: string }) {
@@ -127,19 +146,30 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
     <transition name="fade">
       <div class="day-detail">
-        <p class="day-label">{{ selectedDateLabel }}</p>
-
-        <div v-if="hasActivity" class="day-items">
-          <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
-            <span class="icon icon--done">✓✓</span>{{ todo.title }}
+        <template v-if="activeSession">
+          <p class="day-label">{{ sessionRangeLabel }}</p>
+          <div class="day-items">
+            <div v-for="todo in activeSession.completed" :key="todo.id" class="day-item">
+              <span class="icon icon--done">✓✓</span>{{ todo.title }}
+            </div>
           </div>
-          <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
-          <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
-            <span class="icon icon--worked">✓</span>{{ todo.title }}
-          </div>
-        </div>
+        </template>
 
-        <p v-else class="no-activity">No activity for this day.</p>
+        <template v-else>
+          <p class="day-label">{{ selectedDateLabel }}</p>
+
+          <div v-if="hasActivity" class="day-items">
+            <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
+              <span class="icon icon--done">✓✓</span>{{ todo.title }}
+            </div>
+            <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
+            <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
+              <span class="icon icon--worked">✓</span>{{ todo.title }}
+            </div>
+          </div>
+
+          <p v-else class="no-activity">No activity for this day.</p>
+        </template>
       </div>
     </transition>
   </div>

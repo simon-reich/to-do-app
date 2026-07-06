@@ -27,10 +27,28 @@ export interface Todo {
   workLog: string[]
 }
 
+export interface SessionCompletion {
+  id: string
+  title: string
+}
+
+export interface Session {
+  id: string
+  startDate: string // ISO date (yyyy-mm-dd)
+  endDate: string    // ISO date (yyyy-mm-dd)
+  completed: SessionCompletion[]
+}
+
+function todayDateStr(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export const useTodosStore = defineStore('todos', () => {
   const todos = ref<Todo[]>([])
   const tags = ref<Tag[]>([])
-  const lastResetDate = ref<string>('')
+  const sessions = ref<Session[]>([])
+  const currentSessionStart = ref<string | null>(null)
+  const currentSessionCompleted = ref<SessionCompletion[]>([])
 
   // ── Getters ──
   const activeTodos = computed(() =>
@@ -70,25 +88,35 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   function deleteTodo(id: string) {
+    const todo = todos.value.find(t => t.id === id)
+    const wasInToday = todo?.inToday
     todos.value = todos.value.filter(t => t.id !== id)
+    if (wasInToday) closeSessionIfEmpty()
   }
 
   function sendToToday(id: string) {
     const todo = todos.value.find(t => t.id === id)
-    if (todo) todo.inToday = true
+    if (!todo) return
+    if (todayTodos.value.length === 0 && currentSessionStart.value === null) {
+      currentSessionStart.value = todayDateStr()
+    }
+    todo.inToday = true
   }
 
   function removeFromToday(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (todo) todo.inToday = false
+    closeSessionIfEmpty()
   }
 
   function completeTodo(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (todo) {
+      if (todo.inToday) currentSessionCompleted.value.push({ id: todo.id, title: todo.title })
       todo.completedAt = new Date().toISOString()
       todo.inToday = false
     }
+    closeSessionIfEmpty()
   }
 
   function doneForToday(id: string) {
@@ -97,6 +125,25 @@ export const useTodosStore = defineStore('todos', () => {
       todo.workLog.push(new Date().toISOString())
       todo.inToday = false
     }
+    closeSessionIfEmpty()
+  }
+
+  // ── Sessions (achievements) ──
+  // A "session" spans from the moment the active list first becomes
+  // non-empty until it becomes empty again. It's only recorded as an
+  // achievement if at least one todo was completed during that span.
+  function closeSessionIfEmpty() {
+    if (todayTodos.value.length > 0) return
+    if (currentSessionStart.value && currentSessionCompleted.value.length > 0) {
+      sessions.value.push({
+        id: uuid(),
+        startDate: currentSessionStart.value,
+        endDate: todayDateStr(),
+        completed: [...currentSessionCompleted.value],
+      })
+    }
+    currentSessionStart.value = null
+    currentSessionCompleted.value = []
   }
 
   // ── System tags ──
@@ -129,28 +176,24 @@ export const useTodosStore = defineStore('todos', () => {
     })
   }
 
-  // ── Reset ──
-  function resetToday() {
-    todos.value.forEach(todo => { todo.inToday = false })
-    lastResetDate.value = new Date().toISOString().slice(0, 10)
-  }
-
   // ── Import ──
-  function importData(data: { todos: Todo[]; tags: Tag[]; lastResetDate: string }) {
+  function importData(data: { todos: Todo[]; tags: Tag[]; sessions?: Session[] }) {
     todos.value = data.todos
     tags.value = data.tags
-    lastResetDate.value = data.lastResetDate
+    sessions.value = data.sessions ?? []
+    currentSessionStart.value = null
+    currentSessionCompleted.value = []
   }
 
   return {
     // state
-    todos, tags, lastResetDate,
+    todos, tags, sessions, currentSessionStart,
     // getters
     activeTodos, todayTodos, archivedTodos, userTags,
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
     addTag, updateTag, deleteTag, ensureSystemTags,
-    resetToday, importData,
+    importData,
   }
 }, {
   persist: true,

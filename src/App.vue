@@ -5,10 +5,8 @@ import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, Layou
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useFontLabStore } from './stores/fontlab'
-import { useReset } from './composables/useReset'
 import TagSelectModal from './components/TagSelectModal.vue'
 
-const { checkAndReset } = useReset()
 const themeStore = useThemeStore()
 useFontLabStore()
 
@@ -24,7 +22,6 @@ function onViewportResize() {
 }
 
 onMounted(() => {
-  checkAndReset()
   store.ensureSystemTags()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
   nextTick(checkScrollState)
@@ -120,7 +117,7 @@ function onTodoBlur() {
 function addTodo() {
   if (!todoInput.value.trim()) return
   const todo = store.addTodo(todoInput.value, { tags: [...newTodoTagIds.value] })
-  if (route.path === '/today') store.sendToToday(todo.id)
+  if (route.path === '/focus') store.sendToToday(todo.id)
   todoInput.value = ''
   newTodoTagIds.value = []
 }
@@ -245,7 +242,7 @@ watch(() => route.path, () => {
           <RouterLink to="/all" class="nav-icon" title="All todos">
             <Globe :size="27" />
           </RouterLink>
-          <RouterLink to="/today" class="nav-icon" title="Today">
+          <RouterLink to="/focus" class="nav-icon" title="Focus">
             <Sun :size="27" />
           </RouterLink>
           <RouterLink to="/calendar" class="nav-icon" title="Calendar">
@@ -379,7 +376,7 @@ watch(() => route.path, () => {
         <RouterLink to="/all" class="nav-icon" title="All todos" @click="showMobileTags = false">
           <Globe :size="24" />
         </RouterLink>
-        <RouterLink to="/today" class="nav-icon" title="Today" @click="showMobileTags = false">
+        <RouterLink to="/focus" class="nav-icon" title="Focus" @click="showMobileTags = false">
           <Sun :size="24" />
         </RouterLink>
         <RouterLink to="/calendar" class="nav-icon" title="Calendar" @click="showMobileTags = false">

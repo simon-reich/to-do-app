@@ -319,7 +319,7 @@ onUnmounted(() => {
       <div class="swipe-bg swipe-bg--right" :class="{ active: swipeX > 30 }">
         <template v-if="mode === 'all'">
           <component :is="todo.inToday ? CircleMinus : CirclePlus" :size="18" />
-          <span>{{ todo.inToday ? 'Remove' : 'Today' }}</span>
+          <span>{{ todo.inToday ? 'Remove' : 'Focus' }}</span>
         </template>
         <template v-else>
           <Circle :size="18" />
@@ -383,7 +383,7 @@ onUnmounted(() => {
             <button
               v-if="!todo.inToday"
               class="card-btn"
-              title="Add to today"
+              title="Add to focus"
               @click.stop="emit('send-to-today', todo.id)"
             >
               <CirclePlus :size="18" />
@@ -391,7 +391,7 @@ onUnmounted(() => {
             <button
               v-else
               class="card-btn"
-              title="Remove from today"
+              title="Remove from focus"
               @click.stop="emit('remove-from-today', todo.id)"
             >
               <CircleMinus :size="18" />

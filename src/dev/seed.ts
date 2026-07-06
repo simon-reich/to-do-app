@@ -63,6 +63,6 @@ export function seedDevData() {
   localStorage.setItem('todos', JSON.stringify({
     todos,
     tags: [],
-    lastResetDate: now.toISOString().slice(0, 10),
+    sessions: [],
   }))
 }

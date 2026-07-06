@@ -23,7 +23,7 @@ export function useStorage() {
       exportedAt: new Date().toISOString(),
       todos: store.todos,
       tags: store.tags,
-      lastResetDate: store.lastResetDate,
+      sessions: store.sessions,
     }
     const json = JSON.stringify(payload, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
@@ -77,7 +77,7 @@ export function useStorage() {
       store.importData({
         todos: Array.isArray(data.todos) ? data.todos : [],
         tags: Array.isArray(data.tags) ? data.tags : [],
-        lastResetDate: typeof data.lastResetDate === 'string' ? data.lastResetDate : '',
+        sessions: Array.isArray(data.sessions) ? data.sessions : [],
       })
     } catch (e) {
       if ((e as Error).message !== 'No file selected') {
