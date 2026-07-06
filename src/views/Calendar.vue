@@ -37,12 +37,30 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ArrowDown')  { e.preventDefault(); shiftDate(7) }
 }
 
+const multiDaySessions = computed(() => store.sessions.filter(s => s.startDate !== s.endDate))
+
+// Days already covered by a multi-day achievement line don't also get the
+// plain activity dot — the line already tells that story for that day.
+const multiDaySessionDates = computed(() => {
+  const set = new Set<string>()
+  multiDaySessions.value.forEach(s => {
+    const d = new Date(s.startDate + 'T12:00:00')
+    const end = new Date(s.endDate + 'T12:00:00')
+    while (d <= end) {
+      set.add(d.toISOString().slice(0, 10))
+      d.setDate(d.getDate() + 1)
+    }
+  })
+  return set
+})
+
 const activeDates = computed(() => {
   const days = new Set<string>()
   store.todos.forEach(t => {
     if (t.completedAt) days.add(t.completedAt.slice(0, 10))
     t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
   })
+  multiDaySessionDates.value.forEach(d => days.delete(d))
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
@@ -82,21 +100,37 @@ const attributes = computed(() => {
   if (activeDates.value.length) {
     attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
-  store.sessions.forEach(s => {
+  // Single-day achievements are shown via the plain activity dot only (see
+  // activeDates) — no line for a session that lasted a single day.
+  // Multi-day achievements get a thin continuous line. It's built one day
+  // at a time (rather than as a single date-range attribute) so it can be
+  // clipped at the calendar's outer edges: on Sundays (leftmost column) it
+  // never reaches past the number to the left, and on Saturdays (rightmost
+  // column) never past the number to the right — otherwise it visually
+  // overhangs the calendar.
+  multiDaySessions.value.forEach(s => {
     const color = { backgroundColor: 'var(--ink-dark)' }
-    const isSingleDay = s.startDate === s.endDate
-    attrs.push({
-      key: `session-${s.id}`,
-      bar: isSingleDay
-        ? { style: { ...color, width: '60%' } }
-        : {
-            // Starts exactly under the day's number and fills rightward,
-            // so multi-day sessions read as one continuous line.
-            start: { style: { ...color, width: '50%', marginLeft: '50%' } },
-            base: { style: { ...color, width: '100%' } },
-            end: { style: { ...color, width: '50%' } },
-          },
-      dates: { start: new Date(s.startDate + 'T12:00:00'), end: new Date(s.endDate + 'T12:00:00') },
+    const days: Date[] = []
+    const cursor = new Date(s.startDate + 'T12:00:00')
+    const end = new Date(s.endDate + 'T12:00:00')
+    while (cursor <= end) {
+      days.push(new Date(cursor))
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    days.forEach((day, i) => {
+      const dow = day.getDay() // 0 = Sunday, 6 = Saturday
+      const extendLeft = i > 0 && dow !== 0
+      const extendRight = i < days.length - 1 && dow !== 6
+      let style: Record<string, string>
+      if (extendLeft && extendRight) style = { ...color, width: '100%' }
+      else if (extendRight) style = { ...color, width: '50%', marginLeft: '50%' }
+      else if (extendLeft) style = { ...color, width: '50%' }
+      else style = { ...color, width: '60%', marginLeft: '20%' }
+      attrs.push({
+        key: `session-${s.id}-${day.toISOString().slice(0, 10)}`,
+        bar: { style },
+        dates: new Date(day),
+      })
     })
   })
   return attrs
