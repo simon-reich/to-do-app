@@ -126,8 +126,8 @@ function confirmDeleteTheme() {
     <section class="section">
       <h2 class="section-title">Data</h2>
       <div class="btn-row">
-        <button class="action-btn" @click="exportData">Export JSON</button>
-        <button class="action-btn" @click="handleImport">Import JSON</button>
+        <button class="action-btn" @click="exportData">Export todos</button>
+        <button class="action-btn" @click="handleImport">Import todos</button>
       </div>
     </section>
 
@@ -239,7 +239,7 @@ function confirmDeleteTheme() {
 .theme-io-row {
   display: flex;
   gap: 10px;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .theme-io-btn {
@@ -335,8 +335,9 @@ function confirmDeleteTheme() {
 
 .btn-row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: flex-start;
 }
 
 .action-btn {
