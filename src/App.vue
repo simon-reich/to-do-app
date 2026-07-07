@@ -5,9 +5,11 @@ import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, Layou
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useFontLabStore } from './stores/fontlab'
+import { useDevStore } from './stores/dev'
 import TagSelectModal from './components/TagSelectModal.vue'
 
 const themeStore = useThemeStore()
+const devStore = useDevStore()
 useFontLabStore()
 
 let lastViewportHeight = 0
@@ -169,6 +171,24 @@ function onSidebarScroll() {
   sidebarScrolled.value = (sidebarRef.value?.scrollTop ?? 0) > 0
 }
 
+// ── Mobile tags panel scroll divider ──
+const tagsPanelRef = ref<HTMLElement | null>(null)
+const tagsPanelScrolled = ref(false)
+const tagsPanelScrolledToBottom = ref(true)
+function checkTagsPanelScrollState() {
+  const el = tagsPanelRef.value
+  if (!el) return
+  tagsPanelScrolled.value = el.scrollTop > 0
+  tagsPanelScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+}
+function onTagsPanelScroll() { checkTagsPanelScrollState() }
+
+watch(showMobileTags, (open) => {
+  if (open && tagsPanelRef.value) tagsPanelRef.value.scrollTop = 0
+  tagsPanelScrolled.value = false
+  if (open) nextTick(checkTagsPanelScrollState)
+})
+
 watch(() => route.path, () => {
   const el = mainContentRef.value
   if (el) el.scrollTop = 0
@@ -178,7 +198,16 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <div id="app" :class="{ 'is-settings': route.path === '/settings', 'is-calendar': route.path === '/calendar', 'mobile-tags-open': showMobileTags }">
+  <div
+    id="app"
+    :class="{
+      'is-settings': route.path === '/settings',
+      'is-calendar': route.path === '/calendar',
+      'mobile-tags-open': showMobileTags,
+      'dev-divider-full': devStore.dividerStyle === 'full',
+      'dev-divider-inset-narrow': devStore.dividerStyle === 'inset-narrow',
+    }"
+  >
 
     <!-- ══ DESKTOP: Sidebar head (tag input) ══ -->
     <div class="sidebar-head desktop-only">
@@ -305,7 +334,7 @@ watch(() => route.path, () => {
     </div>
 
     <!-- ══ MOBILE: Tag panel (full screen, replaces main-head + content) ══ -->
-    <div class="mobile-tags-panel mobile-only">
+    <div ref="tagsPanelRef" class="mobile-tags-panel mobile-only" @scroll="onTagsPanelScroll">
       <div class="mobile-tags-head">
         <input
           v-model="tagInput"
@@ -316,6 +345,7 @@ watch(() => route.path, () => {
         <button class="nav-icon back-btn" title="Back" @click="showMobileTags = false">
           <ArrowRight :size="24" />
         </button>
+        <div class="tags-scroll-divider" :class="{ visible: tagsPanelScrolled }" />
       </div>
 
       <div class="tag-list mobile-tag-list">
@@ -349,6 +379,7 @@ watch(() => route.path, () => {
         </div>
       </div>
     </div>
+    <div v-if="showMobileTags" class="tags-scroll-divider-bottom mobile-only" :class="{ visible: !tagsPanelScrolledToBottom }" />
 
     <!-- ══ Main content ══ -->
     <main ref="mainContent" class="main-content" @scroll="onScroll">

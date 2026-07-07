@@ -4,6 +4,7 @@ import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
 import { useFontLabStore } from '../stores/fontlab'
+import { useDevStore } from '../stores/dev'
 import { applyTheme } from '../composables/useTheme'
 import { PLAYFUL_FONTS, MONO_FONTS } from '../composables/useAppFonts'
 import ColorPicker from '../components/ColorPicker.vue'
@@ -11,9 +12,13 @@ import ColorPicker from '../components/ColorPicker.vue'
 const { exportData, importData, exportThemes, importThemes } = useStorage()
 const themeStore = useThemeStore()
 const fontLabStore = useFontLabStore()
+const devStore = useDevStore()
 
 // Font lab picker is hidden for now (fonts settled on Caveat + Anonymous Pro) — flip to re-show.
 const SHOW_FONT_LAB = false
+
+// Divider style decided on 'full' — flip to re-show and compare again.
+const SHOW_DEV_TOOLS = false
 
 async function handleImport() {
   const confirmed = window.confirm('Import will replace all current data. Continue?')
@@ -128,6 +133,16 @@ function confirmDeleteTheme() {
       <div class="btn-row">
         <button class="action-btn" @click="exportData">Export todos</button>
         <button class="action-btn" @click="handleImport">Import todos</button>
+      </div>
+    </section>
+
+    <!-- Dev: mobile scroll-divider preview (not an end-user setting) -->
+    <section v-if="SHOW_DEV_TOOLS" class="section">
+      <h2 class="section-title">Dev: divider style</h2>
+      <div class="option-row">
+        <button class="action-btn" :class="{ active: devStore.dividerStyle === 'full' }" @click="devStore.dividerStyle = 'full'">Full width</button>
+        <button class="action-btn" :class="{ active: devStore.dividerStyle === 'inset' }" @click="devStore.dividerStyle = 'inset'">Inset</button>
+        <button class="action-btn" :class="{ active: devStore.dividerStyle === 'inset-narrow' }" @click="devStore.dividerStyle = 'inset-narrow'">Inset + narrower content</button>
       </div>
     </section>
 

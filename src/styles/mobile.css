@@ -42,6 +42,15 @@
     display: none;
   }
 
+  /* The tags panel is an overlay on top of the main content, but the main
+     content's own dividers have a higher z-index and would otherwise bleed
+     through — showing a stale scroll state from whatever view was open
+     before, unrelated to the tags panel's own scroll position. */
+  #app.mobile-tags-open .scroll-divider,
+  #app.mobile-tags-open .scroll-divider-bottom {
+    display: none;
+  }
+
   /* Calendar: the grid stays put; only the selected day's entries below it
      scroll (see Calendar.vue's own .day-detail-scroll). The outer page
      scroll is disabled so the calendar itself never travels off-screen. */
@@ -124,8 +133,38 @@
     flex: 1;
   }
 
+  .tags-scroll-divider {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 0;
+    height: 2px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+
+  .tags-scroll-divider.visible {
+    background: var(--ink);
+  }
+
+  .tags-scroll-divider-bottom {
+    position: fixed;
+    bottom: 60px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    background: transparent;
+    transition: background 0.2s;
+    z-index: 19;
+    pointer-events: none;
+  }
+
+  .tags-scroll-divider-bottom.visible {
+    background: var(--ink);
+  }
+
   .mobile-tag-list {
-    padding: 16px 14px;
+    padding: 16px 14px 60px;
     flex: 1;
   }
 
@@ -195,5 +234,30 @@
   .toast {
     left: 50%;
     top: 72px;
+  }
+
+  /* ── Dev-only: scroll-divider style preview (see stores/dev.ts) ──
+     "full" removes the inset on every scroll divider, edge to edge.
+     "inset-narrow" keeps the normal divider inset but widens the content
+     padding so the content reads narrower than the divider lines. */
+  #app.dev-divider-full .scroll-divider {
+    margin: 0 -14px;
+  }
+
+  #app.dev-divider-full .scroll-divider-bottom,
+  #app.dev-divider-full .day-scroll-divider-bottom,
+  #app.dev-divider-full .tags-scroll-divider,
+  #app.dev-divider-full .tags-scroll-divider-bottom {
+    left: 0;
+    right: 0;
+  }
+
+  #app.dev-divider-full .day-scroll-divider {
+    margin: 0 -14px;
+  }
+
+  #app.dev-divider-inset-narrow .content-inner {
+    padding-left: 22px;
+    padding-right: 22px;
   }
 }
