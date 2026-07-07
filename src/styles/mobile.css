@@ -165,8 +165,21 @@
   }
 
   .mobile-tag-list {
-    padding: 16px 14px 60px;
+    padding: 16px 14px 0;
     flex: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    align-content: flex-start;
+  }
+
+  /* The desktop sidebar's stacked-list spacing (all/priority get extra
+     margin-bottom to visually separate them from the tag rows below)
+     doesn't apply to a wrapped grid of pills — every pill just uses the
+     list's own gap instead. */
+  .mobile-tag-list .all-btn {
+    margin-bottom: 0;
   }
 
   /* ── Main content ── */
@@ -178,7 +191,10 @@
   }
 
   .content-inner {
-    padding: 40px 14px 120px;
+    /* 60px reserved to clear the fixed bottom nav; any further breathing
+       room below that is added dynamically (see bottom-breathing-spacer)
+       only once the content actually needs to scroll. */
+    padding: 40px 14px 60px;
   }
 
   /* ── Top scroll divider: inset like Calendar's, not edge-to-edge ── */

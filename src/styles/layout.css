@@ -139,11 +139,6 @@
   font-family: var(--font-mono, monospace);
 }
 
-.tag-row-opt.checked {
-  color: var(--ink-dark);
-  border-color: var(--ink-dark);
-}
-
 .tag-row-opt.dimmed {
   opacity: 0.35;
 }
@@ -247,7 +242,6 @@
     border-color 0.12s;
 }
 
-.all-btn.active,
 .all-btn:hover {
   color: var(--ink-dark);
   border-color: var(--ink-dark);
@@ -275,11 +269,6 @@
   transition:
     color 0.12s,
     border-color 0.12s;
-}
-
-.tag-chip.active {
-  color: var(--ink-dark);
-  border-color: var(--ink-dark);
 }
 
 .tag-chip.dimmed {
@@ -402,7 +391,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 36px 20px 120px;
+  padding: 36px 20px 0;
+}
+
+/* Cosmetic breathing room below the last item — only given real height once
+   the list actually needs to scroll, so a short list can't be nudged around
+   by padding alone (see useOverflowSpacer). */
+.bottom-breathing-spacer {
+  flex-shrink: 0;
+  width: 100%;
+  transition: height 0.15s;
 }
 
 @keyframes toast-float {

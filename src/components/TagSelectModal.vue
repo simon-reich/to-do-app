@@ -20,7 +20,10 @@ function toggle(id: string) {
         v-for="tag in store.tags"
         :key="tag.id"
         class="tag-option"
-        :class="{ checked: modelValue.includes(tag.id) }"
+        :class="{
+          checked: modelValue.includes(tag.id),
+          dimmed: modelValue.length > 0 && !modelValue.includes(tag.id),
+        }"
       >
         <input
           type="checkbox"
@@ -64,8 +67,8 @@ function toggle(id: string) {
   user-select: none;
 }
 
-.tag-option.checked {
-  color: var(--ink-dark);
+.tag-option.dimmed {
+  opacity: 0.35;
 }
 
 .tag-option:hover {

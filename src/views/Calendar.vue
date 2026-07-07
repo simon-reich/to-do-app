@@ -1,20 +1,26 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useTodosStore } from '../stores/todos'
+import { useOverflowSpacer } from '../composables/useOverflowSpacer'
 
 const store = useTodosStore()
 const calendarRef = ref<any>(null)
 const viewRef = ref<HTMLElement | null>(null)
 const dayDetailScrollRef = ref<HTMLElement | null>(null)
+const dayDetailRef = ref<HTMLElement | null>(null)
+const dayDetailBottomSpacerRef = ref<HTMLElement | null>(null)
 const dayDetailScrolled = ref(false)
 const dayDetailScrolledToBottom = ref(true)
+const { overflows: dayDetailOverflows, check: checkDayDetailOverflow } = useOverflowSpacer()
+let dayDetailResizeObserver: ResizeObserver | null = null
 
 function checkDayDetailScrollState() {
   const el = dayDetailScrollRef.value
   if (!el) return
   dayDetailScrolled.value = el.scrollTop > 0
   dayDetailScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+  checkDayDetailOverflow(el, el, dayDetailBottomSpacerRef.value)
 }
 
 function onDayDetailScroll() {
@@ -32,6 +38,15 @@ onMounted(async () => {
   calendarRef.value?.move(new Date())
   viewRef.value?.focus()
   checkDayDetailScrollState()
+
+  if (dayDetailRef.value) {
+    dayDetailResizeObserver = new ResizeObserver(checkDayDetailScrollState)
+    dayDetailResizeObserver.observe(dayDetailRef.value)
+  }
+})
+
+onUnmounted(() => {
+  dayDetailResizeObserver?.disconnect()
 })
 
 onBeforeRouteLeave(() => {
@@ -150,7 +165,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
     <div ref="dayDetailScrollRef" class="day-detail-scroll" @scroll="onDayDetailScroll">
     <transition name="fade">
-      <div class="day-detail">
+      <div ref="dayDetailRef" class="day-detail">
         <p class="day-label">{{ selectedDateLabel }}</p>
 
         <div v-if="hasActivity" class="day-items">
@@ -164,6 +179,8 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
         </div>
 
         <p v-else class="no-activity">No activity for this day.</p>
+
+        <div ref="dayDetailBottomSpacerRef" class="bottom-breathing-spacer" :style="{ height: dayDetailOverflows ? '40px' : '0px' }" />
       </div>
     </transition>
     </div>
@@ -343,7 +360,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding: 20px 0 60px;
+    padding: 20px 0 0;
     scrollbar-width: none;
   }
 

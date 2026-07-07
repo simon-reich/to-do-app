@@ -636,11 +636,6 @@ onUnmounted(() => {
   padding: 8px 12px;
 }
 
-.tag-row-opt.checked {
-  color: var(--ink-dark);
-  border-color: var(--ink-dark);
-}
-
 .tag-row-opt.dimmed {
   opacity: 0.35;
 }
