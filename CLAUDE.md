@@ -12,11 +12,11 @@ Der Fokus liegt auf **Geschwindigkeit und Reibungslosigkeit** beim Anlegen und V
 
 **Kein Tagesreset mehr.** Die Focus-Liste ist nicht an einen Kalendertag gebunden und wird nicht mehr automatisch um 04:00 Uhr geleert. Sie bleibt bestehen, bis sie manuell leergeräumt wird (durch Abhaken oder Zurücklegen in den Pool).
 
-**Sessions & Achievements:** Sobald die Focus-Liste aus dem leeren Zustand befüllt wird, startet eine "Session" (Startdatum wird gemerkt). Wird mindestens ein Todo während dieser Session per *Done* abgehakt und ist die Liste danach leer (restliche Todos abgehakt oder zurück in den Pool gelegt), gilt die Session als abgeschlossenes **Achievement** und wird mit Start-/Enddatum sowie den abgehakten Todos in `sessions[]` gespeichert. Wird die Liste geleert, ohne dass je etwas abgehakt wurde, verfällt die Session kommentarlos (kein Achievement). Siehe `closeSessionIfEmpty()` in `src/stores/todos.ts`.
-
 **Die zwei Abhak-Modi** sind der zentrale Unterschied zu normalen Todo-Apps:
-- **Done** — Todo ist wirklich erledigt, wandert ins Archiv, zählt als Session-Achievement.
+- **Done** — Todo ist wirklich erledigt, wandert ins Archiv (`completedAt` gesetzt).
 - **Done for today** — Für den Moment fertig, aber das Todo bleibt im Pool. Nächste Mal wieder verfügbar. Ideal für Routinen und wiederkehrende Tasks. (Name bewusst beibehalten, obwohl kein Tagesbezug mehr besteht.)
+
+> **Keine Sessions/Achievements.** Es gibt kein Tracking mehrtägiger Focus-Zeiträume. Jedes Todo trägt einfach sein eigenes `completedAt`/`workLog` — der Kalender liest diese Timestamps direkt und zeigt pro Tag genau das, was an diesem Tag erledigt/bearbeitet wurde. Kein Reset, kein Session-Start/-Ende, keine Range-Highlights.
 
 **Design-Philosophie:** Stylisch, aber nicht überladen. Jedes Feature muss sich rechtfertigen. Die App soll sich anfühlen wie ein gutes Notizbuch — immer griffbereit, nie im Weg.
 
@@ -68,22 +68,9 @@ interface Todo {
   workLog: string[]     // ISO-Timestamps: je ein Eintrag pro "Done for today"-Tag
 }
 
-interface SessionCompletion {
-  id: string      // Todo-ID
-  title: string   // Snapshot des Titels (überlebt spätere Löschung des Todos)
-}
-
-interface Session {
-  id: string
-  startDate: string          // ISO-Date, erster Tag der Focus-Liste
-  endDate: string             // ISO-Date, Tag der Session-Abschließung
-  completed: SessionCompletion[]
-}
-
 interface AppState {
   todos: Todo[]
   tags: Tag[]
-  sessions: Session[]        // abgeschlossene Achievements (siehe unten)
 }
 ```
 
@@ -102,11 +89,11 @@ todo-app/
 │   │   └── SettingsModal (entfernt – Settings ist eigene Route/View)
 │   ├── views/
 │   │   ├── AllTodos.vue         // Hauptliste (filtert: aktiv + nicht in Focus)
-│   │   ├── Focus.vue            // Focus-View (todayTodos, zwei Abhak-Modi, Session-Headline)
-│   │   ├── Calendar.vue         // Kalender-View (v-calendar, workLog-Dots, Achievement-Ranges)
+│   │   ├── Focus.vue            // Focus-View (todayTodos, zwei Abhak-Modi)
+│   │   ├── Calendar.vue         // Kalender-View (v-calendar, workLog-Dots, Tages-Detail)
 │   │   └── Settings.vue         // Farb-Theme, Corner-Style, Import/Export
 │   ├── stores/
-│   │   ├── todos.ts             // Pinia Store: Todos, Tags, Sessions/Achievements
+│   │   ├── todos.ts             // Pinia Store: Todos, Tags
 │   │   └── theme.ts             // Pinia Store: Farb-Theme + gespeicherte Themes
 │   ├── composables/
 │   │   ├── useStorage.ts        // Import/Export Logik (File API + Fallback)
@@ -137,9 +124,7 @@ todo-app/
 - **Ausgefüllter Dot** – Todo wurde an diesem Tag als *Done* abgehakt (`completedAt` fällt auf diesen Tag).
 - **Umriss-Dot** – Todo hatte an diesem Tag einen *Done for today*-Eintrag (Datum in `workLog[]`).
 
-Zusätzlich zieht sich für jede abgeschlossene Session (`store.sessions`) ein durchgezogener Highlight-Balken über die Tage von `startDate` bis `endDate` – auch über mehrere Wochenzeilen hinweg. Klickt man auf einen Tag innerhalb dieser Range, zeigt die Detail-Ansicht statt des normalen Tages-Labels eine Von-bis-Headline (z.B. "Jul 3, 2026 – Jul 6, 2026") und die während der Session abgehakten Todos.
-
-Ein Klick auf einen Tag öffnet eine Detail-Liste der zugehörigen Todos. Die Overrides für v-calendar (Farben, Abstände) stehen in `src/styles/calendar.css`.
+Ein Klick auf einen Tag öffnet eine Detail-Liste der an diesem Tag erledigten (`completedAt`) und bearbeiteten (`workLog`) Todos, unter dem normalen Tages-Label (z.B. "Tuesday, July 7, 2026"). Kein Konzept von mehrtägigen Zeiträumen — jeder Tag steht für sich. Die Overrides für v-calendar (Farben, Abstände) stehen in `src/styles/calendar.css`.
 
 ## Typografie – Zufällige Schriftarten pro Todo
 
@@ -152,7 +137,7 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 
 ## Entschiedene Design-Fragen
 
-- **Kein Tagesreset mehr:** Die Focus-Liste (`inToday`) wird nicht mehr automatisch geleert. Stattdessen definiert eine "Session" den Zeitraum, in dem die Liste befüllt ist (siehe Datenmodell/Sessions).
+- **Kein Tagesreset mehr:** Die Focus-Liste (`inToday`) wird nicht mehr automatisch geleert und bleibt bestehen, bis sie manuell leergeräumt wird.
 - **Dark/Light Toggle:** Keins. Fixes Design (eine Variante).
 - **Todo-Erstellung:** Add-Input in App.vue (Main-Head), immer sichtbar. Enter speichert. Bei vorhandenen Tags öffnet sich TagSelectModal zur direkten Tag-Zuweisung.
 - **Zusatzfelder:** Tags direkt im Add-Input via TagSelectModal. Edit per Klick auf den Todo-Titel in der Karte (öffnet TagSelectModal).
@@ -160,7 +145,7 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 
 ## Abhaken in Focus – zwei Modi
 
-- **✓ Done** – Setzt `completedAt`, Todo wandert ins Archiv, zählt als Session-Achievement.
+- **✓ Done** – Setzt `completedAt`, Todo wandert ins Archiv.
 - **◷ Done for today** – Fügt Timestamp zu `workLog[]` hinzu, setzt `inToday = false`. Todo bleibt im Pool.
 
 ## Implementierungs-Phasen

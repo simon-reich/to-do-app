@@ -63,6 +63,5 @@ export function seedDevData() {
   localStorage.setItem('todos', JSON.stringify({
     todos,
     tags: [],
-    sessions: [],
   }))
 }

@@ -52,31 +52,12 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ArrowDown')  { e.preventDefault(); shiftDate(7) }
 }
 
-const multiDaySessions = computed(() => store.sessions.filter(s => s.startDate !== s.endDate))
-const singleDaySessions = computed(() => store.sessions.filter(s => s.startDate === s.endDate))
-
-// Days already covered by an achievement mark (X or strike-through) don't
-// also get the plain activity dot — the mark already tells that story.
-const sessionDates = computed(() => {
-  const set = new Set<string>()
-  store.sessions.forEach(s => {
-    const d = new Date(s.startDate + 'T12:00:00')
-    const end = new Date(s.endDate + 'T12:00:00')
-    while (d <= end) {
-      set.add(d.toISOString().slice(0, 10))
-      d.setDate(d.getDate() + 1)
-    }
-  })
-  return set
-})
-
 const activeDates = computed(() => {
   const days = new Set<string>()
   store.todos.forEach(t => {
     if (t.completedAt) days.add(t.completedAt.slice(0, 10))
     t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
   })
-  sessionDates.value.forEach(d => days.delete(d))
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
@@ -116,77 +97,7 @@ const attributes = computed(() => {
   if (activeDates.value.length) {
     attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
-  // Single-day achievements: cross the day out with a handwritten-style X.
-  singleDaySessions.value.forEach(s => {
-    attrs.push({
-      key: `session-x-${s.id}`,
-      content: { class: 'vc-x-mark' },
-      dates: new Date(s.startDate + 'T12:00:00'),
-    })
-  })
-  // Multi-day achievements: one continuous line struck through the numbers,
-  // like crossing off entries on a paper calendar. Built one day at a time
-  // (rather than as a single date-range attribute) so each day can be
-  // styled individually:
-  // - The session's first/last day starts/ends a little before/after that
-  //   day's number (NUMBER_PAD) so the line runs through the whole digit
-  //   instead of splitting exactly at its center.
-  // - A Sunday or Saturday in the middle of a session would otherwise touch
-  //   the calendar's outer edge (they're the leftmost/rightmost columns), so
-  //   it overshoots the number further (EDGE_OVERSHOOT) instead of stopping
-  //   flush at it — short of the edge, not flush against it.
-  const NUMBER_PAD = 8
-  const EDGE_OVERSHOOT = 25
-  // Adjacent days' segments are sized independently as percentages of their
-  // own cell, so sub-pixel rounding can leave a hairline (1-2px) gap where
-  // they should touch. Bleeding each segment a couple pixels past its
-  // logical edges on both sides guarantees an overlap instead of a gap.
-  const BLEED = 2
-  function segmentStyle(widthPct: number, marginPct: number) {
-    return {
-      width: `calc(${widthPct}% + ${BLEED}px)`,
-      marginLeft: `calc(${marginPct}% - ${BLEED / 2}px)`,
-    }
-  }
-  multiDaySessions.value.forEach(s => {
-    const color = { backgroundColor: 'var(--ink-dark)' }
-    const days: Date[] = []
-    const cursor = new Date(s.startDate + 'T12:00:00')
-    const end = new Date(s.endDate + 'T12:00:00')
-    while (cursor <= end) {
-      days.push(new Date(cursor))
-      cursor.setDate(cursor.getDate() + 1)
-    }
-    days.forEach((day, i) => {
-      const dow = day.getDay() // 0 = Sunday, 6 = Saturday
-      const isFirst = i === 0
-      const isLast = i === days.length - 1
-      let bounds: { width: string; marginLeft: string }
-      if (isFirst) bounds = segmentStyle(50 + NUMBER_PAD, 50 - NUMBER_PAD)
-      else if (isLast) bounds = segmentStyle(50 + NUMBER_PAD, 0)
-      else if (dow === 0) bounds = segmentStyle(50 + EDGE_OVERSHOOT, 50 - EDGE_OVERSHOOT)
-      else if (dow === 6) bounds = segmentStyle(50 + EDGE_OVERSHOOT, 0)
-      else bounds = segmentStyle(100, 0)
-      attrs.push({
-        key: `session-strike-${s.id}-${day.toISOString().slice(0, 10)}`,
-        highlight: { class: 'vc-session-strike', style: { ...color, ...bounds, height: '1.5px' } },
-        dates: new Date(day),
-      })
-    })
-  })
   return attrs
-})
-
-const activeSession = computed(() => {
-  if (!selectedDate.value) return null
-  return store.sessions.find(s => selectedDate.value! >= s.startDate && selectedDate.value! <= s.endDate) ?? null
-})
-
-const sessionRangeLabel = computed(() => {
-  const s = activeSession.value
-  if (!s) return ''
-  const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  return s.startDate === s.endDate ? fmt(s.startDate) : `${fmt(s.startDate)} – ${fmt(s.endDate)}`
 })
 
 function onDayClick(day: { id: string }) {
@@ -240,30 +151,19 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     <div ref="dayDetailScrollRef" class="day-detail-scroll" @scroll="onDayDetailScroll">
     <transition name="fade">
       <div class="day-detail">
-        <template v-if="activeSession">
-          <p class="day-label">{{ sessionRangeLabel }}</p>
-          <div class="day-items">
-            <div v-for="todo in activeSession.completed" :key="todo.id" class="day-item">
-              <span class="icon icon--done">✓✓</span>{{ todo.title }}
-            </div>
+        <p class="day-label">{{ selectedDateLabel }}</p>
+
+        <div v-if="hasActivity" class="day-items">
+          <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
+            <span class="icon icon--done">✓✓</span>{{ todo.title }}
           </div>
-        </template>
-
-        <template v-else>
-          <p class="day-label">{{ selectedDateLabel }}</p>
-
-          <div v-if="hasActivity" class="day-items">
-            <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
-              <span class="icon icon--done">✓✓</span>{{ todo.title }}
-            </div>
-            <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
-            <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
-              <span class="icon icon--worked">✓</span>{{ todo.title }}
-            </div>
+          <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
+          <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
+            <span class="icon icon--worked">✓</span>{{ todo.title }}
           </div>
+        </div>
 
-          <p v-else class="no-activity">No activity for this day.</p>
-        </template>
+        <p v-else class="no-activity">No activity for this day.</p>
       </div>
     </transition>
     </div>

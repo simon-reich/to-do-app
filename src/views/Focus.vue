@@ -21,22 +21,10 @@ const filteredTodos = computed(() => {
 })
 
 const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
-
-function fmtDate(dateStr: string) {
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-const sessionLabel = computed(() => {
-  const start = store.currentSessionStart
-  if (!start) return null
-  const todayStr = new Date().toISOString().slice(0, 10)
-  return start === todayStr ? fmtDate(start) : `${fmtDate(start)} – ${fmtDate(todayStr)}`
-})
 </script>
 
 <template>
   <div class="focus-view">
-    <p v-if="sessionLabel" class="session-label">{{ sessionLabel }}</p>
     <div v-if="filteredTodos.length" class="todo-wrap">
       <TodoCard
         v-for="todo in filteredTodos"
@@ -57,15 +45,6 @@ const sessionLabel = computed(() => {
 .focus-view {
   width: 100%;
   max-width: 640px;
-}
-
-.session-label {
-  color: var(--ink-dark);
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin-bottom: 12px;
 }
 
 .todo-wrap {
