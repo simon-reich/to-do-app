@@ -341,6 +341,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     padding: 20px 0 60px;
     scrollbar-width: none;

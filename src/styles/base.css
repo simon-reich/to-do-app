@@ -23,6 +23,7 @@ body {
   min-height: 100svh;
   background: var(--bg);
   cursor: default;
+  overflow-x: hidden;
 }
 
 * { cursor: inherit; }
