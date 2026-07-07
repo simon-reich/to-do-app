@@ -365,33 +365,37 @@ watch(() => route.path, () => {
       </div>
 
       <div ref="tagsListInner" class="tag-list mobile-tag-list">
-        <button
-          class="all-btn"
-          :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
-          @click="activeTagIds = []"
-        >
-          all
-        </button>
+        <div class="mobile-all-priority-row">
+          <button
+            class="all-btn"
+            :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
+            @click="activeTagIds = []"
+          >
+            all
+          </button>
 
-        <button
-          class="all-btn priority-btn"
-          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
-          @click="toggleTag(PRIORITY_TAG_ID)"
-        >
-          priority
-        </button>
+          <button
+            class="all-btn priority-btn"
+            :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
+            @click="toggleTag(PRIORITY_TAG_ID)"
+          >
+            priority
+          </button>
+        </div>
 
-        <div
-          v-for="tag in store.userTags"
-          :key="tag.id"
-          class="tag-chip"
-          :class="{
-            active: activeTagIds.includes(tag.id),
-            dimmed: activeTagIds.length > 0 && !activeTagIds.includes(tag.id)
-          }"
-        >
-          <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
-          <button class="tag-x" title="Delete" @click="handleDeleteTag(tag.id, tag.label)">×</button>
+        <div class="mobile-tag-chip-wrap">
+          <div
+            v-for="tag in store.userTags"
+            :key="tag.id"
+            class="tag-chip"
+            :class="{
+              active: activeTagIds.includes(tag.id),
+              dimmed: activeTagIds.length > 0 && !activeTagIds.includes(tag.id)
+            }"
+          >
+            <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
+            <button class="tag-x" title="Delete" @click="handleDeleteTag(tag.id, tag.label)">×</button>
+          </div>
         </div>
         <div ref="tagsBottomSpacer" class="bottom-breathing-spacer" :style="{ height: tagsPanelOverflows ? '44px' : '0px' }" />
       </div>

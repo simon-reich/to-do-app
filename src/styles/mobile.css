@@ -161,18 +161,28 @@
   .mobile-tag-list {
     padding: 16px 14px 0;
     flex: 1;
-    flex-direction: row;
+    align-items: stretch;
+    gap: 20px;
+  }
+
+  .mobile-all-priority-row {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  .mobile-tag-chip-wrap {
+    display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: flex-start;
     align-content: flex-start;
+    gap: 7px;
   }
 
   /* The desktop sidebar's stacked-list spacing (all/priority get extra
      margin-bottom to visually separate them from the tag rows below)
-     doesn't apply to a wrapped grid of pills — every pill just uses the
-     list's own gap instead. */
-  .mobile-tag-list .all-btn {
+     doesn't apply here — the row/list gaps handle spacing instead. */
+  .mobile-all-priority-row .all-btn {
     margin-bottom: 0;
   }
 
