@@ -148,10 +148,15 @@
   opacity: 0.35;
 }
 
-.tag-row-opt:hover {
-  color: var(--ink-dark);
-  border-color: var(--ink-dark);
-  opacity: 1;
+/* hover: hover excludes touch devices, which otherwise keep the hover
+   style "stuck" on the last-tapped tag until something else is tapped —
+   making it look selected when it isn't. */
+@media (hover: hover) {
+  .tag-row-opt:hover {
+    color: var(--ink-dark);
+    border-color: var(--ink-dark);
+    opacity: 1;
+  }
 }
 
 .tag-row-opt input[type='checkbox'] {
