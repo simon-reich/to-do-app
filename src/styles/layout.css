@@ -394,6 +394,18 @@
   padding: 36px 20px 0;
 }
 
+/* Calendar: the grid stays put; only the selected day's entries below it
+   scroll (see Calendar.vue's own .day-detail-scroll). The outer page scroll
+   is disabled so the calendar itself never travels off-screen — on any
+   viewport width, not just mobile. */
+#app.is-calendar .main-content {
+  overflow: hidden;
+}
+
+#app.is-calendar .content-inner {
+  height: 100%;
+}
+
 /* Cosmetic breathing room below the last item — only given real height once
    the list actually needs to scroll, so a short list can't be nudged around
    by padding alone (see useOverflowSpacer). */

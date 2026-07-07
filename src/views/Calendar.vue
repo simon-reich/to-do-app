@@ -152,20 +152,22 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 <template>
   <div ref="viewRef" class="calendar-view" tabindex="0" @keydown="onKeydown">
-    <VCalendar
-      ref="calendarRef"
-      class="cal"
-      :attributes="attributes"
-      expanded
-      locale="en"
-      @dayclick="onDayClick"
-    />
+    <div class="calendar-inner">
+      <VCalendar
+        ref="calendarRef"
+        class="cal"
+        :attributes="attributes"
+        expanded
+        locale="en"
+        @dayclick="onDayClick"
+      />
+    </div>
 
     <div class="day-scroll-divider" :class="{ visible: dayDetailScrolled }" />
 
     <div ref="dayDetailScrollRef" class="day-detail-scroll" @scroll="onDayDetailScroll">
     <transition name="fade">
-      <div ref="dayDetailRef" class="day-detail">
+      <div ref="dayDetailRef" class="day-detail calendar-inner">
         <p class="day-label">{{ selectedDateLabel }}</p>
 
         <div v-if="hasActivity" class="day-items">
@@ -192,11 +194,19 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 <style scoped>
 .calendar-view {
   width: 100%;
-  max-width: 640px;
   display: flex;
   flex-direction: column;
   gap: 20px;
   outline: none;
+}
+
+/* Caps the calendar grid and the day's entries at the same reading width,
+   while the divider lines (siblings, outside this wrapper) span the full
+   .calendar-view width like every other divider in the app. */
+.calendar-inner {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .cal {
@@ -324,24 +334,41 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 .fade-enter-from,
 .fade-leave-to { opacity: 0; transform: translateY(4px); }
 
+/* Pin the calendar in place, scroll the day's entries underneath it
+   instead of scrolling the whole page — the calendar grid otherwise
+   travels out of view along with everything else. Applies on any viewport
+   width; only the bottom divider's clearance differs on mobile (fixed
+   bottom nav) vs. desktop (none). */
+.calendar-view {
+  height: 100%;
+  gap: 0;
+}
+
+.cal {
+  flex-shrink: 0;
+}
+
+/* Divider lines only make visual sense on mobile — desktop hides both. */
 .day-scroll-divider,
 .day-scroll-divider-bottom {
   display: none;
 }
 
-/* Mobile: pin the calendar in place, scroll the day's entries underneath
-   it instead of scrolling the whole page — the calendar grid otherwise
-   travels out of view along with everything else. */
+.day-detail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 0 0;
+  scrollbar-width: none;
+}
+
+.day-detail-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 @media (max-width: 900px) {
-  .calendar-view {
-    height: 100%;
-    gap: 0;
-  }
-
-  .cal {
-    flex-shrink: 0;
-  }
-
   .day-scroll-divider {
     display: block;
     height: 2px;
@@ -354,26 +381,12 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     background: var(--ink);
   }
 
-  .day-detail-scroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    padding: 20px 0 0;
-    scrollbar-width: none;
-  }
-
-  .day-detail-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
   .day-scroll-divider-bottom {
     display: block;
     position: fixed;
     bottom: 60px;
-    left: 14px;
-    right: 14px;
+    left: 0;
+    right: 0;
     height: 2px;
     background: transparent;
     transition: background 0.2s;

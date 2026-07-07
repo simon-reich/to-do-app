@@ -51,15 +51,9 @@
     display: none;
   }
 
-  /* Calendar: the grid stays put; only the selected day's entries below it
-     scroll (see Calendar.vue's own .day-detail-scroll). The outer page
-     scroll is disabled so the calendar itself never travels off-screen. */
-  #app.is-calendar .main-content {
-    overflow: hidden;
-  }
-
+  /* Calendar pinning itself (overflow:hidden + height:100%) is universal —
+     see layout.css. Mobile only adds clearance for the fixed bottom nav. */
   #app.is-calendar .content-inner {
-    height: 100%;
     padding-bottom: 60px;
   }
 
