@@ -177,12 +177,35 @@ function autoGrow() {
   el.style.height = `${el.scrollHeight}px`
 }
 
+// On mobile, focusing the textarea pops the on-screen keyboard, which can
+// cover the very card you just opened if it sits low in the list. Scroll
+// it fully into view once the keyboard has finished animating in (the
+// visualViewport resize is the actual signal; the timeout is just a
+// fallback for browsers/situations where it doesn't fire). Aligns to the
+// top edge rather than centering — if the expanded card (grown by lots of
+// tags/a long title) is taller than the space above the keyboard, the top
+// stays reliably visible and the overflow disappears below the input
+// instead of the top getting pushed off-screen.
+function scrollCardIntoView() {
+  const el = wrapRef.value
+  if (!el) return
+  let done = false
+  const doScroll = () => {
+    if (done) return
+    done = true
+    el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }
+  window.visualViewport?.addEventListener('resize', doScroll, { once: true })
+  setTimeout(doScroll, 350)
+}
+
 function startEdit() {
   editTitle.value = props.todo.title
   isEditing.value = true
   nextTick(() => {
     editInputRef.value?.focus()
     autoGrow()
+    scrollCardIntoView()
   })
 }
 
@@ -470,6 +493,10 @@ onUnmounted(() => {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
+  /* Leaves a sliver of breathing room above the card when scrollIntoView
+     (see scrollCardIntoView) snaps its top edge to the viewport — flush
+     against the edge read as jarring. */
+  scroll-margin-top: 16px;
 }
 
 .swipe-container {

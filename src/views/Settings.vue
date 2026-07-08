@@ -182,7 +182,7 @@ function confirmDeleteTheme() {
 <style scoped>
 .settings-view {
   width: 100%;
-  max-width: 480px;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   gap: 52px;
@@ -202,7 +202,13 @@ function confirmDeleteTheme() {
   text-align: center;
 }
 
+/* Only the themes list below (see .themes-list) should benefit from
+   .settings-view's wider cap — the pickers and save field stay at the
+   original 480px reading width instead of stretching along with it. */
 .color-picker-group {
+  width: 100%;
+  max-width: 480px;
+  align-self: center;
   display: flex;
   flex-direction: column;
   gap: 20px;
