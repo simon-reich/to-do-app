@@ -137,6 +137,18 @@
   user-select: none;
   transition: color 0.1s, border-color 0.1s, opacity 0.1s;
   font-family: var(--font-mono, monospace);
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Long tag labels truncate with an ellipsis instead of blowing out the
+   add-todo / edit-todo tag picker rows — same idea as .tag-label in the
+   sidebar/mobile tags panel. */
+.tag-row-opt span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .tag-row-opt.dimmed {

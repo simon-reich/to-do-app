@@ -307,7 +307,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="wrapRef" class="todo-card-wrap">
+  <div ref="wrapRef" class="todo-card-wrap" :class="{ 'tag-editing': showTagMenu }">
     <div
       ref="swipeContainerRef"
       class="swipe-container"
@@ -500,6 +500,25 @@ onUnmounted(() => {
   font-size: 17px;
   color: var(--ink);
   max-width: 600px;
+}
+
+/* While editing a todo's tags, the card grows to fill the row's available
+   width instead of staying shrink-to-fit around the title — same idea as
+   .add-tag-row's dropdown, just by widening the card itself rather than
+   floating a separate overlay. Long tag labels get room to breathe and
+   still truncate via .tag-row-opt's ellipsis if they exceed even that. */
+.todo-card-wrap.tag-editing,
+.todo-card-wrap.tag-editing .swipe-container,
+.todo-card-wrap.tag-editing .todo-card {
+  width: 100%;
+}
+
+/* .todo-card's own max-width:600px (below) exists to stop short-title
+   cards from stretching absurdly wide on desktop — but it also caps the
+   width:100% above, so on wide desktop rows the widened card stalls at
+   600px instead of actually filling the row. Only lift it while editing. */
+.todo-card-wrap.tag-editing .todo-card {
+  max-width: none;
 }
 
 .priority {
