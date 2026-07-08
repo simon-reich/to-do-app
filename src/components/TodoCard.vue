@@ -187,6 +187,9 @@ function autoGrow() {
 // stays reliably visible and the overflow disappears below the input
 // instead of the top getting pushed off-screen.
 function scrollCardIntoView() {
+  // Desktop has no on-screen keyboard covering the card, so there's
+  // nothing to compensate for — only mobile/tablet need this.
+  if (window.innerWidth > 1024) return
   const el = wrapRef.value
   if (!el) return
   let done = false
