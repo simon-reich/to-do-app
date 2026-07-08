@@ -10,6 +10,10 @@
   --vc-color-gray-900: var(--ink-dark);
   --vc-color-white: var(--bg);
   --vc-rounded-full: 6px;
+  /* Month/year picker popup + its individual cells — follow the app's own
+     corner-style setting instead of v-calendar's fixed rounded default. */
+  --vc-rounded: var(--radius);
+  --vc-rounded-lg: var(--radius);
   --vc-bg: var(--bg);
   --vc-border: none;
   --vc-gray-900: var(--ink-dark);
