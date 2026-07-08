@@ -114,6 +114,7 @@
 
   .mobile-tags-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
     padding: 12px 14px;
@@ -126,6 +127,13 @@
 
   .mobile-tags-head .tag-new-input {
     flex: 1;
+  }
+
+  /* Wraps onto its own centered line below the input/back row, matching
+     the spacing the row used to have as the first child of mobile-tag-list. */
+  .mobile-tags-head .mobile-all-priority-row {
+    flex-basis: 100%;
+    margin-top: 6px;
   }
 
   .tags-scroll-divider {

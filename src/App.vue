@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, ArrowRight, LayoutList, LayoutGrid } from '@lucide/vue'
+import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, CircleArrowLeft, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useFontLabStore } from './stores/fontlab'
@@ -359,12 +359,9 @@ watch(() => route.path, () => {
           @keydown="handleTagKey"
         />
         <button class="nav-icon back-btn" title="Back" @click="showMobileTags = false">
-          <ArrowRight :size="24" />
+          <CircleArrowLeft :size="24" />
         </button>
-        <div class="tags-scroll-divider" :class="{ visible: tagsPanelScrolled }" />
-      </div>
 
-      <div ref="tagsListInner" class="tag-list mobile-tag-list">
         <div class="mobile-all-priority-row">
           <button
             class="all-btn"
@@ -383,6 +380,10 @@ watch(() => route.path, () => {
           </button>
         </div>
 
+        <div class="tags-scroll-divider" :class="{ visible: tagsPanelScrolled }" />
+      </div>
+
+      <div ref="tagsListInner" class="tag-list mobile-tag-list">
         <div class="mobile-tag-chip-wrap">
           <div
             v-for="tag in store.userTags"

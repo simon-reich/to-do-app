@@ -67,9 +67,6 @@
     grid-row: 2;
     grid-column: 1 / -1;
     justify-self: center;
-    /* Leaves clearance so the settings button (anchored to main-head's own
-       corner, see below) doesn't sit flush against the last nav icon. */
-    margin-right: 60px;
   }
 
   /* Shares main-head's grid cell (both are direct children of #app) and
@@ -142,11 +139,23 @@
     display: flex;
   }
 
+  /* Mirrors main-head's own layout exactly — same grid shape (input on its
+     own row, a leftmost button below it), same padding math (main-head
+     sits inside #app's 18px top / 36px side padding plus its own 20px, and
+     since this panel is a full-screen overlay outside that padding, we
+     add the combined 32px/56px directly) — so switching into the tags
+     panel doesn't shift the input or the button at all, just swaps what's
+     below the header. */
   .mobile-tags-head {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas:
+      "input input input"
+      "back  tags  .";
     align-items: center;
-    gap: 10px;
-    padding: 16px 24px;
+    row-gap: 22px;
+    column-gap: 18px;
+    padding: 32px 56px 10px;
     flex-shrink: 0;
     position: sticky;
     top: 0;
@@ -155,14 +164,34 @@
   }
 
   .mobile-tags-head .tag-new-input {
-    flex: 1;
-    max-width: 320px;
+    grid-area: input;
+    width: 100%;
+    font-size: 17px;
+    padding: 10px 16px;
+  }
+
+  .mobile-tags-head .back-btn {
+    grid-area: back;
+    padding: 6px;
+  }
+
+  .mobile-tags-head .back-btn svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Sits beside the back button, on the same row — it's a fixed, non-
+     deletable pair (unlike the tag chips below), so anchoring it up at
+     header height reads as part of the top menu rather than the list. */
+  .mobile-tags-head .mobile-all-priority-row {
+    grid-area: tags;
+    justify-self: start;
   }
 
   .tags-scroll-divider {
     position: absolute;
-    left: 24px;
-    right: 24px;
+    left: 56px;
+    right: 56px;
     bottom: 0;
     height: 2px;
     background: transparent;
