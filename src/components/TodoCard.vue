@@ -518,11 +518,6 @@ onUnmounted(() => {
   }
 }
 
-.swipe-container.open {
-  border-color: var(--ink-dark);
-  box-shadow: 5px 5px 0 var(--ink-dark);
-}
-
 .swipe-bg {
   position: absolute;
   top: 0;
