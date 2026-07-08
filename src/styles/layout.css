@@ -258,7 +258,8 @@
   transition:
     color 0.12s,
     border-color 0.12s,
-    background 0.12s;
+    background 0.12s,
+    transform 0.15s;
 }
 
 /* The fill/border already signals active state on tap — no separate
@@ -267,6 +268,14 @@
 .all-btn:focus,
 .all-btn:focus-visible {
   outline: none;
+}
+
+/* Same puff-up feedback as the tag chips (see .tag-chip) — real mouse
+   devices only. */
+@media (hover: hover) {
+  .all-btn:hover {
+    transform: scale(1.08);
+  }
 }
 
 /* Inverted fill (ink background, bg-colored text) — a clearer "this is the
@@ -301,11 +310,20 @@
   min-width: 0;
   transition:
     color 0.12s,
-    border-color 0.12s;
+    border-color 0.12s,
+    transform 0.15s;
 }
 
 .tag-chip.dimmed {
   opacity: 0.35;
+}
+
+/* Same puff-up feedback as hovering a closed todo card (see .swipe-container
+   in TodoCard.vue) — real mouse devices only. */
+@media (hover: hover) {
+  .tag-chip:hover {
+    transform: scale(1.08);
+  }
 }
 
 .tag-label {
