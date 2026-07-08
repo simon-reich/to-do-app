@@ -113,8 +113,8 @@ function confirmDeleteTheme() {
     <section class="section">
       <h2 class="section-title">Corners</h2>
       <div class="option-row">
-        <button class="action-btn" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
         <button class="action-btn" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
+        <button class="action-btn" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
       </div>
     </section>
 
@@ -122,8 +122,8 @@ function confirmDeleteTheme() {
     <section class="section">
       <h2 class="section-title">Drop shadow</h2>
       <div class="option-row">
-        <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
         <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
+        <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
       </div>
     </section>
 
@@ -199,7 +199,7 @@ function confirmDeleteTheme() {
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--ink-dark);
-  align-self: flex-start;
+  text-align: center;
 }
 
 .color-picker-group {
@@ -212,6 +212,7 @@ function confirmDeleteTheme() {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .color-field {
@@ -251,10 +252,15 @@ function confirmDeleteTheme() {
   justify-content: center;
 }
 
+/* inline-grid + 1fr columns: the standard trick for equal-width siblings
+   sized to the widest one's own content, without stretching the row to
+   fill the section (align-self: center keeps it shrink-wrapped). */
 .theme-io-row {
-  display: flex;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 10px;
-  justify-content: flex-start;
+  align-self: center;
 }
 
 .theme-io-btn {
@@ -273,12 +279,6 @@ function confirmDeleteTheme() {
   border-color: var(--ink-dark);
   color: var(--ink-dark);
   box-shadow: 4px 4px 0 var(--ink-dark);
-}
-
-@media (max-width: 700px) {
-  .themes-list {
-    justify-content: flex-start;
-  }
 }
 
 .theme-chip {
@@ -343,16 +343,21 @@ function confirmDeleteTheme() {
 
 .chip-delete:hover { color: var(--ink-dark); }
 
+/* Same equal-width-without-stretch trick as .theme-io-row above. */
 .option-row {
-  display: flex;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 10px;
+  align-self: center;
 }
 
 .btn-row {
-  display: flex;
-  flex-direction: row;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 10px;
-  justify-content: flex-start;
+  align-self: center;
 }
 
 .action-btn {
