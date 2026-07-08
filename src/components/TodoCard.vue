@@ -95,7 +95,7 @@ const openCheckMenuId = vueRef<string | null>(null)
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil } from '@lucide/vue'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, CircleCheck } from '@lucide/vue'
 import { useTodosStore, type Todo } from '../stores/todos'
 
 const props = defineProps<{
@@ -143,13 +143,22 @@ watch([showMenu, showTagMenu], ([m, t]) => {
   if (m || t) document.addEventListener('click', closeOnOutside)
   else {
     document.removeEventListener('click', closeOnOutside)
-    requestAnimationFrame(() => { (document.activeElement as HTMLElement | null)?.blur() })
+    // Only blur if focus is still inside *this* card — otherwise this fires
+    // after focus has already moved on to a different card (e.g. clicking
+    // straight from one open todo into another) and would steal it back.
+    requestAnimationFrame(() => {
+      const active = document.activeElement as HTMLElement | null
+      if (active && wrapRef.value?.contains(active)) active.blur()
+    })
   }
 })
 
 function toggleTagMenu() {
   showMenu.value = false
-  openTagMenuId.value = openTagMenuId.value === props.todo.id ? null : props.todo.id
+  const willOpen = openTagMenuId.value !== props.todo.id
+  openTagMenuId.value = willOpen ? props.todo.id : null
+  if (willOpen) startEdit()
+  else saveEdit()
 }
 
 function updateTags(tags: string[]) {
@@ -159,12 +168,22 @@ function updateTags(tags: string[]) {
 // ── Edit title ──────────────────────────────────────────
 const isEditing = ref(false)
 const editTitle = ref('')
-const editInputRef = ref<HTMLInputElement | null>(null)
+const editInputRef = ref<HTMLTextAreaElement | null>(null)
+
+function autoGrow() {
+  const el = editInputRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
 
 function startEdit() {
   editTitle.value = props.todo.title
   isEditing.value = true
-  nextTick(() => editInputRef.value?.focus())
+  nextTick(() => {
+    editInputRef.value?.focus()
+    autoGrow()
+  })
 }
 
 function saveEdit() {
@@ -173,6 +192,10 @@ function saveEdit() {
     store.updateTodo(props.todo.id, { title: trimmed })
   }
   isEditing.value = false
+}
+
+function acceptEdit() {
+  saveEdit()
   openTagMenuId.value = null
 }
 
@@ -347,15 +370,17 @@ onUnmounted(() => {
         }"
       >
         <div class="todo-card-main" @click.stop="mode === 'today' ? toggleCheckMenu() : toggleTagMenu()">
-          <input
+          <textarea
             v-if="isEditing"
             ref="editInputRef"
             v-model="editTitle"
             class="title-input"
+            rows="1"
             :style="font ? { fontFamily: font } : {}"
-            @keydown.enter="saveEdit"
+            @keydown.enter.prevent="acceptEdit"
             @keydown.escape="cancelEdit"
             @blur="saveEdit"
+            @input="autoGrow"
             @click.stop
           />
           <span
@@ -364,10 +389,11 @@ onUnmounted(() => {
             :style="font ? { fontFamily: font } : {}"
           >{{ todo.title }}</span>
 
-          <!-- When card is open (all mode): show edit icon -->
+          <!-- When card is open (all mode): editing is already active (see
+               toggleTagMenu) — this just accepts + closes the card. -->
           <template v-if="showTagMenu && mode === 'all'">
-            <button class="card-btn card-btn--edit" title="Edit" @click.stop="startEdit">
-              <Pencil :size="15" />
+            <button class="card-btn card-btn--edit" title="Accept" @click.stop="acceptEdit">
+              <CircleCheck :size="18" />
             </button>
           </template>
 
@@ -605,18 +631,42 @@ onUnmounted(() => {
 
 .card-btn--delete:hover { color: var(--ink); }
 
+/* .todo-card-main aligns to flex-start so multi-line titles keep their
+   icons pinned to the top line — but the accept button sits next to a
+   single-line input, so it should center on that line instead. Nudged up
+   slightly because the input's own bottom padding/border (for the
+   underline) sit below the text, skewing the plain center down. */
+.card-btn--edit {
+  align-self: center;
+  position: relative;
+  top: -2px;
+}
+
 .title-input {
+  display: block;
   flex: 1;
   min-width: 0;
+  width: 100%;
   background: none;
   border: none;
   border-bottom: 1px solid var(--ink);
   outline: none;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
   font-size: inherit;
   font-family: inherit;
   color: inherit;
-  padding: 0;
+  padding: 0 0 4px;
   line-height: 1.35;
+}
+
+/* Priority cards already sit on an ink-colored highlight (see .priority
+   .todo-card below) — the underline needs to be the background color to
+   still read against it, instead of the ink color normal cards use. */
+.priority .title-input {
+  border-bottom-color: var(--bg);
 }
 
 .check-row {
