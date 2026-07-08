@@ -263,11 +263,17 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   font-size: 20px !important;
 }
 
+/* Narrower than the calendar grid above it (which keeps its own 640px cap
+   via .calendar-inner) — the day's entries read better in a tighter,
+   centered column instead of stretching out to match the grid's width. */
 .day-detail {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 28px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 .day-label {
@@ -395,6 +401,11 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
   .day-scroll-divider-bottom.visible {
     background: var(--ink);
+  }
+
+  /* Even narrower on phones than the general 420px cap above. */
+  .day-detail {
+    max-width: 320px;
   }
 }
 </style>
