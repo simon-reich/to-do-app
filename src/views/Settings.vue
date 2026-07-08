@@ -275,7 +275,7 @@ function confirmDeleteTheme() {
   box-shadow: 4px 4px 0 var(--ink-dark);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .themes-list {
     justify-content: flex-start;
   }

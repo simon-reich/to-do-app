@@ -70,7 +70,7 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
   max-width: 640px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .all-todos {
     max-width: 100%;
   }
@@ -79,6 +79,17 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
     flex-wrap: nowrap;
     align-items: flex-start;
     justify-content: flex-start;
+  }
+}
+
+/* Tablet: cards stay in a wrapping grid (unlike phone's single column),
+   but the reading-width cap needs to go so more of them fit per row. */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .all-todos {
+    max-width: 100%;
+  }
+  .todo-wrap {
+    gap: 8px;
   }
 }
 

@@ -368,7 +368,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .day-scroll-divider {
     display: block;
     height: 2px;

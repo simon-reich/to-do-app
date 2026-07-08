@@ -646,7 +646,7 @@ onUnmounted(() => {
   padding: 3px 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .todo-card {
     font-size: 14px;
   }
@@ -662,6 +662,25 @@ onUnmounted(() => {
 
   .card-btn--edit {
     display: flex;
+  }
+}
+
+/* Tablet: smaller/finer cards (but keep all action buttons, unlike phone)
+   so several fit per row instead of the desktop-sized cards hogging space. */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .todo-card {
+    font-size: 13.5px;
+    max-width: 100%;
+  }
+
+  .todo-card-main {
+    padding: 7px 10px;
+    gap: 6px;
+  }
+
+  .card-btn svg {
+    width: 15px;
+    height: 15px;
   }
 }
 </style>
