@@ -506,7 +506,16 @@ onUnmounted(() => {
   border-radius: var(--radius);
   border: 2px solid var(--ink);
   box-shadow: 5px 5px 0 var(--ink);
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.15s;
+}
+
+/* Closed cards puff up a touch on hover — real mouse devices only (see
+   other (hover: hover) blocks in this file), and skipped while open so
+   the menu/edit UI underneath doesn't shift while you're using it. */
+@media (hover: hover) {
+  .swipe-container:not(.open):hover {
+    transform: scale(1.035);
+  }
 }
 
 .swipe-container.open {
@@ -589,8 +598,13 @@ onUnmounted(() => {
   color: var(--bg);
 }
 
-.priority .card-btn:hover {
-  color: var(--ink);
+/* Scoped to real hover devices — on touch, :hover applies right after a
+   tap and sticks until something else is tapped, so mobile action icons
+   would otherwise look permanently "hovered" after use. */
+@media (hover: hover) {
+  .priority .card-btn:hover {
+    color: var(--ink);
+  }
 }
 
 .priority .check-row {
@@ -653,10 +667,11 @@ onUnmounted(() => {
   transition: color 0.12s;
 }
 
-.card-btn:hover,
 .card-btn.active { color: var(--ink-dark); }
 
-.card-btn--delete:hover { color: var(--ink); }
+@media (hover: hover) {
+  .card-btn:hover { color: var(--ink-dark); }
+}
 
 /* .todo-card-main aligns to flex-start so multi-line titles keep their
    icons pinned to the top line — but the accept button sits next to a
@@ -716,8 +731,10 @@ onUnmounted(() => {
   transition: color 0.1s;
 }
 
-.check-opt:hover {
-  color: var(--ink-dark);
+@media (hover: hover) {
+  .check-opt:hover {
+    color: var(--ink-dark);
+  }
 }
 
 .check-divider {

@@ -75,10 +75,14 @@ function handleDeleteTag(id: string, label: string) {
   const inUse = store.todos.some(t => t.tags.includes(id))
   if (inUse) { deleteConfirm.value = { id, label }; return }
   store.deleteTag(id)
+  deactivateTag(id)
 }
 
 function confirmDeleteTag() {
-  if (deleteConfirm.value) store.deleteTag(deleteConfirm.value.id)
+  if (deleteConfirm.value) {
+    store.deleteTag(deleteConfirm.value.id)
+    deactivateTag(deleteConfirm.value.id)
+  }
   deleteConfirm.value = null
 }
 
@@ -98,6 +102,14 @@ function handleTagKey(e: KeyboardEvent) {
 }
 
 const activeTagIds = ref<string[]>([])
+
+// Deleting a tag that's currently used as a filter should drop it from the
+// filter too — otherwise the list stays filtered by a tag that no longer
+// exists. An empty array already means "all", so no extra fallback needed.
+function deactivateTag(id: string) {
+  const idx = activeTagIds.value.indexOf(id)
+  if (idx !== -1) activeTagIds.value.splice(idx, 1)
+}
 
 function toggleTag(id: string) {
   const idx = activeTagIds.value.indexOf(id)

@@ -253,14 +253,28 @@
   font-size: 13px;
   padding: 4px 10px;
   cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
   transition:
     color 0.12s,
-    border-color 0.12s;
+    border-color 0.12s,
+    background 0.12s;
 }
 
-.all-btn:hover {
-  color: var(--ink-dark);
-  border-color: var(--ink-dark);
+/* The fill/border already signals active state on tap — no separate
+   lingering focus ring needed (mobile keeps focus on a button after a
+   tap until something else is focused, which otherwise looks stuck). */
+.all-btn:focus,
+.all-btn:focus-visible {
+  outline: none;
+}
+
+/* Inverted fill (ink background, bg-colored text) — a clearer "this is the
+   active filter" signal than just the border, matching how selected tag
+   chips read elsewhere. */
+.all-btn.active {
+  background: var(--ink);
+  color: var(--bg);
 }
 
 /* All + Priority read as one grouped pair (just the list's own 7px gap
