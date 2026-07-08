@@ -60,4 +60,16 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
   text-align: center;
   margin-top: 24px;
 }
+
+/* Same fix as AllTodos.vue's list-view: content-inner centers this
+   640px-capped block, so its left edge drifts depending on how much wider
+   than 640px the row is at a given tablet width. Pin it to the left,
+   offset to match main-head's own left padding (20px) against
+   content-inner's (6px). */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .focus-view {
+    align-self: flex-start;
+    margin-left: 14px;
+  }
+}
 </style>

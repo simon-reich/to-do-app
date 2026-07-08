@@ -91,6 +91,18 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
   .todo-wrap {
     gap: 8px;
   }
+
+  /* Grid mode already spans the full row so centering is moot, but list
+     mode keeps its 640px reading-width cap — content-inner's align-items:
+     center then centers that narrower block, so its left edge drifts
+     depending on how much wider than 640px the row happens to be at a
+     given tablet width, instead of lining up with the top-menu's icons.
+     Pin it to the left, offset to match main-head's own left padding
+     (20px) against content-inner's (6px). */
+  .all-todos.list-view {
+    align-self: flex-start;
+    margin-left: 14px;
+  }
 }
 
 .empty {
