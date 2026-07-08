@@ -24,7 +24,7 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 </script>
 
 <template>
-  <div class="focus-view">
+  <div class="focus-view" :class="{ 'is-empty': !filteredTodos.length }">
     <div v-if="filteredTodos.length" class="todo-wrap">
       <TodoCard
         v-for="todo in filteredTodos"
@@ -56,7 +56,9 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 
 .empty {
   color: var(--ink);
-  font-size: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  font-family: var(--font-playful, sans-serif);
   text-align: center;
   margin-top: 24px;
 }
@@ -65,9 +67,11 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
    640px-capped block, so its left edge drifts depending on how much wider
    than 640px the row is at a given tablet width. Pin it to the left,
    offset to match main-head's own left padding (20px) against
-   content-inner's (6px). */
+   content-inner's (6px). Doesn't apply to the empty state — there's no
+   list to align against, so it stays centered like the calendar's own
+   empty-day placeholder. */
 @media (min-width: 701px) and (max-width: 1024px) {
-  .focus-view {
+  .focus-view:not(.is-empty) {
     align-self: flex-start;
     margin-left: 14px;
   }
