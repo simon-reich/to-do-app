@@ -162,10 +162,9 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 
 | Branch | Zweck |
 |---|---|
-| `main` | Stabiler Stand nach Phase 8 – minimalistisches, generisches Design |
-| `design/poppy` | Design-Experiment: Neo-brutalist, keine runden Ecken, Flächen statt Borders, kräftige Farben (Orange-Rot, Gelb, Teal), harte Drop-Shadows |
+| `main` | Aktuelles Design: Neo-brutalist, keine runden Ecken, Flächen statt Borders, kräftige Farben (Orange-Rot, Gelb, Teal), harte Drop-Shadows. Ehemals auf `design/poppy` entwickelt, per Fast-Forward-Merge übernommen. |
 
-Auf `design/poppy` wird frei experimentiert. Rückkehr zu `main` jederzeit via `git checkout main`.
+Das ursprüngliche minimalistische Design (Phase 1–8, vor dem Poppy-Redesign) ist über die Git-Historie weiterhin erreichbar (z.B. `git log` vor dem Merge-Commit, oder ein Tag darauf, falls gewünscht).
 
 ## Entwicklungshinweise
 
