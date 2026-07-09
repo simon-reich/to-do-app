@@ -120,7 +120,18 @@ const emit = defineEmits<{
 const showMenu = computed(() => openCheckMenuId.value === props.todo.id)
 const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
 
+// After a mouse drag (unlike touch), the browser still synthesizes a plain
+// `click` on mouseup regardless of how far the pointer moved in between —
+// so releasing a swipe back into Hold on desktop was re-toggling the card
+// open/closed as an unwanted side effect. Set in onDragStart (not
+// onDragEnd — that risks running after the browser's own click, which
+// fires synchronously right on mouseup) and checked at the very top of
+// every click-driven toggle below, so it catches the click regardless of
+// which element it actually lands on.
+let justDragged = false
+
 function toggleCheckMenu() {
+  if (justDragged) { justDragged = false; return }
   const willOpen = openCheckMenuId.value !== props.todo.id
   openCheckMenuId.value = willOpen ? props.todo.id : null
   if (willOpen) nextTick(scrollCardIntoView)
@@ -150,6 +161,7 @@ watch([showMenu, showTagMenu], ([m, t]) => {
 })
 
 function toggleTagMenu() {
+  if (justDragged) { justDragged = false; return }
   openCheckMenuId.value = null
   const willOpen = openTagMenuId.value !== props.todo.id
   openTagMenuId.value = willOpen ? props.todo.id : null
@@ -178,6 +190,7 @@ function openForEdit() {
 let titleClickTimer: ReturnType<typeof setTimeout> | null = null
 
 function handleTitleClick() {
+  if (justDragged) { justDragged = false; return }
   if (titleClickTimer) {
     clearTimeout(titleClickTimer)
     titleClickTimer = null
@@ -313,8 +326,9 @@ const swipeY = ref(0)
 // from it. It's a *fixed* point for the duration of a state — it only ever
 // moves at the exact moment of falling back into Hold, where it re-baselines
 // to wherever that happened. From there, reaching either armed state again
-// needs the full ARM_DISTANCE once more, in either direction — Hold is a
-// real, equally-sized zone of its own, not just a wedge you pass through.
+// needs the full arm distance (see armDistance()) once more, in either
+// direction — Hold is a real, equally-sized zone of its own, not just a
+// wedge you pass through.
 //
 // `extremeX` tracks the furthest point reached in the current excursion —
 // release is measured back from *that peak*, not from refX/the original
@@ -331,14 +345,32 @@ let extremeX = 0
 // also the width of the Hold zone you land back in after releasing an
 // armed state, so it needs real, comfortably perceivable room — too tight
 // and a normal-speed swipe blows straight through it in a frame or two.
-const ARM_DISTANCE = 130
+// Desktop drags (mouse, generally larger/faster pointer travel across a
+// bigger screen) need noticeably more room than a touch swipe does for
+// Hold to stay comfortably reachable — same breakpoint as
+// scrollCardIntoView's desktop check.
+//
+// The very first arm attempt of a gesture (straight from the grip's start)
+// wants a shorter distance than every subsequent Hold-to-armed transition
+// (after at least one release has already happened) — 340px felt right for
+// swinging between an already-armed Focus and Delete, but far too much for
+// the very first pull off of Hold. `everArmed` (set in onDrag/onDragStart)
+// tracks which of the two applies.
+let everArmed = false
+
+function armDistance() {
+  if (window.innerWidth <= 1024) return 130
+  return everArmed ? 340 : 180
+}
 // How far back from the current excursion's peak counts as "given up on
-// this direction" — deliberately small relative to ARM_DISTANCE, so once
+// this direction" — deliberately small relative to armDistance(), so once
 // armed it stays armed through minor jitter, but a real, deliberate
 // pull-back drops it back to a fresh Hold zone. Always measured from the
 // peak, so it's the same small pull-back regardless of how far past the
 // threshold the swipe went.
-const RELEASE_MARGIN = 45
+function releaseMargin() {
+  return window.innerWidth > 1024 ? 120 : 45
+}
 
 // The one authoritative "what would happen on release" state — the reveal
 // indicator and the actual onDragEnd decision both read this directly, so
@@ -493,6 +525,7 @@ const fixedOrigin = ref<{ top: number; left: number; width: number } | null>(nul
 const backdropRect = ref<{ top: number; left: number; width: number; height: number } | null>(null)
 
 function onDragStart() {
+  justDragged = true
   releaseGripFallback() // in case a previous gesture didn't clean up
   lockScroll()
   armGripSafetyNet()
@@ -501,19 +534,27 @@ function onDragStart() {
   extremeX = 0
   armedDir.value = 0
   swipeRelX.value = 0
+  everArmed = false
   const rect = wrapRef.value?.getBoundingClientRect()
   if (rect) fixedOrigin.value = { top: rect.top, left: rect.left, width: rect.width }
-  const listRect = scrollLockEl?.getBoundingClientRect()
-  if (listRect) {
-    // .main-content's own box still geometrically extends behind the fixed
-    // mobile bottom nav (only its inner padding keeps content clear of it)
-    // — clip the backdrop to stop at the nav's top edge instead of matching
-    // the full box, or it visually covers the nav too.
-    let height = listRect.height
-    const bottomNav = document.querySelector<HTMLElement>('.mobile-bottom-nav')
-    const navRect = bottomNav?.getBoundingClientRect()
-    if (navRect && navRect.width > 0) height = Math.min(height, navRect.top - listRect.top)
-    backdropRect.value = { top: listRect.top, left: listRect.left, width: listRect.width, height }
+  if (window.innerWidth > 1024) {
+    // Desktop has no fixed top/bottom chrome fighting for the same space
+    // (see scrollCardIntoView's identical breakpoint) — the backdrop can
+    // just cover the whole viewport there.
+    backdropRect.value = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }
+  } else {
+    const listRect = scrollLockEl?.getBoundingClientRect()
+    if (listRect) {
+      // .main-content's own box still geometrically extends behind the
+      // fixed mobile bottom nav (only its inner padding keeps content clear
+      // of it) — clip the backdrop to stop at the nav's top edge instead of
+      // matching the full box, or it visually covers the nav too.
+      let height = listRect.height
+      const bottomNav = document.querySelector<HTMLElement>('.mobile-bottom-nav')
+      const navRect = bottomNav?.getBoundingClientRect()
+      if (navRect && navRect.width > 0) height = Math.min(height, navRect.top - listRect.top)
+      backdropRect.value = { top: listRect.top, left: listRect.left, width: listRect.width, height }
+    }
   }
 }
 
@@ -521,19 +562,21 @@ function onDrag(_event: PointerEvent, info: PanInfo) {
   const rawX = info.offset.x
   const rel = rawX - refX
   if (Math.abs(rel) > Math.abs(extremeX - refX)) extremeX = rawX
+  const arm = armDistance()
+  const margin = releaseMargin()
 
   if (armedDir.value === 0) {
-    if (rel > ARM_DISTANCE) armedDir.value = 1
-    else if (rel < -ARM_DISTANCE) armedDir.value = -1
+    if (rel > arm) { armedDir.value = 1; everArmed = true }
+    else if (rel < -arm) { armedDir.value = -1; everArmed = true }
   } else {
     const peakRel = extremeX - refX
     const released =
-      (armedDir.value === 1 && rel < peakRel - RELEASE_MARGIN) ||
-      (armedDir.value === -1 && rel > peakRel + RELEASE_MARGIN)
+      (armedDir.value === 1 && rel < peakRel - margin) ||
+      (armedDir.value === -1 && rel > peakRel + margin)
     if (released) {
       // Falls back to Hold — wherever that happens becomes the fresh
       // reference point, so reaching either armed state again needs the
-      // full ARM_DISTANCE from here, not a discount for distance already
+      // full arm distance from here, not a discount for distance already
       // covered before this release.
       refX = rawX
       extremeX = rawX
@@ -557,6 +600,11 @@ function springBackToCenter() {
 // showing on screen the instant the finger lifts is exactly what fires,
 // vertical movement never factors in, and it never fires mid-gesture.
 async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
+  // justDragged itself was already set in onDragStart — clearing it here
+  // is just a delayed safety net in case no click ever follows at all
+  // (e.g. the mouse was released off the card). See onDragStart for why it
+  // isn't set here instead.
+  setTimeout(() => { justDragged = false }, 300)
   window.removeEventListener('pointerup', releaseGripFallback)
   window.removeEventListener('pointercancel', releaseGripFallback)
   unlockScroll()
@@ -675,7 +723,10 @@ onUnmounted(() => {
         @drag="onDrag"
         @drag-end="onDragEnd"
       >
-        <div class="todo-card-main" @click.stop="mode === 'today' ? toggleCheckMenu() : toggleTagMenu()">
+        <div
+          class="todo-card-main"
+          @click.stop="mode === 'today' ? toggleCheckMenu() : toggleTagMenu()"
+        >
           <textarea
             v-if="isEditing"
             ref="editInputRef"
