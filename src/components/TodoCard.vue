@@ -518,13 +518,17 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop>
+        <!-- Clicking the row's own background (not a tag itself) closes the
+             card, same as clicking anywhere else on it — each tag label
+             stops propagation so toggling a tag doesn't also close it. -->
+        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click="toggleTagMenu">
           <template v-if="store.tags.length">
             <label
               v-for="tag in store.tags"
               :key="tag.id"
               class="tag-row-opt"
               :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
+              @click.stop
             >
               <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
               <span>{{ tag.label }}</span>
