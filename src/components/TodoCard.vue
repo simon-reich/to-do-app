@@ -132,10 +132,24 @@ function closeOnOutside(e: MouseEvent) {
   }
 }
 
+// Escape/Enter close the card when it's open but not being edited (the
+// textarea has its own Escape/Enter handlers for the editing case, and
+// ignoring them here keeps the two from double-handling the same key).
+function onCardKeydown(e: KeyboardEvent) {
+  if (isEditing.value) return
+  if (e.key !== 'Escape' && e.key !== 'Enter') return
+  e.preventDefault()
+  if (showMenu.value) openCheckMenuId.value = null
+  else if (showTagMenu.value) openTagMenuId.value = null
+}
+
 watch([showMenu, showTagMenu], ([m, t]) => {
-  if (m || t) document.addEventListener('click', closeOnOutside)
-  else {
+  if (m || t) {
+    document.addEventListener('click', closeOnOutside)
+    document.addEventListener('keydown', onCardKeydown)
+  } else {
     document.removeEventListener('click', closeOnOutside)
+    document.removeEventListener('keydown', onCardKeydown)
     // Only blur if focus is still inside *this* card — otherwise this fires
     // after focus has already moved on to a different card (e.g. clicking
     // straight from one open todo into another) and would steal it back.
@@ -445,9 +459,14 @@ onUnmounted(() => {
             </button>
           </template>
 
-          <!-- Saves + closes the card once editing is active. -->
+          <!-- Saves + closes the card once editing is active. mousedown.prevent
+               keeps the textarea focused through the click — otherwise its
+               own blur (from focus moving to this button) runs saveEdit and
+               flips isEditing to false *before* the click fires, swapping
+               this button out for the Edit one mid-click so the click lands
+               on nothing/the wrong button and the card never closes. -->
           <template v-else-if="showTagMenu && mode === 'all' && isEditing">
-            <button class="card-btn card-btn--edit" title="Accept" @click.stop="acceptEdit">
+            <button class="card-btn card-btn--edit" title="Accept" @mousedown.prevent @click.stop="acceptEdit">
               <Check :size="11" />
             </button>
           </template>
