@@ -307,26 +307,38 @@ const rotate = useTransform(x, [-200, 200], [-8, 8])
 const swipeX = ref(0)
 const swipeY = ref(0)
 
-// Reveal indicator + action threshold are measured relative to the most
-// recent reference point, not the fixed spot where the grip started. `refX`
-// is that reference; `swipeRelX` is the live offset from it. It only moves
-// when the swipe genuinely *disarms* (see armedDir below) — not on every
-// tiny frame-to-frame wobble — so a straight swipe in one direction needs
-// exactly the same distance as the other, symmetrically.
+// A clean 3-state machine along the horizontal axis: Hold (armedDir 0),
+// armed-right (1), armed-left (-1). `refX` is the reference point for
+// whichever state is currently active, and `swipeRelX` is the live offset
+// from it. It's a *fixed* point for the duration of a state — it only ever
+// moves at the exact moment of falling back into Hold, where it re-baselines
+// to wherever that happened. From there, reaching either armed state again
+// needs the full ARM_DISTANCE once more, in either direction — Hold is a
+// real, equally-sized zone of its own, not just a wedge you pass through.
+//
+// `extremeX` tracks the furthest point reached in the current excursion —
+// release is measured back from *that peak*, not from refX/the original
+// grip start. Without this, dragging out far past the arm threshold before
+// pulling back meant the release check (relative to the far-away start)
+// barely moved before crossing, needing an enormous pull-back — while a
+// swipe that armed right at the threshold released after only a small one.
 const swipeRelX = ref(0)
 let refX = 0
+let extremeX = 0
 
-// Same threshold both directions — delete and move/complete both need the
-// identical amount of travel to fire. Lower than it first looks: short
-// todos near the screen edge simply don't have 75px of room to drag through
-// before hitting the edge of the viewport.
-const SWIPE_THRESHOLD = 45
-// Once armed, the swipe stays armed (and would still fire on release) even
-// if you ease back a little — it only disarms once you give back more than
-// this many pixels from the threshold. Without this, the tiniest give-back
-// snapped straight back to neutral and lost the pending action entirely.
-const DISARM_MARGIN = 24
-const DISARM_AT = SWIPE_THRESHOLD - DISARM_MARGIN
+// Distance from Hold's reference point needed to arm a direction — same
+// both ways, so delete and move/complete need identical travel. This is
+// also the width of the Hold zone you land back in after releasing an
+// armed state, so it needs real, comfortably perceivable room — too tight
+// and a normal-speed swipe blows straight through it in a frame or two.
+const ARM_DISTANCE = 130
+// How far back from the current excursion's peak counts as "given up on
+// this direction" — deliberately small relative to ARM_DISTANCE, so once
+// armed it stays armed through minor jitter, but a real, deliberate
+// pull-back drops it back to a fresh Hold zone. Always measured from the
+// peak, so it's the same small pull-back regardless of how far past the
+// threshold the swipe went.
+const RELEASE_MARGIN = 45
 
 // The one authoritative "what would happen on release" state — the reveal
 // indicator and the actual onDragEnd decision both read this directly, so
@@ -364,25 +376,24 @@ const canDrag = computed(() => !isEditing.value && !showTagMenu.value && !showMe
 // What-would-happen indicator, shown centered over the whole page (via
 // Teleport) instead of pinned to the card — it now needs to stay legible and
 // on top of everything no matter where a free-form drag has carried the card.
-// Before arming, it still previews the nearer direction (a much smaller,
-// non-hysteresis threshold) so it doesn't stay blank for the first 45px.
-const REVEAL_THRESHOLD = 18
-const previewDir = computed<-1 | 0 | 1>(() => {
-  if (armedDir.value !== 0) return armedDir.value
-  if (swipeRelX.value > REVEAL_THRESHOLD) return 1
-  if (swipeRelX.value < -REVEAL_THRESHOLD) return -1
-  return 0
-})
+// Tied directly to `armedDir` (the same authoritative state onDragEnd reads)
+// rather than its own separate preview threshold: an earlier version showed
+// a preview once past ~32px, computed independently from the 24px margin
+// that moves the reference point — on an ordinary, non-glacial swipe, a
+// single drag frame easily covers more than the ~8px gap between those two,
+// so the neutral state got skipped over almost every time. Showing "Hold"
+// for the entire pre-arm range (0–45px, not just a wedge of it) sidesteps
+// that entirely and gives a genuinely large, robust neutral zone.
 const swipeAction = computed(() => {
-  if (previewDir.value === 1) {
+  if (armedDir.value === 1) {
     return props.mode === 'all'
       ? { label: props.todo.inToday ? 'Remove' : 'Focus' }
       : { label: 'Complete' }
   }
-  if (previewDir.value === -1) {
+  if (armedDir.value === -1) {
     return props.mode === 'all' ? { label: 'Delete' } : { label: 'Remove' }
   }
-  return null
+  return { label: 'Hold' }
 })
 const swipeArmed = computed(() => armedDir.value !== 0)
 
@@ -483,6 +494,7 @@ function onDragStart() {
   armGripSafetyNet()
   isGripped.value = true
   refX = 0
+  extremeX = 0
   armedDir.value = 0
   swipeRelX.value = 0
   const rect = wrapRef.value?.getBoundingClientRect()
@@ -490,26 +502,32 @@ function onDragStart() {
 }
 
 function onDrag(_event: PointerEvent, info: PanInfo) {
-  const rel = info.offset.x - refX
+  const rawX = info.offset.x
+  const rel = rawX - refX
+  if (Math.abs(rel) > Math.abs(extremeX - refX)) extremeX = rawX
 
   if (armedDir.value === 0) {
-    if (rel > SWIPE_THRESHOLD) armedDir.value = 1
-    else if (rel < -SWIPE_THRESHOLD) armedDir.value = -1
-  } else if (
-    (armedDir.value === 1 && rel < DISARM_AT) ||
-    (armedDir.value === -1 && rel > -DISARM_AT)
-  ) {
-    // Given back more than the margin — this position becomes the new
-    // reference point, so swiping back the other way from here needs the
-    // same full threshold again, not a discount for however far we'd
-    // already come in the original direction.
-    refX = info.offset.x
-    armedDir.value = 0
+    if (rel > ARM_DISTANCE) armedDir.value = 1
+    else if (rel < -ARM_DISTANCE) armedDir.value = -1
+  } else {
+    const peakRel = extremeX - refX
+    const released =
+      (armedDir.value === 1 && rel < peakRel - RELEASE_MARGIN) ||
+      (armedDir.value === -1 && rel > peakRel + RELEASE_MARGIN)
+    if (released) {
+      // Falls back to Hold — wherever that happens becomes the fresh
+      // reference point, so reaching either armed state again needs the
+      // full ARM_DISTANCE from here, not a discount for distance already
+      // covered before this release.
+      refX = rawX
+      extremeX = rawX
+      armedDir.value = 0
+    }
   }
 
-  swipeRelX.value = info.offset.x - refX
+  swipeRelX.value = rawX - refX
 
-  if (Math.abs(info.offset.x) > DRAG_ENGAGE_THRESHOLD) {
+  if (Math.abs(rawX) > DRAG_ENGAGE_THRESHOLD) {
     y.set(info.offset.y)
   }
 }
@@ -530,6 +548,7 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
   const swipedLeft = armedDir.value === -1
   const swipedRight = armedDir.value === 1
   refX = 0
+  extremeX = 0
   armedDir.value = 0
   swipeRelX.value = 0
 
@@ -590,7 +609,7 @@ onUnmounted(() => {
       <Teleport to="body">
         <Transition name="swipe-indicator">
           <span
-            v-if="isGripped && swipeAction"
+            v-if="isGripped"
             class="swipe-indicator"
             :class="{ armed: swipeArmed }"
           >{{ swipeAction.label }}</span>
