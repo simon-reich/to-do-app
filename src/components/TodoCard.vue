@@ -556,8 +556,10 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
     x.set(0)
     y.set(0)
     if (props.mode === 'all') {
-      await animateOut('puff')
-      emit('delete', props.todo.id)
+      // Delete is permanent and the swipe to trigger it is quick — easy to
+      // cross by accident. Confirm first, same as deleting a tag; the puff
+      // animation only plays once that's actually confirmed.
+      pendingDelete.value = true
     } else {
       await animateOut('puff')
       emit('remove-from-today', props.todo.id)
@@ -576,6 +578,20 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
   } else {
     springBackToCenter()
   }
+}
+
+// Confirmation for a swipe-triggered delete (see onDragEnd) — mirrors the
+// tag-delete confirmation modal in App.vue, same markup/classes/style.
+const pendingDelete = ref(false)
+
+async function confirmSwipeDelete() {
+  pendingDelete.value = false
+  await animateOut('puff')
+  emit('delete', props.todo.id)
+}
+
+function cancelSwipeDelete() {
+  pendingDelete.value = false
 }
 
 onUnmounted(() => {
@@ -614,6 +630,19 @@ onUnmounted(() => {
             :class="{ armed: swipeArmed }"
           >{{ swipeAction.label }}</span>
         </Transition>
+      </Teleport>
+
+      <Teleport to="body">
+        <template v-if="pendingDelete">
+          <div class="modal-backdrop" @click="cancelSwipeDelete" />
+          <div class="modal-box" role="dialog">
+            <p class="modal-text">Delete <strong>{{ todo.title }}</strong>?</p>
+            <div class="modal-actions">
+              <button class="modal-btn modal-btn--cancel" @click="cancelSwipeDelete">Cancel</button>
+              <button class="modal-btn modal-btn--delete" @click="confirmSwipeDelete">Delete</button>
+            </div>
+          </div>
+        </template>
       </Teleport>
 
       <motion.div
