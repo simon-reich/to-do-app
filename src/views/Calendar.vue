@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useTodosStore } from '../stores/todos'
-import { useOverflowSpacer } from '../composables/useOverflowSpacer'
+import { useScrollTracking } from '../composables/useScrollTracking'
+import ScrollDivider from '../components/ScrollDivider.vue'
 
 const store = useTodosStore()
 const calendarRef = ref<any>(null)
@@ -10,18 +11,12 @@ const viewRef = ref<HTMLElement | null>(null)
 const dayDetailScrollRef = ref<HTMLElement | null>(null)
 const dayDetailRef = ref<HTMLElement | null>(null)
 const dayDetailBottomSpacerRef = ref<HTMLElement | null>(null)
-const dayDetailScrolled = ref(false)
-const dayDetailScrolledToBottom = ref(true)
-const { overflows: dayDetailOverflows, check: checkDayDetailOverflow } = useOverflowSpacer()
-let dayDetailResizeObserver: ResizeObserver | null = null
-
-function checkDayDetailScrollState() {
-  const el = dayDetailScrollRef.value
-  if (!el) return
-  dayDetailScrolled.value = el.scrollTop > 0
-  dayDetailScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
-  checkDayDetailOverflow(el, el, dayDetailBottomSpacerRef.value)
-}
+const {
+  scrolled: dayDetailScrolled,
+  scrolledToBottom: dayDetailScrolledToBottom,
+  spacerHeight: dayDetailSpacerHeight,
+  check: checkDayDetailScrollState,
+} = useScrollTracking({ scrollEl: dayDetailScrollRef, resizeTarget: dayDetailRef, spacerEl: dayDetailBottomSpacerRef, targetGap: 40 })
 
 function onDayDetailScroll() {
   checkDayDetailScrollState()
@@ -37,16 +32,6 @@ onMounted(async () => {
   await nextTick()
   calendarRef.value?.move(new Date())
   viewRef.value?.focus()
-  checkDayDetailScrollState()
-
-  if (dayDetailRef.value) {
-    dayDetailResizeObserver = new ResizeObserver(checkDayDetailScrollState)
-    dayDetailResizeObserver.observe(dayDetailRef.value)
-  }
-})
-
-onUnmounted(() => {
-  dayDetailResizeObserver?.disconnect()
 })
 
 onBeforeRouteLeave(() => {
@@ -132,20 +117,8 @@ const selectedDateLabel = computed(() => {
   })
 })
 
-const doneOnDay = computed(() => {
-  if (!selectedDate.value) return []
-  const dateStr = selectedDate.value
-  return store.todos.filter(t => t.completedAt?.slice(0, 10) === dateStr)
-})
-
-const workedOnDay = computed(() => {
-  if (!selectedDate.value) return []
-  const dateStr = selectedDate.value
-  const doneIds = new Set(doneOnDay.value.map(t => t.id))
-  return store.todos.filter(t =>
-    !doneIds.has(t.id) && t.workLog.some(ts => ts.slice(0, 10) === dateStr)
-  )
-})
+const doneOnDay = computed(() => selectedDate.value ? store.completedOn(selectedDate.value) : [])
+const workedOnDay = computed(() => selectedDate.value ? store.workedOn(selectedDate.value) : [])
 
 const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.value.length > 0)
 </script>
@@ -163,7 +136,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
       />
     </div>
 
-    <div class="day-scroll-divider" :class="{ visible: dayDetailScrolled }" />
+    <ScrollDivider class="day-scroll-divider" :visible="dayDetailScrolled" />
 
     <div ref="dayDetailScrollRef" class="day-detail-scroll" @scroll="onDayDetailScroll">
     <transition name="fade">
@@ -182,12 +155,12 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
         <p v-else class="no-activity">No activity for this day.</p>
 
-        <div ref="dayDetailBottomSpacerRef" class="bottom-breathing-spacer" :style="{ height: dayDetailOverflows ? '40px' : '0px' }" />
+        <div ref="dayDetailBottomSpacerRef" class="bottom-breathing-spacer" :style="{ height: dayDetailSpacerHeight + 'px' }" />
       </div>
     </transition>
     </div>
 
-    <div class="day-scroll-divider-bottom" :class="{ visible: !dayDetailScrolledToBottom }" />
+    <ScrollDivider class="day-scroll-divider-bottom" :visible="!dayDetailScrolledToBottom" />
   </div>
 </template>
 
@@ -377,14 +350,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 @media (max-width: 700px) {
   .day-scroll-divider {
     display: block;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
     flex-shrink: 0;
-  }
-
-  .day-scroll-divider.visible {
-    background: var(--ink);
   }
 
   .day-scroll-divider-bottom {
@@ -393,14 +359,7 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
     bottom: 60px;
     left: 0;
     right: 0;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
     pointer-events: none;
-  }
-
-  .day-scroll-divider-bottom.visible {
-    background: var(--ink);
   }
 
   /* Even narrower on phones than the general 420px cap above. */

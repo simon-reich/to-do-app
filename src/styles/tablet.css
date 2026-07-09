@@ -1,7 +1,10 @@
 /* ══ Tablet: same layout as desktop, except the tag sidebar becomes an
    overlay panel opened via a button (like on mobile). Phone-specific rules
    (flex-column app shell, bottom nav, etc.) live in mobile.css below 700px
-   and don't apply here. ══ */
+   and don't apply here.
+   Breakpoint convention (canonical values + where responsive CSS belongs):
+   see top of base.css. This file is for App.vue's own shell markup only —
+   other components keep their responsive CSS inline. ══ */
 @media (min-width: 701px) and (max-width: 1024px) {
   /* Single content column — the header grows tall enough to fit two lines
      (input on its own line, buttons below) instead of forcing everything
@@ -92,21 +95,12 @@
     display: none;
   }
 
-  /* ── Tags toggle button ── */
+  /* ── Tags toggle button (color/hover shared in layout.css) ── */
   .mobile-tags-btn {
     display: flex;
-    background: none;
-    border: none;
-    color: var(--ink);
-    cursor: pointer;
     padding: 4px;
     align-items: center;
     flex-shrink: 0;
-    transition: color 0.15s;
-  }
-
-  .mobile-tags-btn:hover {
-    color: var(--ink-dark);
   }
 
   #app.is-settings .mobile-tags-btn,
@@ -115,24 +109,11 @@
     opacity: 0.35;
   }
 
-  /* ── Tag panel (full screen overlay) ── */
+  /* ── Tag panel (full screen overlay; shared bits in layout.css) ──
+     display:none must stay here — see mobile.css for why. */
   .mobile-tags-panel {
     display: none;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
     bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--bg);
-    z-index: 15;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
-  }
-
-  .mobile-tags-panel::-webkit-scrollbar {
-    display: none;
   }
 
   .mobile-tags-open .mobile-tags-panel {
@@ -193,13 +174,6 @@
     left: 56px;
     right: 56px;
     bottom: 0;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
-  }
-
-  .tags-scroll-divider.visible {
-    background: var(--ink);
   }
 
   .tags-scroll-divider-bottom {
@@ -207,15 +181,8 @@
     bottom: 0;
     left: 24px;
     right: 24px;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
     z-index: 19;
     pointer-events: none;
-  }
-
-  .tags-scroll-divider-bottom.visible {
-    background: var(--ink);
   }
 
   .mobile-tag-list {
@@ -225,21 +192,4 @@
     gap: 20px;
   }
 
-  .mobile-all-priority-row {
-    display: flex;
-    justify-content: center;
-    gap: 7px;
-  }
-
-  .mobile-tag-chip-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-content: flex-start;
-    gap: 7px;
-  }
-
-  .mobile-all-priority-row .all-btn {
-    margin-bottom: 0;
-  }
 }

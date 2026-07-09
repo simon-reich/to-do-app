@@ -58,20 +58,41 @@
   max-width: 750px;
 }
 
-.sort-btn {
+/* Shared "icon button" look — plain icon, ink color, darkens on hover —
+   used by every bare icon control in the app (nav links, sort/settings/
+   tag-delete/mobile-tags-toggle buttons). Each keeps its own layout
+   properties (display, padding, etc.) since those genuinely differ. */
+.sort-btn,
+.nav-icon,
+.settings-btn,
+.tag-x,
+.mobile-tags-btn {
   background: none;
   border: none;
   color: var(--ink);
   cursor: pointer;
+  transition: color 0.15s;
+}
+
+.sort-btn:hover,
+.nav-icon:hover,
+.nav-icon.router-link-active,
+.settings-btn:hover,
+.settings-btn.active,
+.tag-x:hover,
+.mobile-tags-btn:hover {
+  color: var(--ink-dark);
+}
+
+/* .mobile-tags-btn is deliberately not included here — its display:flex
+   must stay gated inside mobile.css/tablet.css's own media queries so it
+   doesn't fight .mobile-only's display:none on desktop (same specificity,
+   later-in-file would otherwise win). */
+.sort-btn {
   padding: 4px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  transition: color 0.15s;
-}
-
-.sort-btn:hover {
-  color: var(--ink-dark);
 }
 
 .add-wrapper {
@@ -185,20 +206,10 @@
 }
 
 .nav-icon {
-  color: var(--ink);
   display: flex;
   align-items: center;
   text-decoration: none;
-  background: none;
-  border: none;
-  cursor: pointer;
   padding: 4px;
-  transition: color 0.15s;
-}
-
-.nav-icon:hover,
-.nav-icon.router-link-active {
-  color: var(--ink-dark);
 }
 
 
@@ -221,15 +232,8 @@
 .sidebar-scroll-divider {
   position: sticky;
   top: -16px;
-  height: 2px;
   margin: -16px -16px 8px -16px;
-  background: transparent;
-  transition: background 0.2s;
   z-index: 1;
-}
-
-.sidebar-scroll-divider.visible {
-  background: var(--ink);
 }
 
 .tag-list {
@@ -270,13 +274,6 @@
   outline: none;
 }
 
-/* Same puff-up feedback as the tag chips (see .tag-chip) — real mouse
-   devices only. */
-@media (hover: hover) {
-  .all-btn:hover {
-    transform: scale(1.08);
-  }
-}
 
 /* Inverted fill (ink background, bg-colored text) — a clearer "this is the
    active filter" signal than just the border, matching how selected tag
@@ -318,9 +315,12 @@
   opacity: 0.35;
 }
 
-/* Same puff-up feedback as hovering a closed todo card (see .swipe-container
-   in TodoCard.vue) — real mouse devices only. */
+/* Puff-up hover feedback — shared by both filter-chip styles (All/Priority
+   and tag chips); TodoCard.vue's closed-card hover uses the same idea with
+   a subtler scale, kept separate there since it also needs a :not(.open)
+   guard. Real mouse devices only. */
 @media (hover: hover) {
+  .all-btn:hover,
   .tag-chip:hover {
     transform: scale(1.08);
   }
@@ -338,18 +338,9 @@
 }
 
 .tag-x {
-  background: none;
-  border: none;
-  color: var(--ink);
-  cursor: pointer;
   font-size: 16px;
   line-height: 1;
   padding: 0;
-  transition: color 0.12s;
-}
-
-.tag-x:hover {
-  color: var(--ink-dark);
 }
 
 /* ── Settings head ── */
@@ -365,17 +356,7 @@
 .settings-btn {
   display: flex;
   align-items: center;
-  background: none;
-  border: none;
-  color: var(--ink);
-  cursor: pointer;
   padding: 4px;
-  transition: color 0.15s;
-}
-
-.settings-btn:hover,
-.settings-btn.active {
-  color: var(--ink-dark);
 }
 
 /* ── Settings/Calendar active: dim + lock unrelated UI ── */
@@ -428,14 +409,7 @@
 .scroll-divider {
   position: sticky;
   top: 0;
-  height: 2px;
-  background: transparent;
-  transition: background 0.2s;
   z-index: 5;
-}
-
-.scroll-divider.visible {
-  background: var(--ink);
 }
 
 .content-inner {
@@ -553,4 +527,49 @@
 .modal-btn--delete:hover {
   background: var(--ink-dark);
   border-color: var(--ink-dark);
+}
+
+/* ── Mobile tags panel: breakpoint-independent bits ──
+   mobile.css and tablet.css each open this panel with different geometry
+   (header layout, insets), but share these declarations verbatim — kept
+   here so they're not duplicated per breakpoint.
+   display:none is NOT here on purpose: it has to stay in mobile.css/
+   tablet.css themselves, declared after their own .mobile-only rule (see
+   comments there) — otherwise .mobile-only's display:flex wins the tie
+   and the panel gets stuck visible regardless of .mobile-tags-open. The
+   show/hide toggle (.mobile-tags-open .mobile-tags-panel { display: flex })
+   also stays gated per breakpoint so it can't leak onto desktop. */
+.mobile-tags-panel {
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  z-index: 15;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.mobile-tags-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-tag-chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 7px;
+}
+
+.mobile-all-priority-row {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+}
+
+.mobile-all-priority-row .all-btn {
+  margin-bottom: 0;
 }

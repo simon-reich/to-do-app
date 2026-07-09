@@ -1,3 +1,15 @@
+/* ══ Breakpoints (canonical — keep every occurrence in sync) ══
+   Mobile:  max-width: 700px             → src/styles/mobile.css
+   Tablet:  min-width: 701px, max-width: 1024px → src/styles/tablet.css
+   Desktop: > 1024px (no media query — it's the unqualified base CSS)
+
+   Where responsive CSS lives:
+   - App.vue's own markup (shell/nav/layout): overrides live in
+     mobile.css / tablet.css, never inline in App.vue's <style>.
+   - Every other component/view's responsive CSS stays inline in that
+     component's own <style scoped>, using the same breakpoint values
+     above. Don't add a component-specific rule to mobile.css/tablet.css. */
+
 /* ══ Resets ══ */
 *, *::before, *::after {
   box-sizing: border-box;

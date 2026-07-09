@@ -94,9 +94,8 @@ const openCheckMenuId = vueRef<string | null>(null)
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
-import { useTodosStore, type Todo } from '../stores/todos'
+import { CirclePlus, CircleMinus, Circle, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
+import { useTodosStore, type Todo, PRIORITY_TAG_ID } from '../stores/todos'
 
 const props = defineProps<{
   todo: Todo
@@ -105,14 +104,8 @@ const props = defineProps<{
 }>()
 
 const store = useTodosStore()
-const route = useRoute()
 
-const isPriority = computed(() =>
-  props.todo.tags.some(tid => {
-    const tag = store.tags.find(t => t.id === tid)
-    return tag?.label.toLowerCase() === 'priority'
-  })
-)
+const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
 
 
 const emit = defineEmits<{
@@ -154,7 +147,7 @@ watch([showMenu, showTagMenu], ([m, t]) => {
 })
 
 function toggleTagMenu() {
-  showMenu.value = false
+  openCheckMenuId.value = null
   const willOpen = openTagMenuId.value !== props.todo.id
   openTagMenuId.value = willOpen ? props.todo.id : null
   if (!willOpen && isEditing.value) saveEdit()
@@ -501,7 +494,6 @@ onUnmounted(() => {
           <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
             <Clock :size="16" /> Done for today
           </button>
-          <div class="check-divider" />
           <button class="check-opt" @click.stop="handleComplete(todo.id)">
             <CheckCheck :size="16" /> Done
           </button>
@@ -650,10 +642,6 @@ onUnmounted(() => {
   color: var(--bg);
 }
 
-.priority .check-divider {
-  background: var(--bg);
-}
-
 .priority .tag-row {
   border-top-color: var(--bg);
 }
@@ -772,10 +760,6 @@ onUnmounted(() => {
   }
 }
 
-.check-divider {
-  display: none;
-  flex-shrink: 0;
-}
 
 .tag-row {
   display: flex;

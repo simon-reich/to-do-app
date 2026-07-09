@@ -19,7 +19,6 @@ export interface Tag {
 export interface Todo {
   id: string
   title: string
-  note?: string
   tags: string[]
   createdAt: string
   inToday: boolean
@@ -40,17 +39,24 @@ export const useTodosStore = defineStore('todos', () => {
     todos.value.filter(t => t.inToday && !t.completedAt)
   )
 
-  const archivedTodos = computed(() =>
-    todos.value.filter(t => !!t.completedAt)
-      .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))
-  )
+  // Completed / worked-on todos for a given calendar day (YYYY-MM-DD),
+  // used by Calendar.vue's day-detail list.
+  function completedOn(dateStr: string) {
+    return todos.value.filter(t => t.completedAt?.slice(0, 10) === dateStr)
+  }
+
+  function workedOn(dateStr: string) {
+    const doneIds = new Set(completedOn(dateStr).map(t => t.id))
+    return todos.value.filter(t =>
+      !doneIds.has(t.id) && t.workLog.some(ts => ts.slice(0, 10) === dateStr)
+    )
+  }
 
   // ── Todo Actions ──
-  function addTodo(title: string, extra: Partial<Pick<Todo, 'note' | 'tags'>> = {}): Todo {
+  function addTodo(title: string, extra: Partial<Pick<Todo, 'tags'>> = {}): Todo {
     const todo: Todo = {
       id: uuid(),
       title: title.trim(),
-      note: extra.note,
       tags: extra.tags ?? [],
       createdAt: new Date().toISOString(),
       inToday: false,
@@ -60,11 +66,10 @@ export const useTodosStore = defineStore('todos', () => {
     return todo
   }
 
-  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'note' | 'tags'>>) {
+  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags'>>) {
     const todo = todos.value.find(t => t.id === id)
     if (!todo) return
     if (patch.title !== undefined) todo.title = patch.title.trim()
-    if (patch.note !== undefined) todo.note = patch.note
     if (patch.tags !== undefined) todo.tags = patch.tags
   }
 
@@ -114,12 +119,6 @@ export const useTodosStore = defineStore('todos', () => {
     return tag
   }
 
-  function updateTag(id: string, patch: Partial<Pick<Tag, 'label'>>) {
-    const tag = tags.value.find(t => t.id === id)
-    if (!tag) return
-    if (patch.label !== undefined) tag.label = patch.label.trim()
-  }
-
   function deleteTag(id: string) {
     if (id === PRIORITY_TAG_ID) return
     tags.value = tags.value.filter(t => t.id !== id)
@@ -138,10 +137,11 @@ export const useTodosStore = defineStore('todos', () => {
     // state
     todos, tags,
     // getters
-    activeTodos, todayTodos, archivedTodos, userTags,
+    activeTodos, todayTodos, userTags,
+    completedOn, workedOn,
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
-    addTag, updateTag, deleteTag, ensureSystemTags,
+    addTag, deleteTag, ensureSystemTags,
     importData,
   }
 }, {

@@ -12,6 +12,7 @@ import './styles/tablet.css'
 import './styles/mobile.css'
 import App from './App.vue'
 import { applyTheme } from './composables/useTheme'
+import { applyAppFonts } from './composables/useAppFonts'
 import { seedDevData } from './dev/seed'
 
 // Apply persisted theme before mount to avoid flash of default colors
@@ -22,6 +23,9 @@ try {
     if (activeBg && activeGray) applyTheme(activeBg, activeGray)
   }
 } catch { /* ignore */ }
+
+// Fonts settled on Caveat (playful) + Anonymous Pro (mono) — no picker needed.
+applyAppFonts('Caveat', 'Anonymous Pro')
 
 if (import.meta.env.DEV) seedDevData()
 

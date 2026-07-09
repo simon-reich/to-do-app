@@ -1,3 +1,6 @@
+/* Breakpoint convention (canonical values + where responsive CSS
+   belongs): see top of base.css. This file is for App.vue's own shell
+   markup only — other components keep their responsive CSS inline. */
 @media (max-width: 700px) {
   .desktop-only {
     display: none !important;
@@ -71,41 +74,23 @@
     padding: 9px 14px;
   }
 
-  /* ── Tags toggle button ── */
+  /* ── Tags toggle button (color/hover shared in layout.css) ── */
   .mobile-tags-btn {
-    background: none;
-    border: none;
-    color: var(--ink);
-    cursor: pointer;
     padding: 4px;
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    transition: color 0.15s;
   }
 
-  .mobile-tags-btn:hover {
-    color: var(--ink-dark);
-  }
-
-  /* ── Tag panel (full screen overlay) ── */
+  /* ── Tag panel (full screen overlay; shared bits in layout.css) ──
+     display:none must stay here (not hoisted to layout.css): .mobile-only
+     already makes this element flex on mobile for its "always visible"
+     elements, but this one needs to default to hidden even on mobile,
+     only shown via .mobile-tags-open below — so it has to come after
+     .mobile-only's flex in this same file to win the tie. */
   .mobile-tags-panel {
     display: none;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
     bottom: 60px;
-    left: 0;
-    right: 0;
-    background: var(--bg);
-    z-index: 15;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
-  }
-
-  .mobile-tags-panel::-webkit-scrollbar {
-    display: none;
   }
 
   .mobile-tags-open .mobile-tags-panel {
@@ -138,32 +123,18 @@
 
   .tags-scroll-divider {
     position: absolute;
-    left: 14px;
-    right: 14px;
+    left: 0;
+    right: 0;
     bottom: 0;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
-  }
-
-  .tags-scroll-divider.visible {
-    background: var(--ink);
   }
 
   .tags-scroll-divider-bottom {
     position: fixed;
     bottom: 60px;
-    left: 14px;
-    right: 14px;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
+    left: 0;
+    right: 0;
     z-index: 19;
     pointer-events: none;
-  }
-
-  .tags-scroll-divider-bottom.visible {
-    background: var(--ink);
   }
 
   .mobile-tag-list {
@@ -171,27 +142,6 @@
     flex: 1;
     align-items: stretch;
     gap: 20px;
-  }
-
-  .mobile-all-priority-row {
-    display: flex;
-    justify-content: center;
-    gap: 7px;
-  }
-
-  .mobile-tag-chip-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-content: flex-start;
-    gap: 7px;
-  }
-
-  /* The desktop sidebar's stacked-list spacing (all/priority get extra
-     margin-bottom to visually separate them from the tag rows below)
-     doesn't apply here — the row/list gaps handle spacing instead. */
-  .mobile-all-priority-row .all-btn {
-    margin-bottom: 0;
   }
 
   /* ── Main content ── */
@@ -209,26 +159,14 @@
     padding: 40px 14px 60px;
   }
 
-  /* ── Top scroll divider: inset like Calendar's, not edge-to-edge ── */
-  .scroll-divider {
-    margin: 0 14px;
-  }
-
   /* ── Bottom scroll divider ── */
   .scroll-divider-bottom {
     position: fixed;
     bottom: 60px;
-    left: 14px;
-    right: 14px;
-    height: 2px;
-    background: transparent;
-    transition: background 0.2s;
+    left: 0;
+    right: 0;
     z-index: 19;
     pointer-events: none;
-  }
-
-  .scroll-divider-bottom.visible {
-    background: var(--ink);
   }
 
   /* ── Bottom nav ── */
@@ -264,30 +202,5 @@
   .toast {
     left: 50%;
     top: 72px;
-  }
-
-  /* ── Dev-only: scroll-divider style preview (see stores/dev.ts) ──
-     "full" removes the inset on every scroll divider, edge to edge.
-     "inset-narrow" keeps the normal divider inset but widens the content
-     padding so the content reads narrower than the divider lines. */
-  #app.dev-divider-full .scroll-divider {
-    margin: 0 -14px;
-  }
-
-  #app.dev-divider-full .scroll-divider-bottom,
-  #app.dev-divider-full .day-scroll-divider-bottom,
-  #app.dev-divider-full .tags-scroll-divider,
-  #app.dev-divider-full .tags-scroll-divider-bottom {
-    left: 0;
-    right: 0;
-  }
-
-  #app.dev-divider-full .day-scroll-divider {
-    margin: 0 -14px;
-  }
-
-  #app.dev-divider-inset-narrow .content-inner {
-    padding-left: 22px;
-    padding-right: 22px;
   }
 }

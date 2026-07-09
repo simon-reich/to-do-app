@@ -4,14 +4,10 @@ import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, CircleArrowLeft, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
-import { useFontLabStore } from './stores/fontlab'
-import { useDevStore } from './stores/dev'
-import { useOverflowSpacer } from './composables/useOverflowSpacer'
-import TagSelectModal from './components/TagSelectModal.vue'
+import { useScrollTracking } from './composables/useScrollTracking'
+import ScrollDivider from './components/ScrollDivider.vue'
 
 const themeStore = useThemeStore()
-const devStore = useDevStore()
-useFontLabStore()
 
 let lastViewportHeight = 0
 function onViewportResize() {
@@ -27,25 +23,12 @@ function onViewportResize() {
 onMounted(() => {
   store.ensureSystemTags()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
-  nextTick(checkScrollState)
   lastViewportHeight = window.visualViewport?.height ?? 0
   window.visualViewport?.addEventListener('resize', onViewportResize)
-
-  if (contentInnerRef.value) {
-    contentResizeObserver = new ResizeObserver(checkScrollState)
-    contentResizeObserver.observe(contentInnerRef.value)
-  }
-
-  if (tagsListInnerRef.value) {
-    tagsResizeObserver = new ResizeObserver(checkTagsPanelScrollState)
-    tagsResizeObserver.observe(tagsListInnerRef.value)
-  }
 })
 
 onUnmounted(() => {
   window.visualViewport?.removeEventListener('resize', onViewportResize)
-  contentResizeObserver?.disconnect()
-  tagsResizeObserver?.disconnect()
 })
 
 const store = useTodosStore()
@@ -168,25 +151,16 @@ provide('sortKey', sortKey)
 
 // ── Scroll dividers ──
 const mainContentRef = useTemplateRef<HTMLElement>('mainContent')
-const isScrolled = ref(false)
-const isScrolledToBottom = ref(true)
+const contentInnerRef = useTemplateRef<HTMLElement>('contentInner')
 const bottomSpacerRef = useTemplateRef<HTMLElement>('bottomSpacer')
-const { overflows: mainContentOverflows, check: checkMainContentOverflow } = useOverflowSpacer()
-
-function checkScrollState() {
-  const el = mainContentRef.value
-  const inner = contentInnerRef.value
-  if (!el) return
-  isScrolled.value = el.scrollTop > 0
-  isScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
-  checkMainContentOverflow(el, inner, bottomSpacerRef.value)
-}
+const {
+  scrolled: isScrolled,
+  scrolledToBottom: isScrolledToBottom,
+  spacerHeight: mainContentSpacerHeight,
+  check: checkScrollState,
+} = useScrollTracking({ scrollEl: mainContentRef, contentEl: contentInnerRef, spacerEl: bottomSpacerRef, targetGap: 60 })
 
 function onScroll() { checkScrollState() }
-
-const contentInnerRef = useTemplateRef<HTMLElement>('contentInner')
-let contentResizeObserver: ResizeObserver | null = null
-let tagsResizeObserver: ResizeObserver | null = null
 
 // ── Sidebar scroll divider ──
 const sidebarRef = ref<HTMLElement | null>(null)
@@ -198,17 +172,13 @@ function onSidebarScroll() {
 // ── Mobile tags panel scroll divider ──
 const tagsPanelRef = ref<HTMLElement | null>(null)
 const tagsListInnerRef = useTemplateRef<HTMLElement>('tagsListInner')
-const tagsPanelScrolled = ref(false)
-const tagsPanelScrolledToBottom = ref(true)
 const tagsBottomSpacerRef = useTemplateRef<HTMLElement>('tagsBottomSpacer')
-const { overflows: tagsPanelOverflows, check: checkTagsPanelOverflow } = useOverflowSpacer()
-function checkTagsPanelScrollState() {
-  const el = tagsPanelRef.value
-  if (!el) return
-  tagsPanelScrolled.value = el.scrollTop > 0
-  tagsPanelScrolledToBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
-  checkTagsPanelOverflow(el, el, tagsBottomSpacerRef.value)
-}
+const {
+  scrolled: tagsPanelScrolled,
+  scrolledToBottom: tagsPanelScrolledToBottom,
+  spacerHeight: tagsPanelSpacerHeight,
+  check: checkTagsPanelScrollState,
+} = useScrollTracking({ scrollEl: tagsPanelRef, resizeTarget: tagsListInnerRef, spacerEl: tagsBottomSpacerRef, targetGap: 44 })
 function onTagsPanelScroll() { checkTagsPanelScrollState() }
 
 watch(showMobileTags, (open) => {
@@ -232,8 +202,6 @@ watch(() => route.path, () => {
       'is-settings': route.path === '/settings',
       'is-calendar': route.path === '/calendar',
       'mobile-tags-open': showMobileTags,
-      'dev-divider-full': devStore.dividerStyle === 'full',
-      'dev-divider-inset-narrow': devStore.dividerStyle === 'inset-narrow',
     }"
   >
 
@@ -316,7 +284,7 @@ watch(() => route.path, () => {
 
     <!-- ══ DESKTOP: Sidebar body (tag list) ══ -->
     <aside ref="sidebarRef" class="sidebar desktop-only" @scroll="onSidebarScroll">
-      <div class="sidebar-scroll-divider" :class="{ visible: sidebarScrolled }" />
+      <ScrollDivider class="sidebar-scroll-divider" :visible="sidebarScrolled" />
       <div class="tag-list">
         <button
           class="all-btn"
@@ -392,7 +360,7 @@ watch(() => route.path, () => {
           </button>
         </div>
 
-        <div class="tags-scroll-divider" :class="{ visible: tagsPanelScrolled }" />
+        <ScrollDivider class="tags-scroll-divider" :visible="tagsPanelScrolled" />
       </div>
 
       <div ref="tagsListInner" class="tag-list mobile-tag-list">
@@ -410,22 +378,22 @@ watch(() => route.path, () => {
             <button class="tag-x" title="Delete" @click="handleDeleteTag(tag.id, tag.label)">×</button>
           </div>
         </div>
-        <div ref="tagsBottomSpacer" class="bottom-breathing-spacer" :style="{ height: tagsPanelOverflows ? '44px' : '0px' }" />
+        <div ref="tagsBottomSpacer" class="bottom-breathing-spacer" :style="{ height: tagsPanelSpacerHeight + 'px' }" />
       </div>
     </div>
-    <div v-if="showMobileTags" class="tags-scroll-divider-bottom mobile-only" :class="{ visible: !tagsPanelScrolledToBottom }" />
+    <ScrollDivider v-if="showMobileTags" class="tags-scroll-divider-bottom mobile-only" :visible="!tagsPanelScrolledToBottom" />
 
     <!-- ══ Main content ══ -->
     <main ref="mainContent" class="main-content" @scroll="onScroll">
-      <div class="scroll-divider" :class="{ visible: isScrolled }" />
+      <ScrollDivider class="scroll-divider" :visible="isScrolled" />
       <div ref="contentInner" class="content-inner">
         <RouterView />
-        <div v-if="route.path !== '/calendar'" ref="bottomSpacer" class="bottom-breathing-spacer" :style="{ height: mainContentOverflows ? '60px' : '0px' }" />
+        <div v-if="route.path !== '/calendar'" ref="bottomSpacer" class="bottom-breathing-spacer" :style="{ height: mainContentSpacerHeight + 'px' }" />
       </div>
     </main>
 
     <!-- ══ MOBILE: Bottom scroll divider (above bottom nav) ══ -->
-    <div class="scroll-divider-bottom mobile-only" :class="{ visible: !isScrolledToBottom }" />
+    <ScrollDivider class="scroll-divider-bottom mobile-only" :visible="!isScrolledToBottom" />
 
     <!-- ══ MOBILE: Bottom nav ══ -->
     <nav class="mobile-bottom-nav mobile-only">

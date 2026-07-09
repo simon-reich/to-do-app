@@ -52,7 +52,6 @@ export function seedDevData() {
   const todos = TITLES.map((title, i) => ({
     id: uuid(),
     title,
-    note: undefined,
     tags: [],
     createdAt: new Date(now.getTime() - i * 60_000).toISOString(),
     inToday: i % 5 === 0,

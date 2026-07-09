@@ -60,7 +60,6 @@ interface Tag {
 interface Todo {
   id: string            // uuid() mit Math.random()-Fallback für HTTP
   title: string
-  note?: string
   tags: string[]        // Tag-IDs
   createdAt: string     // ISO-Timestamp
   inToday: boolean
@@ -83,8 +82,6 @@ todo-app/
 ├── src/
 │   ├── components/
 │   │   ├── TodoCard.vue         // Karte mit Swipe-Gesten, Tag-Menü, Check-Menü (Focus)
-│   │   ├── TagBadge.vue         // Farbige Tag-Pille
-│   │   ├── TagSelectModal.vue   // Dropdown zum Tag-Auswählen (Add-Input + TodoCard)
 │   │   ├── ColorPicker.vue      // HSV-Farbwähler für Settings
 │   │   └── SettingsModal (entfernt – Settings ist eigene Route/View)
 │   ├── views/
@@ -139,8 +136,8 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 
 - **Kein Tagesreset mehr:** Die Focus-Liste (`inToday`) wird nicht mehr automatisch geleert und bleibt bestehen, bis sie manuell leergeräumt wird.
 - **Dark/Light Toggle:** Keins. Fixes Design (eine Variante).
-- **Todo-Erstellung:** Add-Input in App.vue (Main-Head), immer sichtbar. Enter speichert. Bei vorhandenen Tags öffnet sich TagSelectModal zur direkten Tag-Zuweisung.
-- **Zusatzfelder:** Tags direkt im Add-Input via TagSelectModal. Edit per Klick auf den Todo-Titel in der Karte (öffnet TagSelectModal).
+- **Todo-Erstellung:** Add-Input in App.vue (Main-Head), immer sichtbar. Enter speichert. Bei vorhandenen Tags öffnet sich eine inline Checkbox-Liste zur direkten Tag-Zuweisung.
+- **Zusatzfelder:** Tags direkt im Add-Input. Klick auf den Todo-Titel in der Karte öffnet Tag-Menü + Text-Edit (siehe TodoCard.vue).
 - **Mobile:** Vollständig responsive, mobile-first CSS.
 
 ## Abhaken in Focus – zwei Modi

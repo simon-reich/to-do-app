@@ -3,22 +3,11 @@ import { ref, watch } from 'vue'
 import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
-import { useFontLabStore } from '../stores/fontlab'
-import { useDevStore } from '../stores/dev'
 import { applyTheme } from '../composables/useTheme'
-import { PLAYFUL_FONTS, MONO_FONTS } from '../composables/useAppFonts'
 import ColorPicker from '../components/ColorPicker.vue'
 
 const { exportData, importData, exportThemes, importThemes } = useStorage()
 const themeStore = useThemeStore()
-const fontLabStore = useFontLabStore()
-const devStore = useDevStore()
-
-// Font lab picker is hidden for now (fonts settled on Caveat + Anonymous Pro) — flip to re-show.
-const SHOW_FONT_LAB = false
-
-// Divider style decided on 'full' — flip to re-show and compare again.
-const SHOW_DEV_TOOLS = false
 
 async function handleImport() {
   const confirmed = window.confirm('Import will replace all current data. Continue?')
@@ -88,7 +77,7 @@ function confirmDeleteTheme() {
         <button
           v-for="t in themeStore.savedThemes"
           :key="t.id"
-          class="theme-chip"
+          class="btn-outline theme-chip"
           :class="{ active: t.bg === themeStore.activeBg && t.gray === themeStore.activeGray }"
           @click="themeStore.loadTheme(t); pickerBg = t.bg; pickerGray = t.gray"
         >
@@ -104,8 +93,8 @@ function confirmDeleteTheme() {
       </div>
 
       <div class="theme-io-row">
-        <button class="theme-io-btn" @click="exportThemes">Export themes</button>
-        <button class="theme-io-btn" @click="importThemes">Import themes</button>
+        <button class="btn-outline" @click="exportThemes">Export themes</button>
+        <button class="btn-outline" @click="importThemes">Import themes</button>
       </div>
     </section>
 
@@ -113,8 +102,8 @@ function confirmDeleteTheme() {
     <section class="section">
       <h2 class="section-title">Corners</h2>
       <div class="option-row">
-        <button class="action-btn" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
-        <button class="action-btn" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
+        <button class="btn-outline" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
+        <button class="btn-outline" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
       </div>
     </section>
 
@@ -122,8 +111,8 @@ function confirmDeleteTheme() {
     <section class="section">
       <h2 class="section-title">Drop shadow</h2>
       <div class="option-row">
-        <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
-        <button class="action-btn" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
+        <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
+        <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
       </div>
     </section>
 
@@ -131,37 +120,8 @@ function confirmDeleteTheme() {
     <section class="section">
       <h2 class="section-title">Data</h2>
       <div class="btn-row">
-        <button class="action-btn" @click="exportData">Export todos</button>
-        <button class="action-btn" @click="handleImport">Import todos</button>
-      </div>
-    </section>
-
-    <!-- Dev: mobile scroll-divider preview (not an end-user setting) -->
-    <section v-if="SHOW_DEV_TOOLS" class="section">
-      <h2 class="section-title">Dev: divider style</h2>
-      <div class="option-row">
-        <button class="action-btn" :class="{ active: devStore.dividerStyle === 'full' }" @click="devStore.dividerStyle = 'full'">Full width</button>
-        <button class="action-btn" :class="{ active: devStore.dividerStyle === 'inset' }" @click="devStore.dividerStyle = 'inset'">Inset</button>
-        <button class="action-btn" :class="{ active: devStore.dividerStyle === 'inset-narrow' }" @click="devStore.dividerStyle = 'inset-narrow'">Inset + narrower content</button>
-      </div>
-    </section>
-
-    <!-- Fonts (test) -->
-    <section v-if="SHOW_FONT_LAB" class="section">
-      <h2 class="section-title">Fonts (test)</h2>
-      <div class="font-lab">
-        <label class="font-lab-field">
-          <span class="color-label">Playful (calendar + everything else)</span>
-          <select v-model="fontLabStore.playfulFont" class="font-lab-select">
-            <option v-for="f in PLAYFUL_FONTS" :key="f" :value="f">{{ f }}</option>
-          </select>
-        </label>
-        <label class="font-lab-field">
-          <span class="color-label">Mono (inputs, tags, values, buttons)</span>
-          <select v-model="fontLabStore.monoFont" class="font-lab-select">
-            <option v-for="f in MONO_FONTS" :key="f" :value="f">{{ f }}</option>
-          </select>
-        </label>
+        <button class="btn-outline" @click="exportData">Export todos</button>
+        <button class="btn-outline" @click="handleImport">Import todos</button>
       </div>
     </section>
 
@@ -269,7 +229,11 @@ function confirmDeleteTheme() {
   align-self: center;
 }
 
-.theme-io-btn {
+/* Shared outlined-pill look for every plain button in Settings (corners,
+   drop shadow, data import/export, theme import/export) plus the base for
+   .theme-chip below — must come before .theme-chip so its smaller
+   padding/font-size override this rule's, not the other way round. */
+.btn-outline {
   padding: 10px 20px;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
@@ -281,39 +245,29 @@ function confirmDeleteTheme() {
   transition: background 0.12s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
-.theme-io-btn:hover {
+.btn-outline:hover {
   border-color: var(--ink-dark);
   color: var(--ink-dark);
   box-shadow: 4px 4px 0 var(--ink-dark);
 }
 
+.btn-outline.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--priority-shadow);
+}
+
+/* theme-chip only needs to override the sizing/layout bits below — the
+   border/background/color/shadow/hover/active look comes from .btn-outline
+   above, shared with every other outlined button here. */
 .theme-chip {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 7px 12px 7px 10px;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink);
   font-size: 14px;
   font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
-  box-shadow: 4px 4px 0 var(--ink);
-}
-
-.theme-chip:hover {
-  border-color: var(--ink-dark);
-  color: var(--ink-dark);
-  box-shadow: 4px 4px 0 var(--ink-dark);
-}
-
-.theme-chip.active {
-  background: var(--ink);
-  color: var(--bg);
-  border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--priority-shadow);
 }
 
 .theme-chip.active .chip-delete {
@@ -366,53 +320,4 @@ function confirmDeleteTheme() {
   align-self: center;
 }
 
-.action-btn {
-  padding: 10px 20px;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink);
-  font-size: 15px;
-  cursor: pointer;
-  box-shadow: 4px 4px 0 var(--ink);
-  transition: background 0.12s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
-}
-
-.action-btn:hover {
-  border-color: var(--ink-dark);
-  color: var(--ink-dark);
-  box-shadow: 4px 4px 0 var(--ink-dark);
-}
-
-.action-btn.active {
-  background: var(--ink);
-  color: var(--bg);
-  border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--priority-shadow);
-}
-
-.font-lab {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.font-lab-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.font-lab-select {
-  padding: 9px 12px;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink-dark);
-  font-size: 15px;
-  outline: none;
-  cursor: pointer;
-}
-
-.font-lab-select:focus { border-color: var(--ink-dark); }
 </style>
