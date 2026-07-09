@@ -487,6 +487,10 @@ function armGripSafetyNet() {
 // of sync with a list that's scrolling underneath it.
 const isGripped = ref(false)
 const fixedOrigin = ref<{ top: number; left: number; width: number } | null>(null)
+// Bounds of the dimming backdrop (see swipe-backdrop below) — matches the
+// scroll-locked list container itself, so it only covers the todos and
+// never bleeds over the top bar / bottom nav.
+const backdropRect = ref<{ top: number; left: number; width: number; height: number } | null>(null)
 
 function onDragStart() {
   releaseGripFallback() // in case a previous gesture didn't clean up
@@ -499,6 +503,18 @@ function onDragStart() {
   swipeRelX.value = 0
   const rect = wrapRef.value?.getBoundingClientRect()
   if (rect) fixedOrigin.value = { top: rect.top, left: rect.left, width: rect.width }
+  const listRect = scrollLockEl?.getBoundingClientRect()
+  if (listRect) {
+    // .main-content's own box still geometrically extends behind the fixed
+    // mobile bottom nav (only its inner padding keeps content clear of it)
+    // — clip the backdrop to stop at the nav's top edge instead of matching
+    // the full box, or it visually covers the nav too.
+    let height = listRect.height
+    const bottomNav = document.querySelector<HTMLElement>('.mobile-bottom-nav')
+    const navRect = bottomNav?.getBoundingClientRect()
+    if (navRect && navRect.width > 0) height = Math.min(height, navRect.top - listRect.top)
+    backdropRect.value = { top: listRect.top, left: listRect.left, width: listRect.width, height }
+  }
 }
 
 function onDrag(_event: PointerEvent, info: PanInfo) {
@@ -624,11 +640,14 @@ onUnmounted(() => {
     >
       <Teleport to="body">
         <Transition name="swipe-indicator">
-          <span
-            v-if="isGripped"
-            class="swipe-indicator"
-            :class="{ armed: swipeArmed }"
-          >{{ swipeAction.label }}</span>
+          <div
+            v-if="isGripped && backdropRect"
+            class="swipe-backdrop"
+            :style="{ top: backdropRect.top + 'px', left: backdropRect.left + 'px', width: backdropRect.width + 'px', height: backdropRect.height + 'px' }"
+          >
+            <div class="swipe-backdrop-fill" :class="{ visible: swipeArmed }" />
+            <span class="swipe-indicator" :class="{ armed: swipeArmed }">{{ swipeAction.label }}</span>
+          </div>
         </Transition>
       </Teleport>
 
@@ -796,41 +815,65 @@ onUnmounted(() => {
   }
 }
 
-/* What-would-happen indicator (see swipeAction/swipeArmed) — teleported to
-   body so it always paints centered over the page, not tucked next to
-   whichever card happens to be dragged. Deliberately just dimmed type, no
-   box/border/icon — reads as ambient background text rather than a UI
-   element sitting on top of things. Sits above ordinary list content so
-   it's legible, but below the actively-gripped card itself (z-index: 9999,
-   see the wrapper's fixedOrigin style), which is always meant to read as
-   being in front of it. Only the opacity (never a new colour) distinguishes
-   "just previewing" from "this will fire on release", per the app's
-   dimming-via-opacity rule. */
-.swipe-indicator {
+/* What-would-happen layer (see swipeAction/swipeArmed) — teleported to body,
+   same weight/opacity as the delete-confirmation backdrop (.modal-backdrop),
+   deliberately unchanged regardless of armed state (only the label's own
+   size distinguishes previewing from armed — see .swipe-indicator.armed).
+   Sized and positioned to match the scroll-locked list container itself
+   (backdropRect, measured in onDragStart), so it covers only the todos —
+   never the top bar or bottom nav. Slots in between the rest of the list
+   (which it dims, like a modal would) and the actively-gripped card itself,
+   which stays on top of it at all times (z-index: 9999, see the wrapper's
+   fixedOrigin style) — so the card you're holding always reads as lifted
+   above everything, including this layer, while every other todo reads as
+   behind it. The fill and the label are siblings rather than the label
+   being a dimmed child, so the text itself stays fully legible. */
+.swipe-backdrop {
   position: fixed;
-  top: 42%;
-  left: 50%;
-  z-index: 60;
-  color: var(--ink);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.swipe-backdrop-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  opacity: 0;
+  /* Simple two-state fade tied directly to armedDir (via .visible) rather
+     than the continuous swipe distance — that version's target opacity
+     jumped the instant a release re-baselines the reference point (swipeRelX
+     snaps to 0 right as you land in Hold), which no transition duration
+     could smooth into the graceful fade this is going for. Hold itself
+     always reads as fully off; only entering/leaving an armed state fades. */
+  transition: opacity 0.3s ease-out;
+}
+
+.swipe-backdrop-fill.visible {
   opacity: 0.35;
+}
+
+.swipe-indicator {
+  position: relative;
+  color: var(--bg);
   font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  transition: opacity 0.15s, font-size 0.15s;
+  transition: font-size 0.15s;
 }
 
 .swipe-indicator.armed {
-  opacity: 1;
-  font-size: 26px;
+  font-size: 28px;
 }
 
 .swipe-indicator-enter-active,
 .swipe-indicator-leave-active {
-  transition: opacity 0.12s ease;
+  transition: opacity 0.1s ease;
 }
 
 .swipe-indicator-enter-from,
