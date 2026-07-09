@@ -90,6 +90,10 @@ import { ref as vueRef } from 'vue'
 // Shared across all instances – only one menu open at a time
 const openTagMenuId = vueRef<string | null>(null)
 const openCheckMenuId = vueRef<string | null>(null)
+// Set by navigateSibling right before opening the next/previous card, so
+// that card knows to jump straight into editing (carrying over whether
+// Tab was pressed while actively editing, not just while open).
+const editIntentId = vueRef<string | null>(null)
 </script>
 
 <script setup lang="ts">
@@ -101,6 +105,9 @@ const props = defineProps<{
   todo: Todo
   mode: 'all' | 'today'
   font?: string
+  /** Ids of every todo in the current list, in render order — lets Tab/
+   *  Shift+Tab jump straight to the next/previous card while one is open. */
+  siblingIds?: string[]
 }>()
 
 const store = useTodosStore()
@@ -132,10 +139,42 @@ function closeOnOutside(e: MouseEvent) {
   }
 }
 
+// Tab/Shift+Tab jump to the next/previous card in the list instead of
+// tabbing through individual tag checkboxes — carries the current
+// editing state along: tabbing away from an actively-edited title lands
+// in the next card's edit mode too, tabbing away from a merely-open card
+// just opens the next one the same way.
+function navigateSibling(direction: 1 | -1) {
+  const ids = props.siblingIds
+  if (!ids || ids.length < 2) return
+  const idx = ids.indexOf(props.todo.id)
+  if (idx === -1) return
+  const nextId = ids[(idx + direction + ids.length) % ids.length]
+  const wasEditing = isEditing.value
+  if (wasEditing) saveEdit()
+  if (wasEditing) editIntentId.value = nextId
+  if (props.mode === 'today') openCheckMenuId.value = nextId
+  else openTagMenuId.value = nextId
+}
+
+// Picks up the edit intent left by a sibling's navigateSibling() once this
+// card actually becomes the open one.
+watch(showTagMenu, (isOpen) => {
+  if (isOpen && editIntentId.value === props.todo.id) {
+    editIntentId.value = null
+    startEdit()
+  }
+})
+
 // Escape/Enter close the card when it's open but not being edited (the
 // textarea has its own Escape/Enter handlers for the editing case, and
 // ignoring them here keeps the two from double-handling the same key).
 function onCardKeydown(e: KeyboardEvent) {
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    navigateSibling(e.shiftKey ? -1 : 1)
+    return
+  }
   if (isEditing.value) return
   if (e.key !== 'Escape' && e.key !== 'Enter') return
   e.preventDefault()
