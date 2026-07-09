@@ -168,6 +168,7 @@ Das ursprüngliche minimalistische Design (Phase 1–8, vor dem Poppy-Redesign) 
 
 ## Entwicklungshinweise
 
+- **Paketmanager ist `pnpm`, nicht `npm`.** Es existiert nur eine `pnpm-lock.yaml`, keine `package-lock.json`. Installs/Updates also mit `pnpm add`/`pnpm install` ausführen.
 - IDs werden via `uuid()` in den Stores erzeugt – `crypto.randomUUID()` mit `Math.random()`-Fallback, damit die App auch über HTTP (non-secure context) funktioniert.
 - `pinia-plugin-persistedstate` übernimmt localStorage-Sync automatisch.
 - File API: `showSaveFilePicker`/`showOpenFilePicker` mit Fallback auf `a[download]` / `<input type="file">`.
