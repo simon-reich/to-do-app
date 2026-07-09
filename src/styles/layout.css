@@ -400,6 +400,14 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
+  /* Stops an overscroll at the top/bottom of this list from chaining up to
+     the document — which is exactly what triggers the browser's native
+     pull-to-refresh. This has to be a static rule: toggling it reactively
+     from JS once a drag gesture is recognized is always too late for a fast
+     gesture, since the browser already commits to native pull-to-refresh
+     handling right at touchstart, before any of our drag-recognition JS has
+     had a chance to run. */
+  overscroll-behavior-y: contain;
 }
 
 .main-content::-webkit-scrollbar {

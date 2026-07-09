@@ -93,8 +93,9 @@ const openCheckMenuId = vueRef<string | null>(null)
 </script>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { CirclePlus, CircleMinus, Circle, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
+import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
 import { useTodosStore, type Todo, PRIORITY_TAG_ID } from '../stores/todos'
 
 const props = defineProps<{
@@ -120,7 +121,9 @@ const showMenu = computed(() => openCheckMenuId.value === props.todo.id)
 const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
 
 function toggleCheckMenu() {
-  openCheckMenuId.value = openCheckMenuId.value === props.todo.id ? null : props.todo.id
+  const willOpen = openCheckMenuId.value !== props.todo.id
+  openCheckMenuId.value = willOpen ? props.todo.id : null
+  if (willOpen) nextTick(scrollCardIntoView)
 }
 
 const wrapRef = ref<HTMLElement | null>(null)
@@ -151,6 +154,13 @@ function toggleTagMenu() {
   const willOpen = openTagMenuId.value !== props.todo.id
   openTagMenuId.value = willOpen ? props.todo.id : null
   if (!willOpen && isEditing.value) saveEdit()
+  if (willOpen) nextTick(scrollCardIntoView)
+}
+
+// Clicking the empty space between tag chips (not a chip itself) closes the
+// card, same as clicking the title bar again would.
+function handleTagRowClick(e: MouseEvent) {
+  if (e.target === e.currentTarget) toggleTagMenu()
 }
 
 // Opens the card (if needed) and jumps straight into editing.
@@ -276,38 +286,105 @@ function handleDoneForToday(id: string) {
 }
 
 // ── Swipe ──────────────────────────────────────────────
+// `drag="x"` keeps touch-action: pan-y, so Motion itself makes the
+// scroll-vs-drag call the instant a touch starts, based on its initial
+// direction — a mostly-vertical gesture is left alone and scrolls the list
+// natively; a mostly-horizontal one is claimed as a drag. Only once Motion
+// has already committed to "this is a drag" do we manually mirror the
+// pointer's vertical offset onto `y` too (see onDrag/DRAG_ENGAGE_THRESHOLD),
+// so the card still follows the finger freely in every direction — without
+// ever having to fight the browser for scroll ownership.
 const swipeContainerRef = ref<HTMLElement | null>(null)
+const x = useMotionValue(0)
+const y = useMotionValue(0)
+const rotate = useTransform(x, [-200, 200], [-8, 8])
+// Raw mirrors of physical position (used for the elevated z-index / lifted
+// state only — that has to reflect the actual on-screen offset, not the
+// relative swipe measurement below). Derived directly from position rather
+// than tracked drag-start/drag-end bookkeeping, so it stays correct even if
+// a gesture gets interrupted (pointercancel, direction handed to native
+// scroll mid-drag, etc.) without a clean onDragEnd.
 const swipeX = ref(0)
-const activelySwiping = ref(false)
+const swipeY = ref(0)
 
-const SWIPE_THRESHOLD = 75
-const SWIPE_MAX = 110
+// Reveal indicator + action threshold are measured relative to the most
+// recent reference point, not the fixed spot where the grip started. `refX`
+// is that reference; `swipeRelX` is the live offset from it. It only moves
+// when the swipe genuinely *disarms* (see armedDir below) — not on every
+// tiny frame-to-frame wobble — so a straight swipe in one direction needs
+// exactly the same distance as the other, symmetrically.
+const swipeRelX = ref(0)
+let refX = 0
 
-let touchStartX = 0
-let touchStartY = 0
-let swipeDir: 'horizontal' | 'vertical' | null = null
+// Same threshold both directions — delete and move/complete both need the
+// identical amount of travel to fire. Lower than it first looks: short
+// todos near the screen edge simply don't have 75px of room to drag through
+// before hitting the edge of the viewport.
+const SWIPE_THRESHOLD = 45
+// Once armed, the swipe stays armed (and would still fire on release) even
+// if you ease back a little — it only disarms once you give back more than
+// this many pixels from the threshold. Without this, the tiniest give-back
+// snapped straight back to neutral and lost the pending action entirely.
+const DISARM_MARGIN = 24
+const DISARM_AT = SWIPE_THRESHOLD - DISARM_MARGIN
 
-function onTouchStart(e: TouchEvent) {
-  touchStartX = e.touches[0].clientX
-  touchStartY = e.touches[0].clientY
-  swipeDir = null
-}
+// The one authoritative "what would happen on release" state — the reveal
+// indicator and the actual onDragEnd decision both read this directly, so
+// what you see is always exactly what fires.
+const armedDir = ref<-1 | 0 | 1>(0)
 
-function onTouchMove(e: TouchEvent) {
-  const dx = e.touches[0].clientX - touchStartX
-  const dy = e.touches[0].clientY - touchStartY
+// Horizontal distance (from the grip's start, not the relative measurement
+// above) before the vertical follow kicks in — small enough to feel
+// instant, but enough to stay clear of Motion's own direction-lock tolerance
+// (so we never turn on a y-follow for what was actually a scroll).
+const DRAG_ENGAGE_THRESHOLD = 10
+const SPRING_BACK = { type: 'spring', stiffness: 500, damping: 32 } as const
 
-  if (swipeDir === null) {
-    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return
-    swipeDir = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical'
+// Lifted above every sibling card and the sticky header/bottom-nav for as
+// long as the card is visibly off-center — see the .dragging CSS comment.
+const isLifted = computed(() => swipeX.value !== 0 || swipeY.value !== 0)
+
+useMotionValueEvent(x, 'change', (latest) => {
+  swipeX.value = latest
+})
+useMotionValueEvent(y, 'change', (latest) => {
+  swipeY.value = latest
+})
+
+// One haptic tick exactly when the armed state changes (arms or disarms) —
+// not on every threshold-adjacent wobble.
+watch(armedDir, (dir, prev) => {
+  if (dir !== prev) navigator.vibrate?.(dir === 0 ? 8 : 12)
+})
+
+// Disabled while a menu/edit UI underneath is in use, so drag gestures don't
+// fight with taps on checkboxes/buttons revealed by the open card.
+const canDrag = computed(() => !isEditing.value && !showTagMenu.value && !showMenu.value)
+
+// What-would-happen indicator, shown centered over the whole page (via
+// Teleport) instead of pinned to the card — it now needs to stay legible and
+// on top of everything no matter where a free-form drag has carried the card.
+// Before arming, it still previews the nearer direction (a much smaller,
+// non-hysteresis threshold) so it doesn't stay blank for the first 45px.
+const REVEAL_THRESHOLD = 18
+const previewDir = computed<-1 | 0 | 1>(() => {
+  if (armedDir.value !== 0) return armedDir.value
+  if (swipeRelX.value > REVEAL_THRESHOLD) return 1
+  if (swipeRelX.value < -REVEAL_THRESHOLD) return -1
+  return 0
+})
+const swipeAction = computed(() => {
+  if (previewDir.value === 1) {
+    return props.mode === 'all'
+      ? { label: props.todo.inToday ? 'Remove' : 'Focus' }
+      : { label: 'Complete' }
   }
-
-  if (swipeDir !== 'horizontal') return
-
-  e.preventDefault()
-  activelySwiping.value = true
-  swipeX.value = Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx))
-}
+  if (previewDir.value === -1) {
+    return props.mode === 'all' ? { label: 'Delete' } : { label: 'Remove' }
+  }
+  return null
+})
+const swipeArmed = computed(() => armedDir.value !== 0)
 
 function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
   const el = swipeContainerRef.value
@@ -316,7 +393,7 @@ function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
   if (type === 'fly-right') {
     return el.animate(
       [
-        { transform: `translateX(${swipeX.value}px)`, opacity: 1 },
+        { transform: el.style.transform, opacity: 1 },
         { transform: 'translateX(150vw)', opacity: 0 },
       ],
       { duration: 240, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'forwards' },
@@ -333,18 +410,132 @@ function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
   }
 }
 
-async function onTouchEnd() {
-  if (!activelySwiping.value) {
-    swipeDir = null
-    return
+// touch-action: pan-y means the browser is *allowed* to natively scroll the
+// list at the same time Motion is handling our horizontal drag — on a
+// diagonal-enough gesture both can end up running at once (card dragging
+// while the list scrolls underneath it). Once Motion has actually committed
+// to a drag, we lock the nearest scrollable ancestor's own scrolling for the
+// duration, so gripping a card unambiguously owns the gesture.
+//
+// Pull-to-refresh is a separate, page-level overscroll-chaining gesture and
+// can't be locked reactively here the same way: the browser decides whether
+// to hand a touch to native pull-to-refresh right at touchstart, before any
+// of this component's JS has run, so a fast downward drag can trigger it
+// before onDragStart even fires. That's instead fixed permanently via
+// `overscroll-behavior-y: contain` on .main-content (see layout.css), which
+// stops the chaining at the CSS level from the very first touch, every time.
+let scrollLockEl: HTMLElement | null = null
+
+function lockScroll() {
+  let node = swipeContainerRef.value?.parentElement ?? null
+  while (node && node !== document.body) {
+    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) {
+      scrollLockEl = node
+      node.style.overflowY = 'hidden'
+      return
+    }
+    node = node.parentElement
+  }
+}
+
+function unlockScroll() {
+  if (scrollLockEl) {
+    scrollLockEl.style.overflowY = ''
+    scrollLockEl = null
+  }
+}
+
+// Safety net: if the gesture ever ends without Motion calling onDragEnd
+// (a stray pointercancel, the tab losing focus mid-drag, etc.), the lock
+// above would otherwise stay stuck forever — leaving .main-content
+// permanently unscrollable, breaking things as unrelated as the
+// scroll-into-view on opening the edit textarea. Same story for `isGripped`:
+// stuck true would leave the card permanently position:fixed. Any pointer
+// going up or cancelling anywhere always releases both, regardless of how
+// the drag ended.
+function releaseGripFallback() {
+  unlockScroll()
+  isGripped.value = false
+  window.removeEventListener('pointerup', releaseGripFallback)
+  window.removeEventListener('pointercancel', releaseGripFallback)
+}
+
+function armGripSafetyNet() {
+  window.addEventListener('pointerup', releaseGripFallback, { once: true })
+  window.addEventListener('pointercancel', releaseGripFallback, { once: true })
+}
+
+// `.main-content` (and similar scrollable ancestors) clip anything that's
+// dragged past their own box edges via their own overflow — no z-index can
+// out-rank that, it's a completely separate clipping mechanism. So while
+// actually gripped, the card's wrapper switches to position:fixed at its
+// current on-screen spot (escaping that clipping and any ancestor stacking
+// entirely — it now paints at the true top of the page) and only returns to
+// normal flow the instant the grip ends. Scroll is locked for the whole
+// gripped duration anyway, so there's no risk of the fixed card drifting out
+// of sync with a list that's scrolling underneath it.
+const isGripped = ref(false)
+const fixedOrigin = ref<{ top: number; left: number; width: number } | null>(null)
+
+function onDragStart() {
+  releaseGripFallback() // in case a previous gesture didn't clean up
+  lockScroll()
+  armGripSafetyNet()
+  isGripped.value = true
+  refX = 0
+  armedDir.value = 0
+  swipeRelX.value = 0
+  const rect = wrapRef.value?.getBoundingClientRect()
+  if (rect) fixedOrigin.value = { top: rect.top, left: rect.left, width: rect.width }
+}
+
+function onDrag(_event: PointerEvent, info: PanInfo) {
+  const rel = info.offset.x - refX
+
+  if (armedDir.value === 0) {
+    if (rel > SWIPE_THRESHOLD) armedDir.value = 1
+    else if (rel < -SWIPE_THRESHOLD) armedDir.value = -1
+  } else if (
+    (armedDir.value === 1 && rel < DISARM_AT) ||
+    (armedDir.value === -1 && rel > -DISARM_AT)
+  ) {
+    // Given back more than the margin — this position becomes the new
+    // reference point, so swiping back the other way from here needs the
+    // same full threshold again, not a discount for however far we'd
+    // already come in the original direction.
+    refX = info.offset.x
+    armedDir.value = 0
   }
 
-  const x = swipeX.value
-  swipeX.value = 0
-  activelySwiping.value = false
-  swipeDir = null
+  swipeRelX.value = info.offset.x - refX
 
-  if (x < -SWIPE_THRESHOLD) {
+  if (Math.abs(info.offset.x) > DRAG_ENGAGE_THRESHOLD) {
+    y.set(info.offset.y)
+  }
+}
+
+function springBackToCenter() {
+  animate(x, 0, SPRING_BACK)
+  animate(y, 0, SPRING_BACK)
+}
+
+// Reads the same `armedDir` the indicator itself displays — whatever it was
+// showing on screen the instant the finger lifts is exactly what fires,
+// vertical movement never factors in, and it never fires mid-gesture.
+async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
+  window.removeEventListener('pointerup', releaseGripFallback)
+  window.removeEventListener('pointercancel', releaseGripFallback)
+  unlockScroll()
+  isGripped.value = false
+  const swipedLeft = armedDir.value === -1
+  const swipedRight = armedDir.value === 1
+  refX = 0
+  armedDir.value = 0
+  swipeRelX.value = 0
+
+  if (swipedLeft) {
+    x.set(0)
+    y.set(0)
     if (props.mode === 'all') {
       await animateOut('puff')
       emit('delete', props.todo.id)
@@ -352,24 +543,26 @@ async function onTouchEnd() {
       await animateOut('puff')
       emit('remove-from-today', props.todo.id)
     }
-  } else if (x > SWIPE_THRESHOLD) {
+  } else if (swipedRight) {
     if (props.mode === 'all') {
+      x.set(0)
+      y.set(0)
       await animateOut('fly-right')
       if (!props.todo.inToday) emit('send-to-today', props.todo.id)
       else emit('remove-from-today', props.todo.id)
     } else {
       openCheckMenuId.value = props.todo.id
-      swipeX.value = 0
+      springBackToCenter()
     }
+  } else {
+    springBackToCenter()
   }
 }
 
-onMounted(() => {
-  swipeContainerRef.value?.addEventListener('touchmove', onTouchMove, { passive: false })
-})
-
 onUnmounted(() => {
-  swipeContainerRef.value?.removeEventListener('touchmove', onTouchMove)
+  window.removeEventListener('pointerup', releaseGripFallback)
+  window.removeEventListener('pointercancel', releaseGripFallback)
+  unlockScroll()
   if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
   if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
   if (titleClickTimer) clearTimeout(titleClickTimer)
@@ -377,44 +570,43 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="wrapRef" class="todo-card-wrap" :class="{ 'tag-editing': showTagMenu }">
+  <div
+    ref="wrapRef"
+    class="todo-card-wrap"
+    :class="{ 'tag-editing': showTagMenu, dragging: isLifted }"
+    :style="isGripped && fixedOrigin ? {
+      position: 'fixed',
+      top: fixedOrigin.top + 'px',
+      left: fixedOrigin.left + 'px',
+      width: fixedOrigin.width + 'px',
+      zIndex: 9999,
+    } : undefined"
+  >
     <div
       ref="swipeContainerRef"
       class="swipe-container"
-      :class="{ priority: isPriority, open: showMenu || showTagMenu }"
-      @touchstart="onTouchStart"
-      @touchend="onTouchEnd"
+      :class="{ open: showMenu || showTagMenu }"
     >
-      <!-- Revealed when swiping right (left-side background) -->
-      <div class="swipe-bg swipe-bg--right" :class="{ active: swipeX > 30 }">
-        <template v-if="mode === 'all'">
-          <component :is="todo.inToday ? CircleMinus : CirclePlus" :size="18" />
-          <span>{{ todo.inToday ? 'Remove' : 'Focus' }}</span>
-        </template>
-        <template v-else>
-          <Circle :size="18" />
-          <span>Complete</span>
-        </template>
-      </div>
-      <!-- Revealed when swiping left (right-side background) -->
-      <div class="swipe-bg swipe-bg--left" :class="{ active: swipeX < -30 }">
-        <template v-if="mode === 'all'">
-          <Trash2 :size="18" />
-          <span>Delete</span>
-        </template>
-        <template v-else>
-          <CircleMinus :size="18" />
-          <span>Remove</span>
-        </template>
-      </div>
+      <Teleport to="body">
+        <Transition name="swipe-indicator">
+          <span
+            v-if="isGripped && swipeAction"
+            class="swipe-indicator"
+            :class="{ armed: swipeArmed }"
+          >{{ swipeAction.label }}</span>
+        </Transition>
+      </Teleport>
 
-      <div
+      <motion.div
         class="todo-card"
-        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu }"
-        :style="{
-          transform: `translateX(${swipeX}px)`,
-          transition: activelySwiping ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
-        }"
+        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: isPriority }"
+        :style="{ x, y, rotate }"
+        :drag="canDrag ? 'x' : false"
+        :drag-momentum="false"
+        :while-drag="{ scale: 1.05 }"
+        @drag-start="onDragStart"
+        @drag="onDrag"
+        @drag-end="onDragEnd"
       >
         <div class="todo-card-main" @click.stop="mode === 'today' ? toggleCheckMenu() : toggleTagMenu()">
           <textarea
@@ -499,7 +691,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop>
+        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
           <template v-if="store.tags.length">
             <label
               v-for="tag in store.tags"
@@ -513,7 +705,7 @@ onUnmounted(() => {
           </template>
           <span v-else class="tag-row-empty">No tags yet</span>
         </div>
-      </div>
+      </motion.div>
     </div>
   </div>
 </template>
@@ -530,14 +722,21 @@ onUnmounted(() => {
   scroll-margin-top: 16px;
 }
 
+/* Lifts the gripped card above every sibling card (which would otherwise
+   paint over it per normal DOM order) and above the sticky mobile header /
+   bottom nav (both z-index: 20, see mobile.css) while it's being dragged
+   around freely. */
+.todo-card-wrap.dragging {
+  z-index: 25;
+}
+
+/* No overflow:hidden here — the dragged card must stay fully visible while
+   it's pulled past the reveal panels, instead of getting clipped away at the
+   container edge (which reads as if the delete already fired mid-drag). */
 .swipe-container {
   position: relative;
   display: inline-flex;
-  overflow: hidden;
-  border-radius: var(--radius);
-  border: 2px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
-  transition: border-color 0.12s, box-shadow 0.12s, transform 0.15s;
+  transition: transform 0.15s;
 }
 
 /* Closed cards puff up a touch on hover — real mouse devices only (see
@@ -549,36 +748,46 @@ onUnmounted(() => {
   }
 }
 
-.swipe-bg {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 16px;
-  font-size: 12px;
+/* What-would-happen indicator (see swipeAction/swipeArmed) — teleported to
+   body so it always paints centered over the page, not tucked next to
+   whichever card happens to be dragged. Deliberately just dimmed type, no
+   box/border/icon — reads as ambient background text rather than a UI
+   element sitting on top of things. Sits above ordinary list content so
+   it's legible, but below the actively-gripped card itself (z-index: 9999,
+   see the wrapper's fixedOrigin style), which is always meant to read as
+   being in front of it. Only the opacity (never a new colour) distinguishes
+   "just previewing" from "this will fire on release", per the app's
+   dimming-via-opacity rule. */
+.swipe-indicator {
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  z-index: 60;
+  color: var(--ink);
+  opacity: 0.35;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--bg);
-  opacity: 0;
-  transition: opacity 0.15s;
-  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.15s, font-size 0.15s;
 }
 
-.swipe-bg.active {
+.swipe-indicator.armed {
   opacity: 1;
+  font-size: 26px;
 }
 
-.swipe-bg--right {
-  left: 0;
-  background: var(--ink);
+.swipe-indicator-enter-active,
+.swipe-indicator-leave-active {
+  transition: opacity 0.12s ease;
 }
 
-.swipe-bg--left {
-  right: 0;
-  background: var(--ink);
+.swipe-indicator-enter-from,
+.swipe-indicator-leave-to {
+  opacity: 0;
 }
 
 .todo-card {
@@ -588,6 +797,11 @@ onUnmounted(() => {
   font-size: 17px;
   color: var(--ink);
   max-width: 600px;
+  border-radius: var(--radius);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  overflow: hidden;
+  transition: border-color 0.12s, box-shadow 0.12s;
 }
 
 /* While editing a todo's tags, the card grows to fill the row's available
@@ -609,13 +823,9 @@ onUnmounted(() => {
   max-width: none;
 }
 
-.priority {
+.todo-card.priority {
   border-color: var(--ink);
   box-shadow: 5px 5px 0 var(--priority-shadow);
-  background: var(--ink);
-}
-
-.priority .todo-card {
   background: var(--ink);
   color: var(--bg);
 }
