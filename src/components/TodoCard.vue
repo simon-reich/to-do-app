@@ -95,7 +95,7 @@ const openCheckMenuId = vueRef<string | null>(null)
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, CircleCheck } from '@lucide/vue'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
 import { useTodosStore, type Todo } from '../stores/todos'
 
 const props = defineProps<{
@@ -157,8 +157,35 @@ function toggleTagMenu() {
   showMenu.value = false
   const willOpen = openTagMenuId.value !== props.todo.id
   openTagMenuId.value = willOpen ? props.todo.id : null
-  if (willOpen) startEdit()
-  else saveEdit()
+  if (!willOpen && isEditing.value) saveEdit()
+}
+
+// Opens the card (if needed) and jumps straight into editing.
+function openForEdit() {
+  openTagMenuId.value = props.todo.id
+  startEdit()
+}
+
+// Manual single/double click detection on the title, instead of the native
+// dblclick event — that fires two real `click`s first (which would toggle
+// the card open then shut again before the dblclick lands), and mobile
+// browsers often don't fire it reliably for a double-tap at all. A plain
+// click is held back briefly to see if a second one follows; if so, it's
+// treated as a double-click and opens straight into editing instead.
+let titleClickTimer: ReturnType<typeof setTimeout> | null = null
+
+function handleTitleClick() {
+  if (titleClickTimer) {
+    clearTimeout(titleClickTimer)
+    titleClickTimer = null
+    if (props.mode === 'all') openForEdit()
+    return
+  }
+  titleClickTimer = setTimeout(() => {
+    titleClickTimer = null
+    if (props.mode === 'today') toggleCheckMenu()
+    else toggleTagMenu()
+  }, 280)
 }
 
 function updateTags(tags: string[]) {
@@ -352,6 +379,7 @@ onUnmounted(() => {
   swipeContainerRef.value?.removeEventListener('touchmove', onTouchMove)
   if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
   if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
+  if (titleClickTimer) clearTimeout(titleClickTimer)
 })
 </script>
 
@@ -413,13 +441,21 @@ onUnmounted(() => {
             v-else
             class="todo-title"
             :style="font ? { fontFamily: font } : {}"
+            @click.stop="handleTitleClick"
           >{{ todo.title }}</span>
 
-          <!-- When card is open (all mode): editing is already active (see
-               toggleTagMenu) — this just accepts + closes the card. -->
-          <template v-if="showTagMenu && mode === 'all'">
+          <!-- When card is open (all mode): pencil starts editing; once
+               editing, it swaps to the accept/check button. -->
+          <template v-if="showTagMenu && mode === 'all' && !isEditing">
+            <button class="card-btn card-btn--edit" title="Edit" @click.stop="startEdit">
+              <Pencil :size="10" />
+            </button>
+          </template>
+
+          <!-- Saves + closes the card once editing is active. -->
+          <template v-else-if="showTagMenu && mode === 'all' && isEditing">
             <button class="card-btn card-btn--edit" title="Accept" @click.stop="acceptEdit">
-              <CircleCheck :size="18" />
+              <Check :size="11" />
             </button>
           </template>
 
@@ -671,15 +707,16 @@ onUnmounted(() => {
   .card-btn:hover { color: var(--ink-dark); }
 }
 
-/* .todo-card-main aligns to flex-start so multi-line titles keep their
-   icons pinned to the top line — but the accept button sits next to a
-   single-line input, so it should center on that line instead. Nudged up
-   slightly because the input's own bottom padding/border (for the
-   underline) sit below the text, skewing the plain center down. */
+/* Deliberately no align-self override — this sits in the exact same spot
+   as the plain trash/plus/minus icons (which rely on .todo-card-main's own
+   flex-start alignment), just swapped in conditionally. Sized to match
+   CirclePlus's own 18px footprint. */
 .card-btn--edit {
-  align-self: center;
-  position: relative;
-  top: -2px;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
 }
 
 .title-input {
