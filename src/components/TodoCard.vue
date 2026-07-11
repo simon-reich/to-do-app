@@ -276,27 +276,35 @@ function onExpandEnter(el: Element, done: () => void) {
   const e = el as HTMLElement
   if (window.innerWidth > DESKTOP_BREAKPOINT) { done(); return }
   e.style.height = '0px'
+  e.style.opacity = '0'
   e.style.overflow = 'hidden'
   requestAnimationFrame(() => {
-    e.style.transition = 'height 0.22s ease-out'
+    e.style.transition = 'height 0.2s ease-out, opacity 0.2s ease-out'
     e.style.height = `${e.scrollHeight}px`
+    e.style.opacity = '1'
   })
   e.addEventListener('transitionend', () => {
     e.style.height = ''
+    e.style.opacity = ''
     e.style.overflow = ''
     e.style.transition = ''
     done()
   }, { once: true })
 }
 
+// Closing is quicker than opening and fades out alongside the height
+// collapse — a plain height-only collapse at the same speed as opening
+// read as slow and let the shrinking content visibly squash instead of
+// just disappearing.
 function onExpandLeave(el: Element, done: () => void) {
   const e = el as HTMLElement
   if (window.innerWidth > DESKTOP_BREAKPOINT) { done(); return }
   e.style.height = `${e.scrollHeight}px`
   e.style.overflow = 'hidden'
   requestAnimationFrame(() => {
-    e.style.transition = 'height 0.22s ease-out'
+    e.style.transition = 'height 0.12s ease-in, opacity 0.1s ease-in'
     e.style.height = '0px'
+    e.style.opacity = '0'
   })
   e.addEventListener('transitionend', () => done(), { once: true })
 }
