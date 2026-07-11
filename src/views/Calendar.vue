@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
+import { motion } from 'motion-v'
 import { useTodosStore } from '../stores/todos'
 import { useScrollTracking } from '../composables/useScrollTracking'
 import ScrollDivider from '../components/ScrollDivider.vue'
@@ -125,7 +126,12 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 
 <template>
   <div ref="viewRef" class="calendar-view" tabindex="0" @keydown="onKeydown">
-    <div class="calendar-inner">
+    <motion.div
+      class="calendar-inner"
+      :initial="{ opacity: 0, scale: 0.96 }"
+      :animate="{ opacity: 1, scale: 1 }"
+      :transition="{ type: 'spring', stiffness: 380, damping: 26, mass: 0.8 }"
+    >
       <VCalendar
         ref="calendarRef"
         class="cal"
@@ -134,30 +140,38 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
         locale="en"
         @dayclick="onDayClick"
       />
-    </div>
+    </motion.div>
 
     <ScrollDivider class="day-scroll-divider" :visible="dayDetailScrolled" />
 
     <div ref="dayDetailScrollRef" class="day-detail-scroll" @scroll="onDayDetailScroll">
-    <transition name="fade">
       <div ref="dayDetailRef" class="day-detail calendar-inner">
-        <p class="day-label">{{ selectedDateLabel }}</p>
+        <transition
+          name="unfold"
+          mode="out-in"
+          appear
+          appear-active-class="unfold-appear-active"
+          appear-from-class="unfold-appear-from"
+        >
+          <div :key="selectedDate" class="day-detail-content">
+            <p class="day-label">{{ selectedDateLabel }}</p>
 
-        <div v-if="hasActivity" class="day-items">
-          <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
-            <span class="icon icon--done">✓✓</span>{{ todo.title }}
-          </div>
-          <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
-          <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
-            <span class="icon icon--worked">✓</span>{{ todo.title }}
-          </div>
-        </div>
+            <div v-if="hasActivity" class="day-items">
+              <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
+                <span class="icon icon--done">✓✓</span>{{ todo.title }}
+              </div>
+              <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
+              <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
+                <span class="icon icon--worked">✓</span>{{ todo.title }}
+              </div>
+            </div>
 
-        <p v-else class="no-activity">No activity for this day.</p>
+            <p v-else class="no-activity">No activity for this day.</p>
+          </div>
+        </transition>
 
         <div ref="dayDetailBottomSpacerRef" class="bottom-breathing-spacer" :style="{ height: dayDetailSpacerHeight + 'px' }" />
       </div>
-    </transition>
     </div>
 
     <ScrollDivider class="day-scroll-divider-bottom" :visible="!dayDetailScrolledToBottom" />
@@ -249,6 +263,14 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   margin: 0 auto;
 }
 
+.day-detail-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+}
+
 .day-label {
   font-size: 24px;
   font-weight: 600;
@@ -308,10 +330,17 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
   font-family: var(--font-playful, sans-serif);
 }
 
-.fade-enter-active,
-.fade-leave-active { transition: opacity 0.12s, transform 0.12s; }
-.fade-enter-from,
-.fade-leave-to { opacity: 0; transform: translateY(4px); }
+.unfold-enter-active,
+.unfold-leave-active { transition: opacity 0.09s; }
+.unfold-enter-from,
+.unfold-leave-to { opacity: 0; }
+
+/* Only for the very first mount (switching into the Calendar view) — timed
+   to match the calendar grid's own entrance spring (see .calendar-inner)
+   so both arrive together, instead of the day's entry (day-switch fade
+   above) finishing far ahead of the grid. */
+.unfold-appear-active { transition: opacity 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.unfold-appear-from { opacity: 0; transform: translateY(8px); }
 
 /* Pin the calendar in place, scroll the day's entries underneath it
    instead of scrolling the whole page — the calendar grid otherwise
