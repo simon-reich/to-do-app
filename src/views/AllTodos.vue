@@ -4,6 +4,7 @@ import type { Ref } from 'vue'
 import { useTodosStore } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
 import { assignFonts } from '../composables/useTodoFonts'
+import { useListFlip } from '../composables/useListFlip'
 
 const store = useTodosStore()
 const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
@@ -31,6 +32,8 @@ const filteredTodos = computed(() => {
 
 const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
+
+useListFlip(() => siblingIds.value, '.todo-wrap')
 </script>
 
 <template>
@@ -39,6 +42,7 @@ const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
       <TodoCard
         v-for="(todo, index) in filteredTodos"
         :key="`${todo.id}-${renderGen}`"
+        :data-flip-id="todo.id"
         :todo="todo"
         :font="fontMap.get(todo.id)"
         :sibling-ids="siblingIds"
