@@ -158,7 +158,7 @@ function bgFireworks() {
   // a couple of bursts huddled in the middle. Launched within a fixed
   // total span (not a fixed gap per burst) so more bursts on a wide
   // screen means a denser show, not a longer one.
-  const burstCount = Math.round((3 + Math.random() * 2) * Math.min(scale, 2.2))
+  const burstCount = Math.round((4 + Math.random() * 2) * Math.min(scale, 2.2))
   const launchSpan = 420 + Math.random() * 200
   for (let b = 0; b < burstCount; b++) {
     const bx = w * (0.05 + Math.random() * 0.9)
@@ -169,7 +169,7 @@ function bgFireworks() {
     // point, rather than the burst just appearing there instantly.
     const rocketRise = h - by + 20
     const rocketDur = 380 + Math.random() * 160
-    const rocketSize = (3 + Math.random() * 2) * scale
+    const rocketSize = (5 + Math.random() * 3) * scale
     const rocket = document.createElement('span')
     rocket.style.cssText = `position:fixed;left:${bx}px;top:${h + 20}px;width:${rocketSize}px;height:${rocketSize * 2.4}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);`
     document.body.prepend(rocket)
@@ -183,13 +183,13 @@ function bgFireworks() {
 
     // Sparks burst once the rocket arrives.
     const sparkDelay = burstDelay + rocketDur
-    const sparks = 14 + Math.floor(Math.random() * 8)
+    const sparks = 16 + Math.floor(Math.random() * 8)
     for (let i = 0; i < sparks; i++) {
       const angle = (360 / sparks) * i + (Math.random() - 0.5) * 20
-      const dist = (90 + Math.random() * 130) * scale
+      const dist = (100 + Math.random() * 140) * scale
       const dx = Math.cos((angle * Math.PI) / 180) * dist
       const dy = Math.sin((angle * Math.PI) / 180) * dist
-      const size = (5 + Math.random() * 4) * Math.min(scale, 1.15)
+      const size = (8 + Math.random() * 5) * Math.min(scale, 1.15)
       const el = document.createElement('span')
       // opacity: 0 up front — a delayed WAAPI animation doesn't hide the
       // element during its own delay, it just doesn't move yet, so without
