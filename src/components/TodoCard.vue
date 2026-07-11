@@ -816,10 +816,12 @@ function onDragStart() {
   everArmed = false
   const rect = wrapRef.value?.getBoundingClientRect()
   if (rect) fixedOrigin.value = { top: rect.top, left: rect.left, width: rect.width }
-  if (window.innerWidth > 1024) {
-    // Desktop has no fixed top/bottom chrome fighting for the same space
-    // (see scrollCardIntoView's identical breakpoint) — the backdrop can
-    // just cover the whole viewport there.
+  if (window.innerWidth > 700) {
+    // Tablet and desktop both use the same grid layout with no fixed
+    // top/bottom chrome fighting for the same space (that's mobile-only:
+    // a sticky main-head + fixed bottom nav) — the backdrop can just cover
+    // the whole viewport there instead of being clipped to the scroll
+    // container, which on tablet is narrower than the full display width.
     backdropRect.value = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }
   } else {
     const listRect = scrollLockEl?.getBoundingClientRect()
