@@ -87,9 +87,11 @@ export function effectConfetti(cx: number, cy: number) {
 }
 
 import { ref as vueRef } from 'vue'
-// Shared across all instances – only one menu open at a time
-const openTagMenuId = vueRef<string | null>(null)
-const openCheckMenuId = vueRef<string | null>(null)
+// Shared across all instances – only one menu open at a time. Exported so
+// App.vue's Tab-between-views handler can tell whether a card is currently
+// open and back off (the card's own Tab handling takes precedence then).
+export const openTagMenuId = vueRef<string | null>(null)
+export const openCheckMenuId = vueRef<string | null>(null)
 // Set by navigateSibling right before opening the next/previous card, so
 // that card knows to jump straight into editing (carrying over whether
 // Tab was pressed while actively editing, not just while open).

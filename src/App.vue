@@ -6,6 +6,29 @@ import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
 import ScrollDivider from './components/ScrollDivider.vue'
+import { openTagMenuId, openCheckMenuId } from './components/TodoCard.vue'
+
+// Tab/Shift+Tab cycle between the three main views — but only when no todo
+// card is open (that has its own Tab handling, cycling cards instead) and
+// focus isn't in a text field (where Tab should behave normally).
+const viewOrder = ['/all', '/focus', '/calendar']
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  const tag = el?.tagName.toLowerCase()
+  return tag === 'input' || tag === 'textarea' || !!el?.isContentEditable
+}
+
+function onGlobalKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Tab') return
+  if (openTagMenuId.value || openCheckMenuId.value) return
+  if (isTypingTarget(e.target)) return
+  const idx = viewOrder.indexOf(route.path)
+  if (idx === -1) return
+  e.preventDefault()
+  const next = viewOrder[(idx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length]
+  router.push(next)
+}
 
 const themeStore = useThemeStore()
 
@@ -25,10 +48,12 @@ onMounted(() => {
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
   lastViewportHeight = window.visualViewport?.height ?? 0
   window.visualViewport?.addEventListener('resize', onViewportResize)
+  document.addEventListener('keydown', onGlobalKeydown)
 })
 
 onUnmounted(() => {
   window.visualViewport?.removeEventListener('resize', onViewportResize)
+  document.removeEventListener('keydown', onGlobalKeydown)
 })
 
 const store = useTodosStore()
