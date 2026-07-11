@@ -109,7 +109,15 @@ const props = defineProps<{
   /** Ids of every todo in the current list, in render order — lets Tab/
    *  Shift+Tab jump straight to the next/previous card while one is open. */
   siblingIds?: string[]
+  /** Position in the current list — staggers the mount-in bounce so cards
+   *  settle one after another instead of all at once. */
+  index?: number
 }>()
+
+// Entrance bounce when a card first mounts (a fresh view, a newly created
+// todo, a filter revealing it again) — staggered by list position, capped
+// so a long list doesn't take forever to finish settling in.
+const enterDelay = Math.min((props.index ?? 0) * 0.035, 0.35)
 
 const store = useTodosStore()
 
@@ -739,6 +747,12 @@ onUnmounted(() => {
       zIndex: 9999,
     } : undefined"
   >
+    <motion.div
+      class="todo-card-enter"
+      :initial="{ opacity: 0, y: 16, scale: 0.9 }"
+      :animate="{ opacity: 1, y: 0, scale: 1 }"
+      :transition="{ type: 'spring', stiffness: 700, damping: 24, mass: 0.6, delay: enterDelay }"
+    >
     <div
       ref="swipeContainerRef"
       class="swipe-container"
@@ -889,6 +903,7 @@ onUnmounted(() => {
         </div>
       </motion.div>
     </div>
+    </motion.div>
   </div>
 </template>
 
@@ -910,6 +925,15 @@ onUnmounted(() => {
    around freely. */
 .todo-card-wrap.dragging {
   z-index: 25;
+}
+
+/* Purely a layout pass-through for the entrance-bounce motion.div — same
+   inline-flex/stretch as .todo-card-wrap so wrapping it doesn't change how
+   .swipe-container is sized inside. */
+.todo-card-enter {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 /* No overflow:hidden here — the dragged card must stay fully visible while

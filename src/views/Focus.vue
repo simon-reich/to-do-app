@@ -28,11 +28,12 @@ const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
   <div class="focus-view" :class="{ 'is-empty': !filteredTodos.length }">
     <div v-if="filteredTodos.length" class="todo-wrap">
       <TodoCard
-        v-for="todo in filteredTodos"
+        v-for="(todo, index) in filteredTodos"
         :key="todo.id"
         :todo="todo"
         :font="fontMap.get(todo.id)"
         :sibling-ids="siblingIds"
+        :index="index"
         mode="today"
         @remove-from-today="store.removeFromToday($event)"
         @complete="store.completeTodo($event)"

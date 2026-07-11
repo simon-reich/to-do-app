@@ -30,11 +30,12 @@ const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
   <div class="all-todos" :class="{ 'list-view': listView }">
     <div v-if="filteredTodos.length" class="todo-wrap" :class="{ 'list-view': listView }">
       <TodoCard
-        v-for="todo in filteredTodos"
+        v-for="(todo, index) in filteredTodos"
         :key="todo.id"
         :todo="todo"
         :font="fontMap.get(todo.id)"
         :sibling-ids="siblingIds"
+        :index="index"
         mode="all"
         @send-to-today="store.sendToToday($event)"
         @remove-from-today="store.removeFromToday($event)"
