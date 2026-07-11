@@ -1,11 +1,22 @@
 <script lang="ts">
 // Module-level: shared across all TodoCard instances so the bag persists
 // between completions — see nextBgEffect below.
+// These particles sit behind the whole app shell — visible in the page
+// background and the gaps between panels/cards, hidden again wherever an
+// opaque element (sidebar, menus, a card) paints on top — rather than
+// overlaying and obscuring the UI while a celebration plays. z-index
+// alone can't do this: #app is a plain, non-positioned box, and a fixed
+// element's negative z-index stacks against the *root* context (behind
+// <body>'s own background too, since body isn't its own stacking
+// context) — invisible everywhere, not just behind #app. Prepending as
+// body's first child instead relies on plain DOM paint order: earlier
+// siblings paint first (further back), so this paints after body's
+// background but before #app, with no z-index needed at all.
 function particle(cx: number, cy: number, content: string, css: string): HTMLElement {
   const el = document.createElement('span')
   el.textContent = content
-  el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;pointer-events:none;user-select:none;z-index:9999;` + css
-  document.body.appendChild(el)
+  el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;pointer-events:none;user-select:none;` + css
+  document.body.prepend(el)
   return el
 }
 
@@ -28,15 +39,24 @@ function nextBgEffect(): BgEffectName {
   return bgEffectBag.pop()!
 }
 
+// Scales particle size/spread up for wider viewports — at mobile widths
+// this is a no-op (clamped to 1), but on desktop the same fixed pixel
+// sizes/distances used to look tiny and huddled in the middle of a much
+// bigger screen instead of filling it.
+function bgScale() {
+  return Math.min(Math.max(window.innerWidth / 480, 1), 3.2)
+}
+
 function bgHearts() {
   const w = window.innerWidth
   const h = window.innerHeight
+  const scale = bgScale()
   for (let i = 0; i < 22; i++) {
     const cx = Math.random() * w
     const cy = h + 24 + Math.random() * 40
-    const size = 16 + Math.random() * 14
+    const size = (16 + Math.random() * 14) * scale
     const rise = h * (0.55 + Math.random() * 0.5)
-    const drift = (Math.random() - 0.5) * 140
+    const drift = (Math.random() - 0.5) * 140 * scale
     const dur = 1100 + Math.random() * 900
     const delay = Math.random() * 260
     const el = particle(cx, cy, '♥', `font-size:${size}px;color:var(--ink);transform:translate(-50%,-50%);`)
@@ -62,8 +82,8 @@ function bgBalloons() {
     const dur = 1400 + Math.random() * 900
     const delay = Math.random() * 260
     const el = document.createElement('span')
-    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size * 1.2}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;z-index:9999;transform:translate(-50%,-50%);`
-    document.body.appendChild(el)
+    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size * 1.2}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);`
+    document.body.prepend(el)
     el.animate(
       [
         { transform: 'translate(-50%,-50%)', opacity: 1 },
@@ -79,11 +99,12 @@ function bgBalloons() {
 function bgConfetti() {
   const w = window.innerWidth
   const h = window.innerHeight
+  const scale = Math.min(bgScale(), 1.8)
   for (let i = 0; i < 40; i++) {
     const cx = Math.random() * w
     const cy = -24 - Math.random() * 60
-    const cw = 5 + Math.random() * 4
-    const ch = 9 + Math.random() * 7
+    const cw = (5 + Math.random() * 4) * scale
+    const ch = (9 + Math.random() * 7) * scale
     const initRot = Math.random() * 360
     const spin = initRot + (Math.random() > 0.5 ? 1 : -1) * (240 + Math.random() * 300)
     const fall = h + 80 + Math.random() * 60
@@ -91,8 +112,8 @@ function bgConfetti() {
     const dur = 1300 + Math.random() * 900
     const delay = Math.random() * 400
     const el = document.createElement('span')
-    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${cw}px;height:${ch}px;background:var(--ink);border-radius:1px;pointer-events:none;user-select:none;z-index:9999;transform:translate(-50%,-50%) rotate(${initRot}deg);`
-    document.body.appendChild(el)
+    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${cw}px;height:${ch}px;background:var(--ink);border-radius:1px;pointer-events:none;user-select:none;transform:translate(-50%,-50%) rotate(${initRot}deg);`
+    document.body.prepend(el)
     el.animate(
       [
         { transform: `translate(-50%,-50%) rotate(${initRot}deg)`, opacity: 1 },
@@ -110,21 +131,28 @@ function bgConfetti() {
 function bgFireworks() {
   const w = window.innerWidth
   const h = window.innerHeight
-  const burstCount = 3 + Math.floor(Math.random() * 2)
+  const scale = bgScale()
+  // More bursts on wider screens, spread across nearly the full width —
+  // like watching a whole skyline of fireworks from a rooftop instead of
+  // a couple of bursts huddled in the middle. Launched within a fixed
+  // total span (not a fixed gap per burst) so more bursts on a wide
+  // screen means a denser show, not a longer one.
+  const burstCount = Math.round((3 + Math.random() * 2) * Math.min(scale, 2.2))
+  const launchSpan = 420 + Math.random() * 200
   for (let b = 0; b < burstCount; b++) {
-    const bx = w * (0.2 + Math.random() * 0.6)
+    const bx = w * (0.05 + Math.random() * 0.9)
     const by = h * (0.18 + Math.random() * 0.32)
-    const burstDelay = b * (180 + Math.random() * 160)
+    const burstDelay = (b / Math.max(burstCount - 1, 1)) * launchSpan
     const sparks = 14 + Math.floor(Math.random() * 8)
     for (let i = 0; i < sparks; i++) {
       const angle = (360 / sparks) * i + (Math.random() - 0.5) * 20
-      const dist = 60 + Math.random() * 90
+      const dist = (60 + Math.random() * 90) * scale
       const dx = Math.cos((angle * Math.PI) / 180) * dist
       const dy = Math.sin((angle * Math.PI) / 180) * dist
-      const size = 4 + Math.random() * 3
+      const size = (4 + Math.random() * 3) * Math.min(scale, 1.6)
       const el = document.createElement('span')
-      el.style.cssText = `position:fixed;left:${bx}px;top:${by}px;width:${size}px;height:${size}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;z-index:9999;transform:translate(-50%,-50%);`
-      document.body.appendChild(el)
+      el.style.cssText = `position:fixed;left:${bx}px;top:${by}px;width:${size}px;height:${size}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);`
+      document.body.prepend(el)
       el.animate(
         [
           { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
