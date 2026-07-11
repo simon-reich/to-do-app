@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, CircleArrowLeft, LayoutList, LayoutGrid } from '@lucide/vue'
+import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, CircleArrowDown, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
@@ -355,7 +355,8 @@ watch(() => route.path, () => {
     </div>
 
     <!-- ══ MOBILE: Tag panel (full screen, replaces main-head + content) ══ -->
-    <div ref="tagsPanelRef" class="mobile-tags-panel mobile-only" @scroll="onTagsPanelScroll">
+    <Transition name="tags-panel">
+    <div v-show="showMobileTags" ref="tagsPanelRef" class="mobile-tags-panel mobile-only" @scroll="onTagsPanelScroll">
       <div class="mobile-tags-head">
         <input
           v-model="tagInput"
@@ -364,7 +365,7 @@ watch(() => route.path, () => {
           @keydown="handleTagKey"
         />
         <button class="nav-icon back-btn" title="Back" @click="showMobileTags = false">
-          <CircleArrowLeft :size="24" />
+          <CircleArrowDown :size="24" />
         </button>
 
         <div class="mobile-all-priority-row">
@@ -406,6 +407,7 @@ watch(() => route.path, () => {
         <div ref="tagsBottomSpacer" class="bottom-breathing-spacer" :style="{ height: tagsPanelSpacerHeight + 'px' }" />
       </div>
     </div>
+    </Transition>
     <ScrollDivider v-if="showMobileTags" class="tags-scroll-divider-bottom mobile-only" :visible="!tagsPanelScrolledToBottom" />
 
     <!-- ══ Main content ══ -->

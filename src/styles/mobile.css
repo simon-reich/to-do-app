@@ -83,18 +83,13 @@
   }
 
   /* ── Tag panel (full screen overlay; shared bits in layout.css) ──
-     display:none must stay here (not hoisted to layout.css): .mobile-only
-     already makes this element flex on mobile for its "always visible"
-     elements, but this one needs to default to hidden even on mobile,
-     only shown via .mobile-tags-open below — so it has to come after
-     .mobile-only's flex in this same file to win the tie. */
+     display:flex must stay here (not hoisted to layout.css): .mobile-only
+     already makes this element flex here, so this is somewhat redundant,
+     but keeps the win explicit and pinned to this breakpoint — actual
+     show/hide is v-show now (see App.vue), not a display toggle. */
   .mobile-tags-panel {
-    display: none;
-    bottom: 60px;
-  }
-
-  .mobile-tags-open .mobile-tags-panel {
     display: flex;
+    bottom: 60px;
   }
 
   .mobile-tags-head {

@@ -560,12 +560,11 @@
    mobile.css and tablet.css each open this panel with different geometry
    (header layout, insets), but share these declarations verbatim — kept
    here so they're not duplicated per breakpoint.
-   display:none is NOT here on purpose: it has to stay in mobile.css/
+   display: flex is NOT here on purpose: it has to stay in mobile.css/
    tablet.css themselves, declared after their own .mobile-only rule (see
-   comments there) — otherwise .mobile-only's display:flex wins the tie
-   and the panel gets stuck visible regardless of .mobile-tags-open. The
-   show/hide toggle (.mobile-tags-open .mobile-tags-panel { display: flex })
-   also stays gated per breakpoint so it can't leak onto desktop. */
+   comments there) — otherwise this unconditional rule would win the tie
+   against .mobile-only's default display:none and leave the panel visible
+   even on desktop (e.g. after resizing the window while it was open). */
 .mobile-tags-panel {
   flex-direction: column;
   position: fixed;
@@ -581,6 +580,21 @@
 
 .mobile-tags-panel::-webkit-scrollbar {
   display: none;
+}
+
+/* Slides up like a page laying itself over the current view, and back
+   down again on close — driven by the Transition wrapping v-show in
+   App.vue. Decisive ease-out settle, no bounce/overshoot: this covers the
+   whole screen, so a springy motion would read as too much for something
+   this large. */
+.tags-panel-enter-active,
+.tags-panel-leave-active {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tags-panel-enter-from,
+.tags-panel-leave-to {
+  transform: translateY(100%);
 }
 
 .mobile-tag-chip-wrap {

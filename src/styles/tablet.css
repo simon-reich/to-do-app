@@ -110,14 +110,13 @@
   }
 
   /* ── Tag panel (full screen overlay; shared bits in layout.css) ──
-     display:none must stay here — see mobile.css for why. */
+     display:flex must stay here (not hoisted to layout.css) so it only
+     wins against layout.css's own .mobile-only default (display:none)
+     within this breakpoint — actual show/hide is v-show now (see
+     App.vue), not a display toggle. */
   .mobile-tags-panel {
-    display: none;
-    bottom: 0;
-  }
-
-  .mobile-tags-open .mobile-tags-panel {
     display: flex;
+    bottom: 0;
   }
 
   /* Mirrors main-head's own layout exactly — same grid shape (input on its
