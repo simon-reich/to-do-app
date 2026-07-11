@@ -23,6 +23,7 @@ const filteredTodos = computed(() => {
 })
 
 const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
+const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
 </script>
 
 <template>
@@ -33,6 +34,7 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
         :key="todo.id"
         :todo="todo"
         :font="fontMap.get(todo.id)"
+        :sibling-ids="siblingIds"
         mode="all"
         @send-to-today="store.sendToToday($event)"
         @remove-from-today="store.removeFromToday($event)"

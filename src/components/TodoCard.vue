@@ -90,6 +90,10 @@ import { ref as vueRef } from 'vue'
 // Shared across all instances – only one menu open at a time
 const openTagMenuId = vueRef<string | null>(null)
 const openCheckMenuId = vueRef<string | null>(null)
+// Set by navigateSibling right before opening the next/previous card, so
+// that card knows to jump straight into editing (carrying over whether
+// Tab was pressed while actively editing, not just while open).
+const editIntentId = vueRef<string | null>(null)
 </script>
 
 <script setup lang="ts">
@@ -102,6 +106,9 @@ const props = defineProps<{
   todo: Todo
   mode: 'all' | 'today'
   font?: string
+  /** Ids of every todo in the current list, in render order — lets Tab/
+   *  Shift+Tab jump straight to the next/previous card while one is open. */
+  siblingIds?: string[]
 }>()
 
 const store = useTodosStore()
@@ -146,10 +153,56 @@ function closeOnOutside(e: MouseEvent) {
   }
 }
 
+// Tab/Shift+Tab jump to the next/previous card in the list instead of
+// tabbing through individual tag checkboxes — carries the current
+// editing state along: tabbing away from an actively-edited title lands
+// in the next card's edit mode too, tabbing away from a merely-open card
+// just opens the next one the same way.
+function navigateSibling(direction: 1 | -1) {
+  const ids = props.siblingIds
+  if (!ids || ids.length < 2) return
+  const idx = ids.indexOf(props.todo.id)
+  if (idx === -1) return
+  const nextId = ids[(idx + direction + ids.length) % ids.length]
+  const wasEditing = isEditing.value
+  if (wasEditing) saveEdit()
+  if (wasEditing) editIntentId.value = nextId
+  if (props.mode === 'today') openCheckMenuId.value = nextId
+  else openTagMenuId.value = nextId
+}
+
+// Picks up the edit intent left by a sibling's navigateSibling() once this
+// card actually becomes the open one.
+watch(showTagMenu, (isOpen) => {
+  if (isOpen && editIntentId.value === props.todo.id) {
+    editIntentId.value = null
+    startEdit()
+  }
+})
+
+// Escape/Enter close the card when it's open but not being edited (the
+// textarea has its own Escape/Enter handlers for the editing case, and
+// ignoring them here keeps the two from double-handling the same key).
+function onCardKeydown(e: KeyboardEvent) {
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    navigateSibling(e.shiftKey ? -1 : 1)
+    return
+  }
+  if (isEditing.value) return
+  if (e.key !== 'Escape' && e.key !== 'Enter') return
+  e.preventDefault()
+  if (showMenu.value) openCheckMenuId.value = null
+  else if (showTagMenu.value) openTagMenuId.value = null
+}
+
 watch([showMenu, showTagMenu], ([m, t]) => {
-  if (m || t) document.addEventListener('click', closeOnOutside)
-  else {
+  if (m || t) {
+    document.addEventListener('click', closeOnOutside)
+    document.addEventListener('keydown', onCardKeydown)
+  } else {
     document.removeEventListener('click', closeOnOutside)
+    document.removeEventListener('keydown', onCardKeydown)
     // Only blur if focus is still inside *this* card — otherwise this fires
     // after focus has already moved on to a different card (e.g. clicking
     // straight from one open todo into another) and would steal it back.
@@ -755,9 +808,14 @@ onUnmounted(() => {
             </button>
           </template>
 
-          <!-- Saves + closes the card once editing is active. -->
+          <!-- Saves + closes the card once editing is active. mousedown.prevent
+               keeps the textarea focused through the click — otherwise its
+               own blur (from focus moving to this button) runs saveEdit and
+               flips isEditing to false *before* the click fires, swapping
+               this button out for the Edit one mid-click so the click lands
+               on nothing/the wrong button and the card never closes. -->
           <template v-else-if="showTagMenu && mode === 'all' && isEditing">
-            <button class="card-btn card-btn--edit" title="Accept" @click.stop="acceptEdit">
+            <button class="card-btn card-btn--edit" title="Accept" @mousedown.prevent @click.stop="acceptEdit">
               <Check :size="11" />
             </button>
           </template>
@@ -816,6 +874,7 @@ onUnmounted(() => {
               :key="tag.id"
               class="tag-row-opt"
               :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
+              @click.stop
             >
               <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
               <span>{{ tag.label }}</span>
