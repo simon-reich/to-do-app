@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { motion } from 'motion-v'
 import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
@@ -45,7 +46,12 @@ function confirmDeleteTheme() {
 </script>
 
 <template>
-  <div class="settings-view">
+  <motion.div
+    class="settings-view"
+    :initial="{ opacity: 0, scale: 0.96 }"
+    :animate="{ opacity: 1, scale: 1 }"
+    :transition="{ type: 'spring', stiffness: 380, damping: 26, mass: 0.8 }"
+  >
 
     <!-- Appearance -->
     <section class="section">
@@ -125,7 +131,7 @@ function confirmDeleteTheme() {
       </div>
     </section>
 
-  </div>
+  </motion.div>
 
   <template v-if="deleteThemeConfirm">
     <div class="modal-backdrop" @click="deleteThemeConfirm = null" />
