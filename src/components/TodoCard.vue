@@ -595,6 +595,16 @@ function flyOutRight(): Promise<void> {
   ]).then(() => {})
 }
 
+// Mirrors flyOutRight for throwing a card back out of Focus (swipe-left,
+// "Remove") — same continue-from-the-release-point logic, just leftward.
+function flyOutLeft(): Promise<void> {
+  const targetX = (x.get() < 0 ? x.get() : 0) - window.innerWidth * 1.5
+  return Promise.all([
+    animate(x, targetX, { duration: 0.24, ease: 'easeIn' }).finished,
+    animate(cardOpacity, 0, { duration: 0.24, ease: 'easeIn' }).finished,
+  ]).then(() => {})
+}
+
 // touch-action: pan-y means the browser is *allowed* to natively scroll the
 // list at the same time Motion is handling our horizontal drag — on a
 // diagonal-enough gesture both can end up running at once (card dragging
@@ -759,15 +769,15 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
   swipeRelX.value = 0
 
   if (swipedLeft) {
-    x.set(0)
-    y.set(0)
     if (props.mode === 'all') {
+      x.set(0)
+      y.set(0)
       // Delete is permanent and the swipe to trigger it is quick — easy to
       // cross by accident. Confirm first, same as deleting a tag; the puff
       // animation only plays once that's actually confirmed.
       pendingDelete.value = true
     } else {
-      await animateOutPuff()
+      await flyOutLeft()
       emit('remove-from-today', props.todo.id)
     }
   } else if (swipedRight) {
@@ -784,14 +794,20 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
   }
 }
 
+// Shared by the swipe-confirmed delete below and the plain Delete button
+// click — same puff-then-delete either way.
+async function deleteWithPuff() {
+  await animateOutPuff()
+  emit('delete', props.todo.id)
+}
+
 // Confirmation for a swipe-triggered delete (see onDragEnd) — mirrors the
 // tag-delete confirmation modal in App.vue, same markup/classes/style.
 const pendingDelete = ref(false)
 
 async function confirmSwipeDelete() {
   pendingDelete.value = false
-  await animateOutPuff()
-  emit('delete', props.todo.id)
+  await deleteWithPuff()
 }
 
 function cancelSwipeDelete() {
@@ -918,7 +934,7 @@ onUnmounted(() => {
             <button
               class="card-btn card-btn--delete"
               title="Delete"
-              @click.stop="emit('delete', todo.id)"
+              @click.stop="deleteWithPuff"
             >
               <Trash2 :size="16" />
             </button>
