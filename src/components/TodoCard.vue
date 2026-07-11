@@ -60,13 +60,24 @@ function bgHearts() {
     const dur = 1100 + Math.random() * 900
     const delay = Math.random() * 260
     const el = particle(cx, cy, '♥', `font-size:${size}px;color:var(--ink);transform:translate(-50%,-50%);`)
-    el.animate(
+    // Movement and fade are two independent animations rather than one
+    // keyframe list: a shared offset would force it to *finish moving* by
+    // that point and then just sit there fading, when what we want is the
+    // fade starting partway through, while it's still rising — the two
+    // need their own independent timelines to do that.
+    const transformAnim = el.animate(
       [
-        { transform: 'translate(-50%,-50%)', opacity: 1 },
-        { transform: `translate(calc(-50% + ${drift}px), calc(-50% - ${rise}px)) scale(0.7)`, opacity: 0 },
+        { transform: 'translate(-50%,-50%)' },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% - ${rise}px)) scale(0.7)` },
       ],
       { duration: dur, delay, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
-    ).onfinish = () => el.remove()
+    )
+    const fadeStart = dur * 0.5
+    el.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: dur - fadeStart, delay: delay + fadeStart, easing: 'ease-in', fill: 'forwards' },
+    )
+    transformAnim.onfinish = () => el.remove()
   }
 }
 
@@ -84,13 +95,22 @@ function bgBalloons() {
     const el = document.createElement('span')
     el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size * 1.2}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);`
     document.body.prepend(el)
-    el.animate(
+    // Movement and fade are independent animations — see bgHearts above
+    // for why (fading needs to start partway through while it's still
+    // rising, not just once it's already arrived and sitting still).
+    const transformAnim = el.animate(
       [
-        { transform: 'translate(-50%,-50%)', opacity: 1 },
-        { transform: `translate(calc(-50% + ${drift}px), calc(-50% - ${rise}px))`, opacity: 0 },
+        { transform: 'translate(-50%,-50%)' },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% - ${rise}px)) scale(0.6)` },
       ],
       { duration: dur, delay, easing: 'ease-out', fill: 'forwards' },
-    ).onfinish = () => el.remove()
+    )
+    const fadeStart = dur * 0.5
+    el.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: dur - fadeStart, delay: delay + fadeStart, easing: 'ease-in', fill: 'forwards' },
+    )
+    transformAnim.onfinish = () => el.remove()
   }
 }
 
@@ -117,7 +137,7 @@ function bgConfetti() {
     el.animate(
       [
         { transform: `translate(-50%,-50%) rotate(${initRot}deg)`, opacity: 1 },
-        { transform: `translate(calc(-50% + ${drift}px), calc(-50% + ${fall}px)) rotate(${spin}deg)`, opacity: 1, offset: 0.85 },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% + ${fall}px)) rotate(${spin}deg)`, opacity: 1, offset: 0.94 },
         { transform: `translate(calc(-50% + ${drift}px), calc(-50% + ${fall}px)) rotate(${spin}deg)`, opacity: 0 },
       ],
       { duration: dur, delay, easing: 'cubic-bezier(0.4, 0, 0.8, 1)', fill: 'forwards' },
@@ -125,8 +145,9 @@ function bgConfetti() {
   }
 }
 
-// A handful of firework bursts at random points in the upper screen, each
-// a ring of sparks radiating outward — genuinely explosive rather than a
+// A handful of firework bursts at random points in the upper screen — a
+// rocket rises from the bottom into position first, then a ring of
+// sparks radiates outward from there, genuinely explosive rather than a
 // drifting/falling effect like the other three.
 function bgFireworks() {
   const w = window.innerWidth
@@ -143,22 +164,47 @@ function bgFireworks() {
     const bx = w * (0.05 + Math.random() * 0.9)
     const by = h * (0.18 + Math.random() * 0.32)
     const burstDelay = (b / Math.max(burstCount - 1, 1)) * launchSpan
+
+    // Rocket: a single point rising from below the fold up to the burst
+    // point, rather than the burst just appearing there instantly.
+    const rocketRise = h - by + 20
+    const rocketDur = 380 + Math.random() * 160
+    const rocketSize = (3 + Math.random() * 2) * scale
+    const rocket = document.createElement('span')
+    rocket.style.cssText = `position:fixed;left:${bx}px;top:${h + 20}px;width:${rocketSize}px;height:${rocketSize * 2.4}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);`
+    document.body.prepend(rocket)
+    rocket.animate(
+      [
+        { transform: 'translate(-50%,-50%)', offset: 0 },
+        { transform: `translate(-50%, calc(-50% - ${rocketRise}px))`, offset: 1 },
+      ],
+      { duration: rocketDur, delay: burstDelay, easing: 'ease-in', fill: 'forwards' },
+    ).onfinish = () => rocket.remove()
+
+    // Sparks burst once the rocket arrives.
+    const sparkDelay = burstDelay + rocketDur
     const sparks = 14 + Math.floor(Math.random() * 8)
     for (let i = 0; i < sparks; i++) {
       const angle = (360 / sparks) * i + (Math.random() - 0.5) * 20
-      const dist = (60 + Math.random() * 90) * scale
+      const dist = (90 + Math.random() * 130) * scale
       const dx = Math.cos((angle * Math.PI) / 180) * dist
       const dy = Math.sin((angle * Math.PI) / 180) * dist
-      const size = (4 + Math.random() * 3) * Math.min(scale, 1.6)
+      const size = (5 + Math.random() * 4) * Math.min(scale, 1.15)
       const el = document.createElement('span')
-      el.style.cssText = `position:fixed;left:${bx}px;top:${by}px;width:${size}px;height:${size}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);`
+      // opacity: 0 up front — a delayed WAAPI animation doesn't hide the
+      // element during its own delay, it just doesn't move yet, so without
+      // this every spark sat fully visible at the burst point the entire
+      // time the rocket was still rising toward it. The first keyframe
+      // below snaps it to visible right as the delay ends, so it truly
+      // only appears at the moment of the burst.
+      el.style.cssText = `position:fixed;left:${bx}px;top:${by}px;width:${size}px;height:${size}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;opacity:0;transform:translate(-50%,-50%);`
       document.body.prepend(el)
       el.animate(
         [
-          { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
-          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.4)`, opacity: 0 },
+          { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0 },
+          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.4)`, opacity: 0, offset: 1 },
         ],
-        { duration: 550 + Math.random() * 300, delay: burstDelay, easing: 'ease-out', fill: 'forwards' },
+        { duration: 550 + Math.random() * 300, delay: sparkDelay, easing: 'ease-out', fill: 'forwards' },
       ).onfinish = () => el.remove()
     }
   }
