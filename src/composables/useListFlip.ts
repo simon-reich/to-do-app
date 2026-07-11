@@ -41,12 +41,16 @@ export function useListFlip(ids: () => string[], containerSelector: string) {
       const dx = oldRect.left - newRect.left
       const dy = oldRect.top - newRect.top
       if (!dx && !dy) return
+      // Plain ease-out, no overshoot — a back-out curve's overshoot scales
+      // with the distance moved, and a sort can move a card a very long
+      // way (top of the list to the bottom), which turned a subtle wobble
+      // into a wild fling past its resting position on a big reorder.
       el.animate(
         [
           { transform: `translate(${dx}px, ${dy}px)` },
           { transform: 'translate(0, 0)' },
         ],
-        { duration: 380, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
+        { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
       )
     })
   }
