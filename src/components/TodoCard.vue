@@ -1,23 +1,6 @@
 <script lang="ts">
-// Module-level: shared across all TodoCard instances so the bag persists between card completions
-const COLOR = 'var(--ink)'
-function randColor() { return COLOR }
-
-type EffectName = 'hearts' | 'stars' | 'confetti'
-const effectBag: EffectName[] = []
-
-export function nextEffect(): EffectName {
-  if (effectBag.length === 0) {
-    const bag: EffectName[] = ['hearts', 'hearts', 'stars', 'confetti']
-    for (let i = bag.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [bag[i], bag[j]] = [bag[j], bag[i]]
-    }
-    effectBag.push(...bag)
-  }
-  return effectBag.pop()!
-}
-
+// Module-level: shared across all TodoCard instances so the bag persists
+// between completions — see nextBgEffect below.
 function particle(cx: number, cy: number, content: string, css: string): HTMLElement {
   const el = document.createElement('span')
   el.textContent = content
@@ -26,64 +9,145 @@ function particle(cx: number, cy: number, content: string, css: string): HTMLEle
   return el
 }
 
-function animateOut(el: HTMLElement, _dx: number, _dy: number, endTransform: string, dur: number) {
-  el.animate(
-    [
-      { transform: el.style.transform, opacity: 1 },
-      { transform: endTransform, opacity: 0 },
-    ],
-    { duration: dur, easing: 'ease-out', fill: 'forwards' },
-  ).onfinish = () => el.remove()
+type BgEffectName = 'hearts' | 'confetti' | 'balloons' | 'fireworks'
+const bgEffectBag: BgEffectName[] = []
+
+// Shuffle-bag instead of plain random: guarantees every effect turns up
+// once per 4 completions instead of the same one occasionally repeating
+// several times in a row, while still feeling random completion to
+// completion (same trick as the old per-card burst used).
+function nextBgEffect(): BgEffectName {
+  if (bgEffectBag.length === 0) {
+    const bag: BgEffectName[] = ['hearts', 'confetti', 'balloons', 'fireworks']
+    for (let i = bag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [bag[i], bag[j]] = [bag[j], bag[i]]
+    }
+    bgEffectBag.push(...bag)
+  }
+  return bgEffectBag.pop()!
 }
 
-export function effectHearts(cx: number, cy: number) {
-  for (let i = 0; i < 9; i++) {
-    const size = 10 + Math.random() * 6
-    const el = particle(cx, cy, '♥', `font-size:${size}px;color:${randColor()};transform:translate(-50%,-50%);`)
-    const angle = -90 + (Math.random() - 0.5) * 140
-    const dist = 28 + Math.random() * 38
-    const dx = Math.cos((angle * Math.PI) / 180) * dist
-    const dy = Math.sin((angle * Math.PI) / 180) * dist
-    animateOut(el, dx, dy, `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(0.3)`, 550 + Math.random() * 300)
+function bgHearts() {
+  const w = window.innerWidth
+  const h = window.innerHeight
+  for (let i = 0; i < 22; i++) {
+    const cx = Math.random() * w
+    const cy = h + 24 + Math.random() * 40
+    const size = 16 + Math.random() * 14
+    const rise = h * (0.55 + Math.random() * 0.5)
+    const drift = (Math.random() - 0.5) * 140
+    const dur = 1100 + Math.random() * 900
+    const delay = Math.random() * 260
+    const el = particle(cx, cy, '♥', `font-size:${size}px;color:var(--ink);transform:translate(-50%,-50%);`)
+    el.animate(
+      [
+        { transform: 'translate(-50%,-50%)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% - ${rise}px)) scale(0.7)`, opacity: 0 },
+      ],
+      { duration: dur, delay, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
+    ).onfinish = () => el.remove()
   }
 }
 
-export function effectStars(cx: number, cy: number) {
-  const glyphs = ['★', '✦', '✧', '✶']
-  for (let i = 0; i < 12; i++) {
-    const size = 12 + Math.random() * 8
-    const glyph = glyphs[Math.floor(Math.random() * glyphs.length)]
-    const el = particle(cx, cy, glyph, `font-size:${size}px;color:${randColor()};transform:translate(-50%,-50%) scale(1.2) rotate(0deg);`)
-    const angle = (360 / 12) * i + (Math.random() - 0.5) * 30
-    const dist = 32 + Math.random() * 28
-    const dx = Math.cos((angle * Math.PI) / 180) * dist
-    const dy = Math.sin((angle * Math.PI) / 180) * dist
-    const spin = (Math.random() > 0.5 ? 1 : -1) * 180
-    animateOut(el, dx, dy, `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(0.2) rotate(${spin}deg)`, 480 + Math.random() * 260)
-  }
-}
-
-export function effectConfetti(cx: number, cy: number) {
-  for (let i = 0; i < 14; i++) {
-    const w = 4 + Math.random() * 3
-    const h = 8 + Math.random() * 6
-    const initRot = Math.random() * 360
+function bgBalloons() {
+  const w = window.innerWidth
+  const h = window.innerHeight
+  for (let i = 0; i < 16; i++) {
+    const cx = Math.random() * w
+    const cy = h + 24 + Math.random() * 40
+    const size = 18 + Math.random() * 18
+    const rise = h * (0.6 + Math.random() * 0.5)
+    const drift = (Math.random() - 0.5) * 100
+    const dur = 1400 + Math.random() * 900
+    const delay = Math.random() * 260
     const el = document.createElement('span')
-    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${w}px;height:${h}px;background:${randColor()};pointer-events:none;user-select:none;z-index:9999;border-radius:1px;transform:translate(-50%,-50%) rotate(${initRot}deg);`
+    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size * 1.2}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;z-index:9999;transform:translate(-50%,-50%);`
     document.body.appendChild(el)
-    const angle = -90 + (Math.random() - 0.5) * 180
-    const dist = 30 + Math.random() * 50
-    const dx = Math.cos((angle * Math.PI) / 180) * dist
-    const dy = Math.sin((angle * Math.PI) / 180) * dist + 15
-    const spin = initRot + (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 200)
+    el.animate(
+      [
+        { transform: 'translate(-50%,-50%)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% - ${rise}px))`, opacity: 0 },
+      ],
+      { duration: dur, delay, easing: 'ease-out', fill: 'forwards' },
+    ).onfinish = () => el.remove()
+  }
+}
+
+// Falls from above instead of rising, like actual confetti raining down —
+// the other three effects all rise, this is the deliberate exception.
+function bgConfetti() {
+  const w = window.innerWidth
+  const h = window.innerHeight
+  for (let i = 0; i < 40; i++) {
+    const cx = Math.random() * w
+    const cy = -24 - Math.random() * 60
+    const cw = 5 + Math.random() * 4
+    const ch = 9 + Math.random() * 7
+    const initRot = Math.random() * 360
+    const spin = initRot + (Math.random() > 0.5 ? 1 : -1) * (240 + Math.random() * 300)
+    const fall = h + 80 + Math.random() * 60
+    const drift = (Math.random() - 0.5) * 160
+    const dur = 1300 + Math.random() * 900
+    const delay = Math.random() * 400
+    const el = document.createElement('span')
+    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${cw}px;height:${ch}px;background:var(--ink);border-radius:1px;pointer-events:none;user-select:none;z-index:9999;transform:translate(-50%,-50%) rotate(${initRot}deg);`
+    document.body.appendChild(el)
     el.animate(
       [
         { transform: `translate(-50%,-50%) rotate(${initRot}deg)`, opacity: 1 },
-        { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(${spin}deg)`, opacity: 0 },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% + ${fall}px)) rotate(${spin}deg)`, opacity: 1, offset: 0.85 },
+        { transform: `translate(calc(-50% + ${drift}px), calc(-50% + ${fall}px)) rotate(${spin}deg)`, opacity: 0 },
       ],
-      { duration: 600 + Math.random() * 400, easing: 'ease-out', fill: 'forwards' },
+      { duration: dur, delay, easing: 'cubic-bezier(0.4, 0, 0.8, 1)', fill: 'forwards' },
     ).onfinish = () => el.remove()
   }
+}
+
+// A handful of firework bursts at random points in the upper screen, each
+// a ring of sparks radiating outward — genuinely explosive rather than a
+// drifting/falling effect like the other three.
+function bgFireworks() {
+  const w = window.innerWidth
+  const h = window.innerHeight
+  const burstCount = 3 + Math.floor(Math.random() * 2)
+  for (let b = 0; b < burstCount; b++) {
+    const bx = w * (0.2 + Math.random() * 0.6)
+    const by = h * (0.18 + Math.random() * 0.32)
+    const burstDelay = b * (180 + Math.random() * 160)
+    const sparks = 14 + Math.floor(Math.random() * 8)
+    for (let i = 0; i < sparks; i++) {
+      const angle = (360 / sparks) * i + (Math.random() - 0.5) * 20
+      const dist = 60 + Math.random() * 90
+      const dx = Math.cos((angle * Math.PI) / 180) * dist
+      const dy = Math.sin((angle * Math.PI) / 180) * dist
+      const size = 4 + Math.random() * 3
+      const el = document.createElement('span')
+      el.style.cssText = `position:fixed;left:${bx}px;top:${by}px;width:${size}px;height:${size}px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;z-index:9999;transform:translate(-50%,-50%);`
+      document.body.appendChild(el)
+      el.animate(
+        [
+          { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.4)`, opacity: 0 },
+        ],
+        { duration: 550 + Math.random() * 300, delay: burstDelay, easing: 'ease-out', fill: 'forwards' },
+      ).onfinish = () => el.remove()
+    }
+  }
+}
+
+// Full-viewport celebration for completing a todo (Done or Done for
+// today — no hierarchy between the two, both get the same treatment).
+// Picks exactly one of four effects per completion, plain DOM elements +
+// the Web Animations API so it stays cheap regardless of how many
+// particles are on screen at once. Solid ink color throughout, no
+// per-particle transparency.
+export function celebrateBackground() {
+  const effect = nextBgEffect()
+  if (effect === 'hearts') bgHearts()
+  else if (effect === 'confetti') bgConfetti()
+  else if (effect === 'balloons') bgBalloons()
+  else bgFireworks()
 }
 
 import { ref as vueRef } from 'vue'
@@ -407,27 +471,14 @@ function cancelEdit() {
   openTagMenuId.value = null
 }
 
-function spawnEffect() {
-  const el = wrapRef.value
-  if (!el) return
-  const rect = el.getBoundingClientRect()
-  const cx = rect.left + rect.width / 2
-  const cy = rect.top + rect.height / 2
-  const effect = nextEffect()
-  if (effect === 'hearts') effectHearts(cx, cy)
-  else if (effect === 'stars') effectStars(cx, cy)
-  else effectConfetti(cx, cy)
-}
-
-
 function handleComplete(id: string) {
-  spawnEffect()
+  celebrateBackground()
   openCheckMenuId.value = null
   emit('complete', id)
 }
 
 function handleDoneForToday(id: string) {
-  spawnEffect()
+  celebrateBackground()
   openCheckMenuId.value = null
   emit('done-for-today', id)
 }
