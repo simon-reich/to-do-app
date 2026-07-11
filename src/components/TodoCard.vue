@@ -445,6 +445,10 @@ const swipeContainerRef = ref<HTMLElement | null>(null)
 const x = useMotionValue(0)
 const y = useMotionValue(0)
 const rotate = useTransform(x, [-200, 200], [-8, 8])
+// Only animated for the swipe-right-confirmed fly-out (see flyOutRight) —
+// stays at 1 the rest of the time, so binding it in :style below is a
+// no-op until then.
+const cardOpacity = useMotionValue(1)
 // Raw mirrors of physical position (used for the elevated z-index / lifted
 // state only — that has to reflect the actual on-screen offset, not the
 // relative swipe measurement below). Derived directly from position rather
@@ -563,28 +567,32 @@ const swipeAction = computed(() => {
 })
 const swipeArmed = computed(() => armedDir.value !== 0)
 
-function animateOut(type: 'fly-right' | 'puff'): Promise<void> {
+function animateOutPuff(): Promise<void> {
   const el = swipeContainerRef.value
   if (!el) return Promise.resolve()
 
-  if (type === 'fly-right') {
-    return el.animate(
-      [
-        { transform: el.style.transform, opacity: 1 },
-        { transform: 'translateX(150vw)', opacity: 0 },
-      ],
-      { duration: 240, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'forwards' },
-    ).finished.then(() => {})
-  } else {
-    return el.animate(
-      [
-        { transform: 'scale(1)', opacity: 1 },
-        { transform: 'scale(1.08)', opacity: 0.6, offset: 0.18 },
-        { transform: 'scale(0)', opacity: 0 },
-      ],
-      { duration: 300, easing: 'ease-in', fill: 'forwards' },
-    ).finished.then(() => {})
-  }
+  return el.animate(
+    [
+      { transform: 'scale(1)', opacity: 1 },
+      { transform: 'scale(1.08)', opacity: 0.6, offset: 0.18 },
+      { transform: 'scale(0)', opacity: 0 },
+    ],
+    { duration: 300, easing: 'ease-in', fill: 'forwards' },
+  ).finished.then(() => {})
+}
+
+// Sends the card flying off to the right on a confirmed swipe-right — but
+// continuing on from wherever the drag actually released it (x/y aren't
+// reset first), instead of the old version's snap-back-to-center-then-fly,
+// which visibly jumped the card back to its start position for a frame
+// before the fly-out began. `x` is the same motion value the drag itself
+// was already driving, so this reads as one continuous motion.
+function flyOutRight(): Promise<void> {
+  const targetX = (x.get() > 0 ? x.get() : 0) + window.innerWidth * 1.5
+  return Promise.all([
+    animate(x, targetX, { duration: 0.24, ease: 'easeIn' }).finished,
+    animate(cardOpacity, 0, { duration: 0.24, ease: 'easeIn' }).finished,
+  ]).then(() => {})
 }
 
 // touch-action: pan-y means the browser is *allowed* to natively scroll the
@@ -759,14 +767,12 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
       // animation only plays once that's actually confirmed.
       pendingDelete.value = true
     } else {
-      await animateOut('puff')
+      await animateOutPuff()
       emit('remove-from-today', props.todo.id)
     }
   } else if (swipedRight) {
     if (props.mode === 'all') {
-      x.set(0)
-      y.set(0)
-      await animateOut('fly-right')
+      await flyOutRight()
       if (!props.todo.inToday) emit('send-to-today', props.todo.id)
       else emit('remove-from-today', props.todo.id)
     } else {
@@ -784,7 +790,7 @@ const pendingDelete = ref(false)
 
 async function confirmSwipeDelete() {
   pendingDelete.value = false
-  await animateOut('puff')
+  await animateOutPuff()
   emit('delete', props.todo.id)
 }
 
@@ -855,7 +861,7 @@ onUnmounted(() => {
       <motion.div
         class="todo-card"
         :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: isPriority }"
-        :style="{ x, y, rotate }"
+        :style="{ x, y, rotate, opacity: cardOpacity }"
         :drag="canDrag ? 'x' : false"
         :drag-momentum="false"
         :while-drag="{ scale: 1.05 }"
