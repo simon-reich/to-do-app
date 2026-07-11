@@ -256,6 +256,51 @@ function handleTagRowClick(e: MouseEvent) {
   if (e.target === e.currentTarget) toggleTagMenu()
 }
 
+// Animates the check-row/tag-row open/closed by height, via JS transition
+// hooks rather than a CSS-only grid-rows trick — that trick needs the
+// element to stay in the DOM (just collapsed) even while closed, but its
+// content (particularly the full tag list, identical across every todo)
+// then still counts toward each card's own shrink-to-fit width, making
+// every card the same (widest) size and breaking the grid layout. Instead
+// each row still fully unmounts via v-if when closed (exactly like
+// before), and only exists in the DOM — with its height explicitly
+// animated — while actually opening or closing.
+//
+// Desktop skips the animation entirely (done() called immediately, same
+// as no transition at all) — on a mouse-driven, already-snappy desktop
+// layout it read as janky rather than smooth; kept only for mobile/
+// tablet, where opening a card reads more like unfolding a sheet.
+const DESKTOP_BREAKPOINT = 1024
+
+function onExpandEnter(el: Element, done: () => void) {
+  const e = el as HTMLElement
+  if (window.innerWidth > DESKTOP_BREAKPOINT) { done(); return }
+  e.style.height = '0px'
+  e.style.overflow = 'hidden'
+  requestAnimationFrame(() => {
+    e.style.transition = 'height 0.22s ease-out'
+    e.style.height = `${e.scrollHeight}px`
+  })
+  e.addEventListener('transitionend', () => {
+    e.style.height = ''
+    e.style.overflow = ''
+    e.style.transition = ''
+    done()
+  }, { once: true })
+}
+
+function onExpandLeave(el: Element, done: () => void) {
+  const e = el as HTMLElement
+  if (window.innerWidth > DESKTOP_BREAKPOINT) { done(); return }
+  e.style.height = `${e.scrollHeight}px`
+  e.style.overflow = 'hidden'
+  requestAnimationFrame(() => {
+    e.style.transition = 'height 0.22s ease-out'
+    e.style.height = '0px'
+  })
+  e.addEventListener('transitionend', () => done(), { once: true })
+}
+
 // Opens the card (if needed) and jumps straight into editing.
 function openForEdit() {
   openTagMenuId.value = props.todo.id
@@ -892,30 +937,34 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-if="showMenu && mode === 'today'" class="check-row">
-          <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
-            <Clock :size="16" /> Done for today
-          </button>
-          <button class="check-opt" @click.stop="handleComplete(todo.id)">
-            <CheckCheck :size="16" /> Done
-          </button>
-        </div>
+        <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
+          <div v-if="showMenu && mode === 'today'" class="check-row">
+            <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
+              <Clock :size="16" /> Done for today
+            </button>
+            <button class="check-opt" @click.stop="handleComplete(todo.id)">
+              <CheckCheck :size="16" /> Done
+            </button>
+          </div>
+        </Transition>
 
-        <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
-          <template v-if="store.tags.length">
-            <label
-              v-for="tag in store.tags"
-              :key="tag.id"
-              class="tag-row-opt"
-              :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
-              @click.stop
-            >
-              <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
-              <span>{{ tag.label }}</span>
-            </label>
-          </template>
-          <span v-else class="tag-row-empty">No tags yet</span>
-        </div>
+        <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
+          <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
+            <template v-if="store.tags.length">
+              <label
+                v-for="tag in store.tags"
+                :key="tag.id"
+                class="tag-row-opt"
+                :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
+                @click.stop
+              >
+                <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
+                <span>{{ tag.label }}</span>
+              </label>
+            </template>
+            <span v-else class="tag-row-empty">No tags yet</span>
+          </div>
+        </Transition>
       </motion.div>
     </div>
     </motion.div>
