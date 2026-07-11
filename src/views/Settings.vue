@@ -122,6 +122,15 @@ function confirmDeleteTheme() {
       </div>
     </section>
 
+    <!-- Completion animations -->
+    <section class="section">
+      <h2 class="section-title">Completion animations</h2>
+      <div class="option-row">
+        <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">On</button>
+        <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">Off</button>
+      </div>
+    </section>
+
     <!-- Data -->
     <section class="section">
       <h2 class="section-title">Data</h2>

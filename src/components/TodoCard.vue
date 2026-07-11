@@ -241,6 +241,7 @@ import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
 import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
 import { useTodosStore, type Todo, PRIORITY_TAG_ID } from '../stores/todos'
+import { useThemeStore } from '../stores/theme'
 
 const props = defineProps<{
   todo: Todo
@@ -273,6 +274,7 @@ const enterInitial = props.gridMode
   : { opacity: 0, y: 16, scale: 0.9 }
 
 const store = useTodosStore()
+const themeStore = useThemeStore()
 
 const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
 
@@ -546,13 +548,13 @@ function cancelEdit() {
 }
 
 function handleComplete(id: string) {
-  celebrateBackground()
+  if (themeStore.celebrationsEnabled) celebrateBackground()
   openCheckMenuId.value = null
   emit('complete', id)
 }
 
 function handleDoneForToday(id: string) {
-  celebrateBackground()
+  if (themeStore.celebrationsEnabled) celebrateBackground()
   openCheckMenuId.value = null
   emit('done-for-today', id)
 }
