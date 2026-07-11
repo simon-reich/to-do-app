@@ -35,7 +35,14 @@
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  animation: shell-fade-in-side 0.4s ease-out both;
+  /* backwards, not both: holding the animation's final opacity:1 forever
+     (via forwards) would permanently win over the Settings/Calendar dim
+     rule below (opacity: 0.35) — CSS animations override normal
+     non-!important declarations for as long as they're "in effect". Once
+     this one's done playing, opacity should fall back to whatever the
+     normal cascade says (1 normally, 0.35 while dimmed), not stay pinned
+     at the animation's own end state. */
+  animation: shell-fade-in-side 0.4s ease-out backwards;
 }
 
 .tag-new-input {
