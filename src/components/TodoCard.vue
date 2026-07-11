@@ -180,9 +180,10 @@ watch(showTagMenu, (isOpen) => {
   }
 })
 
-// Escape/Enter close the card when it's open but not being edited (the
-// textarea has its own Escape/Enter handlers for the editing case, and
-// ignoring them here keeps the two from double-handling the same key).
+// Escape closes the card when it's open but not being edited; Enter instead
+// opens straight into text-edit mode (the textarea has its own Escape/Enter
+// handlers for the editing case itself, and ignoring them here keeps the
+// two from double-handling the same key).
 function onCardKeydown(e: KeyboardEvent) {
   if (e.key === 'Tab') {
     e.preventDefault()
@@ -192,6 +193,10 @@ function onCardKeydown(e: KeyboardEvent) {
   if (isEditing.value) return
   if (e.key !== 'Escape' && e.key !== 'Enter') return
   e.preventDefault()
+  if (e.key === 'Enter') {
+    if (showTagMenu.value) startEdit()
+    return
+  }
   if (showMenu.value) openCheckMenuId.value = null
   else if (showTagMenu.value) openTagMenuId.value = null
 }
