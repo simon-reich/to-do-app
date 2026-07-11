@@ -36,6 +36,7 @@ const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
         :font="fontMap.get(todo.id)"
         :sibling-ids="siblingIds"
         :index="index"
+        :grid-mode="!listView"
         mode="all"
         @send-to-today="store.sendToToday($event)"
         @remove-from-today="store.removeFromToday($event)"

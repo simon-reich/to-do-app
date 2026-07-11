@@ -112,14 +112,26 @@ const props = defineProps<{
    *  Shift+Tab jump straight to the next/previous card while one is open. */
   siblingIds?: string[]
   /** Position in the current list — staggers the mount-in bounce so cards
-   *  settle one after another instead of all at once. */
+   *  settle one after another instead of all at once. Ignored in grid mode. */
   index?: number
+  /** Grid (Overview) vs. list (Focus, Overview's list toggle) layout. In
+   *  grid mode the whole pool of todos surfaces together instead of
+   *  marching in one-by-one — closer to how the pool concept reads: an
+   *  undifferentiated collection, not a sequence. */
+  gridMode?: boolean
 }>()
 
 // Entrance bounce when a card first mounts (a fresh view, a newly created
-// todo, a filter revealing it again) — staggered by list position, capped
-// so a long list doesn't take forever to finish settling in.
-const enterDelay = Math.min((props.index ?? 0) * 0.035, 0.35)
+// todo, a filter revealing it again). List layout staggers by position so
+// cards settle in one after another; grid layout gives every card its own
+// small random jitter instead — reads as the whole pool surfacing at once
+// rather than a mechanical sequence, while still avoiding a dead-flat sync.
+const enterDelay = props.gridMode
+  ? Math.random() * 0.12
+  : Math.min((props.index ?? 0) * 0.035, 0.35)
+const enterInitial = props.gridMode
+  ? { opacity: 0, y: 0, scale: 0.75 }
+  : { opacity: 0, y: 16, scale: 0.9 }
 
 const store = useTodosStore()
 
@@ -751,7 +763,7 @@ onUnmounted(() => {
   >
     <motion.div
       class="todo-card-enter"
-      :initial="{ opacity: 0, y: 16, scale: 0.9 }"
+      :initial="enterInitial"
       :animate="{ opacity: 1, y: 0, scale: 1 }"
       :transition="{ type: 'spring', stiffness: 700, damping: 24, mass: 0.6, delay: enterDelay }"
     >
