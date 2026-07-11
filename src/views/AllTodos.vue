@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed } from 'vue'
+import { inject, computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useTodosStore } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
@@ -9,6 +9,13 @@ const store = useTodosStore()
 const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
 const sortKey = inject<Ref<'createdAt' | 'title'>>('sortKey')!
 const listView = inject<Ref<boolean>>('listView')!
+
+// Bumped whenever the grid/list toggle or the sort order changes, folded
+// into each card's :key below so the whole set remounts and replays its
+// entrance animation — otherwise Vue just reorders/restyles the existing
+// instances without ever re-triggering it.
+const renderGen = ref(0)
+watch([listView, sortKey], () => { renderGen.value++ })
 
 const filteredTodos = computed(() => {
   let result = store.activeTodos.filter(t => !t.inToday)
@@ -31,12 +38,12 @@ const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
     <div v-if="filteredTodos.length" class="todo-wrap" :class="{ 'list-view': listView }">
       <TodoCard
         v-for="(todo, index) in filteredTodos"
-        :key="todo.id"
+        :key="`${todo.id}-${renderGen}`"
         :todo="todo"
         :font="fontMap.get(todo.id)"
         :sibling-ids="siblingIds"
         :index="index"
-        :grid-mode="!listView"
+        :grid-mode="true"
         mode="all"
         @send-to-today="store.sendToToday($event)"
         @remove-from-today="store.removeFromToday($event)"

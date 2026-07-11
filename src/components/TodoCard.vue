@@ -114,10 +114,11 @@ const props = defineProps<{
   /** Position in the current list — staggers the mount-in bounce so cards
    *  settle one after another instead of all at once. Ignored in grid mode. */
   index?: number
-  /** Grid (Overview) vs. list (Focus, Overview's list toggle) layout. In
-   *  grid mode the whole pool of todos surfaces together instead of
-   *  marching in one-by-one — closer to how the pool concept reads: an
-   *  undifferentiated collection, not a sequence. */
+  /** Overview (both its grid and list toggle) vs. Focus. In this mode the
+   *  whole pool of todos surfaces together instead of marching in one-by-
+   *  one — closer to how the pool concept reads: an undifferentiated
+   *  collection, not a sequence. Focus keeps the marching-in stagger since
+   *  it's a deliberately curated, ordered subset instead. */
   gridMode?: boolean
 }>()
 
