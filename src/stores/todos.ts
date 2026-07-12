@@ -107,8 +107,14 @@ export const useTodosStore = defineStore('todos', () => {
   const userTags = computed(() => tags.value.filter(t => t.id !== PRIORITY_TAG_ID))
 
   function ensureSystemTags() {
-    if (!tags.value.find(t => t.id === PRIORITY_TAG_ID)) {
-      tags.value.unshift({ id: PRIORITY_TAG_ID, label: 'priority' })
+    const existing = tags.value.find(t => t.id === PRIORITY_TAG_ID)
+    if (!existing) {
+      tags.value.unshift({ id: PRIORITY_TAG_ID, label: 'prio' })
+    } else if (existing.label !== 'prio') {
+      // Keeps already-persisted installs (localStorage still holding the
+      // old 'priority' label) in sync with the current label instead of
+      // only applying it to brand-new tag lists.
+      existing.label = 'prio'
     }
   }
 

@@ -377,7 +377,7 @@ watch(() => route.path, () => {
           :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
           @click="toggleTag(PRIORITY_TAG_ID)"
         >
-          priority
+          prio
         </button>
       </div>
     </div>
@@ -455,7 +455,7 @@ watch(() => route.path, () => {
           v-else
           class="mobile-tags-btn priority-toggle-btn mobile-only"
           :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID) }"
-          :title="activeTagIds.includes(PRIORITY_TAG_ID) ? 'Showing priority – tap for all' : 'Showing all – tap for priority'"
+          :title="activeTagIds.includes(PRIORITY_TAG_ID) ? 'Showing prio – tap for all' : 'Showing all – tap for prio'"
           @click="toggleTag(PRIORITY_TAG_ID)"
         >
           <Flag :size="22" :fill="activeTagIds.includes(PRIORITY_TAG_ID) ? 'currentColor' : 'none'" />
@@ -480,7 +480,7 @@ watch(() => route.path, () => {
           :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
           @click="toggleTag(PRIORITY_TAG_ID)"
         >
-          priority
+          prio
         </button>
 
         <div
