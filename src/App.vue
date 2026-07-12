@@ -68,6 +68,11 @@ function shortcutsBlocked(e: KeyboardEvent): boolean {
 }
 
 function onGlobalKeydown(e: KeyboardEvent) {
+  // All keyboard shortcuts (Tab-cycling included) are desktop-only — below
+  // this breakpoint there's essentially never a physical keyboard around,
+  // and leaving them active here was exactly the kind of surface that kept
+  // producing odd side effects (see the Tab-cycling fixes above this file).
+  if (window.innerWidth <= DESKTOP_BREAKPOINT) return
   if (e.key === 'Tab') {
     // Checked before isTypingTarget: a card being open/edited takes
     // priority over the "don't interrupt typing" guard, which exists to
@@ -202,6 +207,7 @@ function confirmDeleteTag() {
 }
 
 function handleTagKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') { (e.target as HTMLElement)?.blur(); return }
   if (e.key !== 'Enter') return
   const labels = tagInput.value.split(',').map(s => s.trim()).filter(Boolean)
   let dupIndex = 0
