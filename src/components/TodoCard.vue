@@ -224,27 +224,64 @@ export function celebrateBackground() {
   else bgFireworks()
 }
 
-import { ref as vueRef, watch as vueWatch } from 'vue'
+import { ref as vueRef } from 'vue'
 // Shared across all instances – only one menu open at a time. Exported so
-// App.vue's Tab-between-views handler can tell whether a card is currently
-// open and back off (the card's own Tab handling takes precedence then).
+// App.vue's single Tab handler can tell whether a card is currently open
+// (and cycle between cards instead of views) or closed (and cycle views).
 export const openTagMenuId = vueRef<string | null>(null)
 export const openCheckMenuId = vueRef<string | null>(null)
 
-if (import.meta.env.DEV) {
-  vueWatch(openCheckMenuId, (v, old) => {
-    console.debug('[menu-id] openCheckMenuId', old, '->', v)
-    console.trace()
-  })
-  vueWatch(openTagMenuId, (v, old) => {
-    console.debug('[menu-id] openTagMenuId', old, '->', v)
-    console.trace()
-  })
-}
-// Set by navigateSibling right before opening the next/previous card, so
-// that card knows to jump straight into editing (carrying over whether
-// Tab was pressed while actively editing, not just while open).
+// Set by cycleOpenCard right before opening the next/previous card, so that
+// card knows to jump straight into editing (carrying over whether Tab was
+// pressed while actively editing, not just while open).
 const editIntentId = vueRef<string | null>(null)
+
+// Descriptor the currently-open card registers itself with (see the
+// showMenu/showTagMenu watch in <script setup> below) — lets a single
+// document-level Tab handler (App.vue) drive card-to-card cycling without
+// needing its own listener per card. Previously each open card attached its
+// own 'keydown' listener and handled Tab itself, entirely independently of
+// App.vue's view-cycling listener; nothing stopped both from existing at
+// once, and since cycling always lands on *some* card (never closes one),
+// once any card opened, Tab silently drove card-cycling forever instead of
+// view-switching, with no way to tell from the outside.
+interface ActiveCardApi {
+  todoId: string
+  mode: 'all' | 'today'
+  getSiblingIds: () => string[] | undefined
+  isEditing: () => boolean
+  saveEdit: () => void
+}
+const activeCardApi = vueRef<ActiveCardApi | null>(null)
+
+// Tab/Shift+Tab jump to the next/previous card in the list instead of
+// tabbing through individual tag checkboxes — carries the current editing
+// state along: tabbing away from an actively-edited title lands in the next
+// card's edit mode too, tabbing away from a merely-open card just opens the
+// next one the same way.
+export function cycleOpenCard(direction: 1 | -1) {
+  const api = activeCardApi.value
+  if (!api) return
+  const ids = api.getSiblingIds()
+  if (!ids || ids.length < 2) return
+  const idx = ids.indexOf(api.todoId)
+  if (idx === -1) return
+  const nextId = ids[(idx + direction + ids.length) % ids.length]
+  const wasEditing = api.isEditing()
+  if (wasEditing) api.saveEdit()
+  if (wasEditing) editIntentId.value = nextId
+  if (api.mode === 'today') openCheckMenuId.value = nextId
+  else openTagMenuId.value = nextId
+}
+
+// Called by App.vue on every view change, so a card left open (or mid-edit)
+// never survives a switch away — coming back to a view should never show
+// something still open or half-typed.
+export function closeActiveCard() {
+  if (activeCardApi.value?.isEditing()) activeCardApi.value.saveEdit()
+  openTagMenuId.value = null
+  openCheckMenuId.value = null
+}
 </script>
 
 <script setup lang="ts">
@@ -327,25 +364,7 @@ function closeOnOutside(e: MouseEvent) {
   }
 }
 
-// Tab/Shift+Tab jump to the next/previous card in the list instead of
-// tabbing through individual tag checkboxes — carries the current
-// editing state along: tabbing away from an actively-edited title lands
-// in the next card's edit mode too, tabbing away from a merely-open card
-// just opens the next one the same way.
-function navigateSibling(direction: 1 | -1) {
-  const ids = props.siblingIds
-  if (!ids || ids.length < 2) return
-  const idx = ids.indexOf(props.todo.id)
-  if (idx === -1) return
-  const nextId = ids[(idx + direction + ids.length) % ids.length]
-  const wasEditing = isEditing.value
-  if (wasEditing) saveEdit()
-  if (wasEditing) editIntentId.value = nextId
-  if (props.mode === 'today') openCheckMenuId.value = nextId
-  else openTagMenuId.value = nextId
-}
-
-// Picks up the edit intent left by a sibling's navigateSibling() once this
+// Picks up the edit intent left by a sibling's cycleOpenCard() once this
 // card actually becomes the open one.
 watch(showTagMenu, (isOpen) => {
   if (isOpen && editIntentId.value === props.todo.id) {
@@ -357,13 +376,10 @@ watch(showTagMenu, (isOpen) => {
 // Escape closes the card when it's open but not being edited; Enter instead
 // opens straight into text-edit mode (the textarea has its own Escape/Enter
 // handlers for the editing case itself, and ignoring them here keeps the
-// two from double-handling the same key).
+// two from double-handling the same key). Tab isn't handled here — App.vue's
+// single document-level handler drives card-to-card cycling via
+// cycleOpenCard() instead, using the activeCardApi registered below.
 function onCardKeydown(e: KeyboardEvent) {
-  if (e.key === 'Tab') {
-    e.preventDefault()
-    navigateSibling(e.shiftKey ? -1 : 1)
-    return
-  }
   if (isEditing.value) return
   if (e.key !== 'Escape' && e.key !== 'Enter') return
   e.preventDefault()
@@ -379,9 +395,17 @@ watch([showMenu, showTagMenu], ([m, t]) => {
   if (m || t) {
     document.addEventListener('click', closeOnOutside)
     document.addEventListener('keydown', onCardKeydown)
+    activeCardApi.value = {
+      todoId: props.todo.id,
+      mode: props.mode,
+      getSiblingIds: () => props.siblingIds,
+      isEditing: () => isEditing.value,
+      saveEdit,
+    }
   } else {
     document.removeEventListener('click', closeOnOutside)
     document.removeEventListener('keydown', onCardKeydown)
+    if (activeCardApi.value?.todoId === props.todo.id) activeCardApi.value = null
     // Only blur if focus is still inside *this* card — otherwise this fires
     // after focus has already moved on to a different card (e.g. clicking
     // straight from one open todo into another) and would steal it back.
@@ -960,6 +984,7 @@ onUnmounted(() => {
   unlockScroll()
   if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
   if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
+  if (activeCardApi.value?.todoId === props.todo.id) activeCardApi.value = null
   if (titleClickTimer) clearTimeout(titleClickTimer)
 })
 </script>

@@ -6,14 +6,22 @@ import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
 import ScrollDivider from './components/ScrollDivider.vue'
-import { openTagMenuId, openCheckMenuId } from './components/TodoCard.vue'
+import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
 
 const router = useRouter()
 const route = useRoute()
 
 // Tab/Shift+Tab cycle between the three main views — but only when no todo
-// card is open (that has its own Tab handling, cycling cards instead) and
-// focus isn't in a text field (where Tab should behave normally).
+// card is open (in which case cards are cycled instead) and focus isn't in
+// a text field (where Tab should behave normally). This is the single
+// place Tab is handled at all: previously each open card also attached its
+// own document-level 'keydown' listener and handled Tab itself, entirely
+// independently of this one — nothing stopped both from existing at once,
+// and since card-cycling always lands on *some* card (never closes one),
+// once any card opened (even a stray single-click most people wouldn't
+// notice), Tab silently drove card-cycling forever instead of switching
+// views, with no way to tell from outside TodoCard.vue. Now there's exactly
+// one handler, and it decides which behavior applies.
 const viewOrder = ['/all', '/focus', '/calendar']
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -30,45 +38,36 @@ function isTypingTarget(target: EventTarget | null): boolean {
 // silently gives up. Tracking our own optimistic index instead — updated
 // the instant we decide to navigate, corrected from route.path only when it
 // actually lands on one of the three views — means consecutive presses never
-// depend on that async settling. (An earlier fix awaited router.push() and
-// gated on a "navigating" flag instead; that flag lived in a plain variable
-// nothing else ever reset, so if a push were ever slow to settle, Tab would
-// stay dead even after navigating away by other means. This has no such
-// lock — it never waits on the promise at all.)
+// depend on that async settling.
 let currentViewIdx = viewOrder.indexOf(route.path)
+
+// Whatever view we're leaving, a card left open (or mid-edit) there should
+// never survive the switch — coming back later should never show something
+// still open or half-typed. Covers every way of navigating, not just Tab
+// (a plain nav-link click bypasses onGlobalKeydown entirely).
 watch(() => route.path, (path) => {
+  closeActiveCard()
   const idx = viewOrder.indexOf(path)
   if (idx !== -1) currentViewIdx = idx
 })
 
 function onGlobalKeydown(e: KeyboardEvent) {
   if (e.key !== 'Tab') return
+  // Checked before isTypingTarget: a card being open/edited takes priority
+  // over the "don't interrupt typing" guard below, which exists to protect
+  // the top-level add-todo input specifically — cycleOpenCard() carrying
+  // Tab away from an actively-edited title into the next card (see its own
+  // wasEditing handling) is deliberate, not something to suppress here.
   if (openTagMenuId.value || openCheckMenuId.value) {
-    if (import.meta.env.DEV) console.debug('[tab-cycle] blocked: card open', { openTagMenuId: openTagMenuId.value, openCheckMenuId: openCheckMenuId.value })
+    e.preventDefault()
+    cycleOpenCard(e.shiftKey ? -1 : 1)
     return
   }
-  if (isTypingTarget(e.target)) {
-    if (import.meta.env.DEV) console.debug('[tab-cycle] blocked: typing target', e.target)
-    return
-  }
-  if (currentViewIdx === -1) {
-    if (import.meta.env.DEV) console.debug('[tab-cycle] blocked: currentViewIdx is -1', { path: route.path })
-    return
-  }
+  if (isTypingTarget(e.target)) return
+  if (currentViewIdx === -1) return
   e.preventDefault()
   currentViewIdx = (currentViewIdx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length
-  const target = viewOrder[currentViewIdx]
-  if (import.meta.env.DEV) {
-    console.debug('[tab-cycle]', { from: route.path, currentViewIdx, target })
-  }
-  router.push(target).then(
-    (failure) => {
-      if (import.meta.env.DEV && failure) console.debug('[tab-cycle] push failure', failure)
-    },
-    (err) => {
-      if (import.meta.env.DEV) console.debug('[tab-cycle] push rejected', err)
-    },
-  )
+  router.push(viewOrder[currentViewIdx])
 }
 
 const themeStore = useThemeStore()
