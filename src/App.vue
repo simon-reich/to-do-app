@@ -43,12 +43,32 @@ watch(() => route.path, (path) => {
 
 function onGlobalKeydown(e: KeyboardEvent) {
   if (e.key !== 'Tab') return
-  if (openTagMenuId.value || openCheckMenuId.value) return
-  if (isTypingTarget(e.target)) return
-  if (currentViewIdx === -1) return
+  if (openTagMenuId.value || openCheckMenuId.value) {
+    if (import.meta.env.DEV) console.debug('[tab-cycle] blocked: card open', { openTagMenuId: openTagMenuId.value, openCheckMenuId: openCheckMenuId.value })
+    return
+  }
+  if (isTypingTarget(e.target)) {
+    if (import.meta.env.DEV) console.debug('[tab-cycle] blocked: typing target', e.target)
+    return
+  }
+  if (currentViewIdx === -1) {
+    if (import.meta.env.DEV) console.debug('[tab-cycle] blocked: currentViewIdx is -1', { path: route.path })
+    return
+  }
   e.preventDefault()
   currentViewIdx = (currentViewIdx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length
-  router.push(viewOrder[currentViewIdx])
+  const target = viewOrder[currentViewIdx]
+  if (import.meta.env.DEV) {
+    console.debug('[tab-cycle]', { from: route.path, currentViewIdx, target })
+  }
+  router.push(target).then(
+    (failure) => {
+      if (import.meta.env.DEV && failure) console.debug('[tab-cycle] push failure', failure)
+    },
+    (err) => {
+      if (import.meta.env.DEV) console.debug('[tab-cycle] push rejected', err)
+    },
+  )
 }
 
 const themeStore = useThemeStore()
