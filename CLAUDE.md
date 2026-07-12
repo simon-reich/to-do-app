@@ -145,6 +145,22 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 - **✓ Done** – Setzt `completedAt`, Todo wandert ins Archiv.
 - **◷ Done for today** – Fügt Timestamp zu `workLog[]` hinzu, setzt `inToday = false`. Todo bleibt im Pool.
 
+## Keyboard-Shortcuts (nur Desktop, > 1024px)
+
+Alle Shortcuts leben in **einem einzigen** globalen `keydown`-Listener in `App.vue` (bewusst, siehe unten). Unterhalb der Desktop-Breite ist der komplette Handler deaktiviert – kein Tab-Cycling, keine Einzeltasten-Shortcuts.
+
+- **Tab / Shift+Tab** – kein Todo offen: schaltet zwischen All/Focus/Calendar durch. Ein Todo offen: schaltet stattdessen zwischen Karten durch (`cycleOpenCard`), trägt eine laufende Bearbeitung auf die nächste Karte weiter.
+- **S** – Sort togglen (Datum ↔ A–Z). Nur Overview, sonst No-Op.
+- **G** – Grid/List togglen. Nur Overview, sonst No-Op.
+- **A** – Fokus ins Add-Todo-Feld. Overview + Focus.
+- **T** – Fokus ins Tag-Input in der Sidebar. Overview + Focus.
+- **X** – Settings togglen, kehrt zum vorher aktiven Haupt-View zurück (nicht hart auf Overview verdrahtet).
+- **Escape** – schließt/blurt immer das, was gerade offen/fokussiert ist (Add-Todo-Input, Tag-Input, offene Karte, Swipe-Delete-Bestätigung).
+
+Alle Einzeltasten-Shortcuts (S/G/A/T/X) greifen nicht, während in einem Textfeld getippt wird, während eine Karte offen ist, oder mit gedrückter Modifier-Taste (Cmd/Ctrl/Alt).
+
+**Wichtig:** Tab-Cycling zwischen Views und Tab-Cycling zwischen Karten dürfen nie zwei unabhängige Listener sein – das hat früher zu einem Bug geführt, bei dem eine offen gebliebene Karte (unbemerkt durch einen einfachen Klick) das View-Wechseln per Tab dauerhaft blockiert hat, weil Karten-Cycling nie schließt, nur immer zur nächsten Karte springt. Außerdem schließt ein View-Wechsel (gleich wodurch ausgelöst) immer jede offene Karte und sichert eine laufende Bearbeitung – ein View darf beim erneuten Betreten nie etwas offen/halb editiert zeigen.
+
 ## Implementierungs-Phasen
 
 | Phase | Inhalt | Geschätzte Zeit |
