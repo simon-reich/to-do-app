@@ -64,12 +64,22 @@
   color: var(--ink);
 }
 
-/* Tags off: All/Priority sit side by side where the tag input used to be —
+/* Tags off: All/Prio stacked where the tag input used to be — same pairing
+   as the normal sidebar tag-list's own vertical All/Priority pair.
    .priority-btn's own margin-bottom (spacing it from the tag list below in
-   the normal sidebar body) doesn't apply in this horizontal context. */
+   the normal sidebar body) doesn't apply in this standalone context. */
 .desktop-all-priority-row {
   display: flex;
+  flex-direction: column;
   gap: 7px;
+  /* .sidebar-head centers its child vertically (fine for the single-line
+     tag input) — but stacked two buttons tall, that centering would push
+     "all"'s top edge well above the add-todo input's top edge in the main
+     head across the grid. Pin to the top instead, then nudge down by the
+     measured (input height − button height) / 2 so "all"'s top edge lines
+     up with the input's, not just with sidebar-head's own padding. */
+  align-self: flex-start;
+  margin-top: 8.75px;
 }
 
 .desktop-all-priority-row .priority-btn {
@@ -311,6 +321,16 @@
   color: var(--ink);
   font-size: 13px;
   padding: 4px 10px;
+  /* Buttons render in the mono font (see base.css), so every character is
+     the same width — "prio" (4 chars) is unavoidably wider than "all" (3
+     chars) at their natural content width. A min-width doesn't fix that
+     (it only clamps the shorter one up, "prio" still overshoots it); a
+     fixed width sized to fit "prio" pins both to the exact same box
+     everywhere the pair appears (sidebar list, desktop row, mobile/tablet
+     row). */
+  width: 56px;
+  text-align: center;
+  white-space: nowrap;
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
