@@ -131,6 +131,15 @@ function confirmDeleteTheme() {
       </div>
     </section>
 
+    <!-- Tags -->
+    <section class="section">
+      <h2 class="section-title">Tags</h2>
+      <div class="option-row">
+        <button class="btn-outline" :class="{ active: themeStore.tagsEnabled }" @click="themeStore.tagsEnabled || themeStore.toggleTags()">On</button>
+        <button class="btn-outline" :class="{ active: !themeStore.tagsEnabled }" @click="themeStore.tagsEnabled && themeStore.toggleTags()">Off</button>
+      </div>
+    </section>
+
     <!-- Data -->
     <section class="section">
       <h2 class="section-title">Data</h2>

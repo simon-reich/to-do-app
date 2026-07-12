@@ -64,6 +64,18 @@
   color: var(--ink);
 }
 
+/* Tags off: All/Priority sit side by side where the tag input used to be —
+   .priority-btn's own margin-bottom (spacing it from the tag list below in
+   the normal sidebar body) doesn't apply in this horizontal context. */
+.desktop-all-priority-row {
+  display: flex;
+  gap: 7px;
+}
+
+.desktop-all-priority-row .priority-btn {
+  margin-bottom: 0;
+}
+
 /* ── Main head ── */
 .main-head {
   grid-column: 2;
@@ -115,6 +127,14 @@
 .settings-btn.active,
 .tag-x:hover,
 .mobile-tags-btn:hover {
+  color: var(--ink-dark);
+}
+
+/* Tags off (mobile/tablet): the tag-panel icon is replaced by a direct
+   All/Priority toggle occupying the same slot — filled flag + darker ink
+   signal "showing priority only", same color-only-active language as
+   .nav-icon.router-link-active above. */
+.priority-toggle-btn.active {
   color: var(--ink-dark);
 }
 

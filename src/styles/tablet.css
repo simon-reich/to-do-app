@@ -77,13 +77,18 @@
      height automatically (no fixed pixel offset needed), landing right at
      the button row's baseline regardless of how tall the input line is. */
   .settings-head {
-    position: static;
+    /* Must be positioned (not static) for z-index to apply at all — static
+       elements ignore it and stack purely by DOM order, which let
+       .main-head's own z-index:20 stacking context (its full-width
+       .main-head-inner child spans the same grid cell) paint over this
+       button and swallow its clicks despite the z-index declared here. */
+    position: relative;
     grid-column: 1;
     grid-row: 1;
     align-self: end;
     justify-self: end;
     height: auto;
-    z-index: 2;
+    z-index: 21;
   }
 
   /* ── Content: near-edge-to-edge, more cards fit per row ── */

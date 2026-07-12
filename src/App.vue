@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
+import { ref, computed, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, CircleArrowDown, LayoutList, LayoutGrid } from '@lucide/vue'
+import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, Flag, CircleArrowDown, LayoutList, LayoutGrid } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
@@ -244,12 +244,19 @@ const todoInputRef = ref<HTMLInputElement | null>(null)
 const showTagModal = ref(false)
 const newTodoTagIds = ref<string[]>([])
 
+// Tags off: the add-todo checkbox row still offers the priority tag (it's
+// not a real tag from the user's point of view, just the marker the
+// All/Priority filter reads), but user-created tags stay hidden here too —
+// otherwise disabling tags in Settings wouldn't actually hide them from
+// this row.
+const addTagModalTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID))
+
 function onTodoFocus() {
-  if (store.tags.length > 0) showTagModal.value = true
+  if (addTagModalTags.value.length > 0) showTagModal.value = true
 }
 
 function onTodoInput() {
-  if (store.tags.length > 0) showTagModal.value = true
+  if (addTagModalTags.value.length > 0) showTagModal.value = true
 }
 
 function onTodoBlur() {
@@ -346,15 +353,33 @@ watch(() => route.path, () => {
     }"
   >
 
-    <!-- ══ DESKTOP: Sidebar head (tag input) ══ -->
+    <!-- ══ DESKTOP: Sidebar head (tag input, or All/Priority when tags are off) ══ -->
     <div class="sidebar-head desktop-only">
       <input
+        v-if="themeStore.tagsEnabled"
         ref="tagInputRef"
         v-model="tagInput"
         class="tag-new-input"
         placeholder="tag, ... + enter"
         @keydown="handleTagKey"
       />
+      <div v-else class="desktop-all-priority-row">
+        <button
+          class="all-btn"
+          :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
+          @click="activeTagIds = []"
+        >
+          all
+        </button>
+
+        <button
+          class="all-btn priority-btn"
+          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
+          @click="toggleTag(PRIORITY_TAG_ID)"
+        >
+          priority
+        </button>
+      </div>
     </div>
 
     <!-- ══ Main head: add todo input (hidden on settings + mobile-tags-open) ══ -->
@@ -379,7 +404,7 @@ watch(() => route.path, () => {
         </div>
 
         <!-- Add todo input -->
-        <div class="add-wrapper" :class="{ 'add-wrapper--open': showTagModal && store.tags.length }">
+        <div class="add-wrapper" :class="{ 'add-wrapper--open': showTagModal && addTagModalTags.length }">
           <input
             ref="todoInputRef"
             v-model="todoInput"
@@ -391,9 +416,9 @@ watch(() => route.path, () => {
             @keydown.enter.prevent="addTodo"
             @keydown.escape="showTagModal = false; todoInputRef?.blur()"
           />
-          <div v-if="showTagModal && store.tags.length" class="add-tag-row" @mousedown.prevent>
+          <div v-if="showTagModal && addTagModalTags.length" class="add-tag-row" @mousedown.prevent>
             <label
-              v-for="tag in store.tags"
+              v-for="tag in addTagModalTags"
               :key="tag.id"
               class="tag-row-opt"
               :class="{ checked: newTodoTagIds.includes(tag.id), dimmed: newTodoTagIds.length > 0 && !newTodoTagIds.includes(tag.id) }"
@@ -417,15 +442,29 @@ watch(() => route.path, () => {
           </RouterLink>
         </nav>
 
-        <!-- Mobile: tag panel toggle -->
-        <button class="mobile-tags-btn mobile-only" title="Tags" @click="showMobileTags = true">
+        <!-- Mobile/Tablet: tag panel toggle, or direct All/Priority toggle when tags are off -->
+        <button
+          v-if="themeStore.tagsEnabled"
+          class="mobile-tags-btn mobile-only"
+          title="Tags"
+          @click="showMobileTags = true"
+        >
           <Tag :size="22" />
+        </button>
+        <button
+          v-else
+          class="mobile-tags-btn priority-toggle-btn mobile-only"
+          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID) }"
+          :title="activeTagIds.includes(PRIORITY_TAG_ID) ? 'Showing priority – tap for all' : 'Showing all – tap for priority'"
+          @click="toggleTag(PRIORITY_TAG_ID)"
+        >
+          <Flag :size="22" :fill="activeTagIds.includes(PRIORITY_TAG_ID) ? 'currentColor' : 'none'" />
         </button>
       </div>
     </div>
 
     <!-- ══ DESKTOP: Sidebar body (tag list) ══ -->
-    <aside ref="sidebarRef" class="sidebar desktop-only" @scroll="onSidebarScroll">
+    <aside v-if="themeStore.tagsEnabled" ref="sidebarRef" class="sidebar desktop-only" @scroll="onSidebarScroll">
       <ScrollDivider class="sidebar-scroll-divider" :visible="sidebarScrolled" />
       <div class="tag-list">
         <button
@@ -472,6 +511,7 @@ watch(() => route.path, () => {
     </div>
 
     <!-- ══ MOBILE: Tag panel (full screen, replaces main-head + content) ══ -->
+    <template v-if="themeStore.tagsEnabled">
     <Transition name="tags-panel">
     <div v-show="showMobileTags" ref="tagsPanelRef" class="mobile-tags-panel mobile-only" @scroll="onTagsPanelScroll">
       <div class="mobile-tags-head">
@@ -526,6 +566,7 @@ watch(() => route.path, () => {
     </div>
     </Transition>
     <ScrollDivider v-if="showMobileTags" class="tags-scroll-divider-bottom mobile-only" :visible="!tagsPanelScrolledToBottom" />
+    </template>
 
     <!-- ══ Main content ══ -->
     <main ref="mainContent" class="main-content" @scroll="onScroll">

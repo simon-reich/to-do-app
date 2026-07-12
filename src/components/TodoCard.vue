@@ -326,6 +326,11 @@ const themeStore = useThemeStore()
 
 const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
 
+// Tags off: the per-card tag menu still offers the priority tag (the
+// All/Priority filter's marker, not a user tag) but hides user-created
+// tags, matching the same rule the add-todo tag row follows in App.vue.
+const tagMenuTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID))
+
 
 const emit = defineEmits<{
   'send-to-today': [id: string]
@@ -1145,9 +1150,9 @@ onUnmounted(() => {
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
           <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
-            <template v-if="store.tags.length">
+            <template v-if="tagMenuTags.length">
               <label
-                v-for="tag in store.tags"
+                v-for="tag in tagMenuTags"
                 :key="tag.id"
                 class="tag-row-opt"
                 :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"

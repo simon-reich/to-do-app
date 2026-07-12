@@ -23,6 +23,7 @@ export const useThemeStore = defineStore('theme', () => {
   const rounded = ref(true)
   const priorityShadow = ref<'mono' | 'dark'>('dark')
   const celebrationsEnabled = ref(true)
+  const tagsEnabled = ref(true)
   const savedThemes = ref<ColorTheme[]>([])
 
   function apply(bg: string, gray: string) {
@@ -45,6 +46,10 @@ export const useThemeStore = defineStore('theme', () => {
     celebrationsEnabled.value = !celebrationsEnabled.value
   }
 
+  function toggleTags() {
+    tagsEnabled.value = !tagsEnabled.value
+  }
+
   function saveTheme(name: string) {
     savedThemes.value.push({
       id: uuid(),
@@ -62,5 +67,5 @@ export const useThemeStore = defineStore('theme', () => {
     apply(theme.bg, theme.gray)
   }
 
-  return { activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, savedThemes, apply, toggleRounded, togglePriorityShadow, toggleCelebrations, saveTheme, deleteTheme, loadTheme }
+  return { activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, savedThemes, apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, saveTheme, deleteTheme, loadTheme }
 }, { persist: true })
