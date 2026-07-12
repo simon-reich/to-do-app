@@ -8,6 +8,9 @@ import { useScrollTracking } from './composables/useScrollTracking'
 import ScrollDivider from './components/ScrollDivider.vue'
 import { openTagMenuId, openCheckMenuId } from './components/TodoCard.vue'
 
+const router = useRouter()
+const route = useRoute()
+
 // Tab/Shift+Tab cycle between the three main views — but only when no todo
 // card is open (that has its own Tab handling, cycling cards instead) and
 // focus isn't in a text field (where Tab should behave normally).
@@ -22,28 +25,30 @@ function isTypingTarget(target: EventTarget | null): boolean {
 // router.push() resolves asynchronously, and route.path briefly reflects an
 // in-between state while it does (verified: reading it right after a push
 // can momentarily show "/", the redirect route, before it settles on the
-// actual target). Without this guard, a Tab press landing in that window
-// reads route.path, finds it isn't one of the three views, and silently
-// gives up — permanently, since nothing else ever retries. Serializing our
-// own navigations means route.path is only ever read once the previous one
-// has fully settled.
-let navigating = false
+// actual target). Reading route.path fresh on every keypress means a Tab
+// press landing in that window finds it isn't one of the three views and
+// silently gives up. Tracking our own optimistic index instead — updated
+// the instant we decide to navigate, corrected from route.path only when it
+// actually lands on one of the three views — means consecutive presses never
+// depend on that async settling. (An earlier fix awaited router.push() and
+// gated on a "navigating" flag instead; that flag lived in a plain variable
+// nothing else ever reset, so if a push were ever slow to settle, Tab would
+// stay dead even after navigating away by other means. This has no such
+// lock — it never waits on the promise at all.)
+let currentViewIdx = viewOrder.indexOf(route.path)
+watch(() => route.path, (path) => {
+  const idx = viewOrder.indexOf(path)
+  if (idx !== -1) currentViewIdx = idx
+})
 
-async function onGlobalKeydown(e: KeyboardEvent) {
+function onGlobalKeydown(e: KeyboardEvent) {
   if (e.key !== 'Tab') return
-  if (navigating) return
   if (openTagMenuId.value || openCheckMenuId.value) return
   if (isTypingTarget(e.target)) return
-  const idx = viewOrder.indexOf(route.path)
-  if (idx === -1) return
+  if (currentViewIdx === -1) return
   e.preventDefault()
-  const next = viewOrder[(idx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length]
-  navigating = true
-  try {
-    await router.push(next)
-  } finally {
-    navigating = false
-  }
+  currentViewIdx = (currentViewIdx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length
+  router.push(viewOrder[currentViewIdx])
 }
 
 const themeStore = useThemeStore()
@@ -73,8 +78,6 @@ onUnmounted(() => {
 })
 
 const store = useTodosStore()
-const router = useRouter()
-const route = useRoute()
 
 // ── Toast bubbles ──
 let toastIdCounter = 0
