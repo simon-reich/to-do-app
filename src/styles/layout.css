@@ -73,6 +73,15 @@
   justify-content: center;
   padding: 12px 20px 17px;
   animation: shell-fade-in-top 0.4s ease-out both;
+  /* The entrance animation above leaves a lingering transform on the final
+     keyframe (fill-mode "both"), which makes this an (accidental) stacking
+     context. Without an explicit z-index here, that context still stacks by
+     DOM order against later siblings (.sidebar, .main-content, .settings-head),
+     which is why the expanded add-tag-row dropdown was rendering underneath
+     them on desktop/tablet. Mobile already sets its own explicit z-index for
+     the sticky header (see mobile.css) — this mirrors that for desktop/tablet. */
+  position: relative;
+  z-index: 20;
 }
 
 .main-head-inner {
