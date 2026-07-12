@@ -224,12 +224,23 @@ export function celebrateBackground() {
   else bgFireworks()
 }
 
-import { ref as vueRef } from 'vue'
+import { ref as vueRef, watch as vueWatch } from 'vue'
 // Shared across all instances – only one menu open at a time. Exported so
 // App.vue's Tab-between-views handler can tell whether a card is currently
 // open and back off (the card's own Tab handling takes precedence then).
 export const openTagMenuId = vueRef<string | null>(null)
 export const openCheckMenuId = vueRef<string | null>(null)
+
+if (import.meta.env.DEV) {
+  vueWatch(openCheckMenuId, (v, old) => {
+    console.debug('[menu-id] openCheckMenuId', old, '->', v)
+    console.trace()
+  })
+  vueWatch(openTagMenuId, (v, old) => {
+    console.debug('[menu-id] openTagMenuId', old, '->', v)
+    console.trace()
+  })
+}
 // Set by navigateSibling right before opening the next/previous card, so
 // that card knows to jump straight into editing (carrying over whether
 // Tab was pressed while actively editing, not just while open).
