@@ -41,16 +41,22 @@ export function useListFlip(ids: () => string[], containerSelector: string) {
       const dx = oldRect.left - newRect.left
       const dy = oldRect.top - newRect.top
       if (!dx && !dy) return
-      // Plain ease-out, no overshoot — a back-out curve's overshoot scales
-      // with the distance moved, and a sort can move a card a very long
-      // way (top of the list to the bottom), which turned a subtle wobble
-      // into a wild fling past its resting position on a big reorder.
+      // Back-out (bounce) easing for the short reshuffles a delete/swipe
+      // causes — its overshoot scales with distance moved, though, and a
+      // sort can drag a card the full height of the list, turning that same
+      // curve into a wild fling. Past OVERSHOOT_MAX_DISTANCE we fall back to
+      // plain ease-out instead.
+      const distance = Math.hypot(dx, dy)
+      const OVERSHOOT_MAX_DISTANCE = 160
+      const { duration, easing } = distance <= OVERSHOOT_MAX_DISTANCE
+        ? { duration: 380, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+        : { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
       el.animate(
         [
           { transform: `translate(${dx}px, ${dy}px)` },
           { transform: 'translate(0, 0)' },
         ],
-        { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        { duration, easing },
       )
     })
   }
