@@ -19,15 +19,31 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return tag === 'input' || tag === 'textarea' || !!el?.isContentEditable
 }
 
-function onGlobalKeydown(e: KeyboardEvent) {
+// router.push() resolves asynchronously, and route.path briefly reflects an
+// in-between state while it does (verified: reading it right after a push
+// can momentarily show "/", the redirect route, before it settles on the
+// actual target). Without this guard, a Tab press landing in that window
+// reads route.path, finds it isn't one of the three views, and silently
+// gives up — permanently, since nothing else ever retries. Serializing our
+// own navigations means route.path is only ever read once the previous one
+// has fully settled.
+let navigating = false
+
+async function onGlobalKeydown(e: KeyboardEvent) {
   if (e.key !== 'Tab') return
+  if (navigating) return
   if (openTagMenuId.value || openCheckMenuId.value) return
   if (isTypingTarget(e.target)) return
   const idx = viewOrder.indexOf(route.path)
   if (idx === -1) return
   e.preventDefault()
   const next = viewOrder[(idx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length]
-  router.push(next)
+  navigating = true
+  try {
+    await router.push(next)
+  } finally {
+    navigating = false
+  }
 }
 
 const themeStore = useThemeStore()
