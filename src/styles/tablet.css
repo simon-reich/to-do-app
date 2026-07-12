@@ -63,6 +63,24 @@
     grid-area: sort;
   }
 
+  /* main-head-inner's grid spans the full row width, including the two
+     unused trailing columns ("." ".") — an empty area with nothing painted
+     in it, but still a real, hit-testable box that sat on top of
+     .settings-head (see below) and swallowed clicks meant for it, even
+     though nothing was visible there. Disabling hit-testing on the empty
+     shell and re-enabling it only on the actual controls fixes that
+     without touching paint/stacking order at all — the add-todo tag
+     dropdown (z-index:30, scoped inside .main-head's own z-index:20
+     stacking context) still needs to render above .settings-head when
+     open, which an actual z-index bump on .settings-head would have broken. */
+  .main-head {
+    pointer-events: none;
+  }
+
+  .main-head-inner > * {
+    pointer-events: auto;
+  }
+
   /* Centered on the full row width (not just the space left over after the
      tag/sort cluster) — spans every column and self-centers within that
      span, so it doesn't drift right when the left cluster takes up room. */
@@ -77,18 +95,13 @@
      height automatically (no fixed pixel offset needed), landing right at
      the button row's baseline regardless of how tall the input line is. */
   .settings-head {
-    /* Must be positioned (not static) for z-index to apply at all — static
-       elements ignore it and stack purely by DOM order, which let
-       .main-head's own z-index:20 stacking context (its full-width
-       .main-head-inner child spans the same grid cell) paint over this
-       button and swallow its clicks despite the z-index declared here. */
-    position: relative;
+    position: static;
     grid-column: 1;
     grid-row: 1;
     align-self: end;
     justify-self: end;
     height: auto;
-    z-index: 21;
+    z-index: 2;
   }
 
   /* ── Content: near-edge-to-edge, more cards fit per row ── */
