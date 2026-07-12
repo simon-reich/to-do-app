@@ -41,6 +41,11 @@ function isTypingTarget(target: EventTarget | null): boolean {
 // depend on that async settling.
 let currentViewIdx = viewOrder.indexOf(route.path)
 
+// Last of the three main views actually visited — Settings isn't one of
+// them, so toggling it (via the button or the X shortcut) can always return
+// to wherever you really came from instead of hardcoding Overview.
+let lastMainViewPath = viewOrder.includes(route.path) ? route.path : '/all'
+
 // Whatever view we're leaving, a card left open (or mid-edit) there should
 // never survive the switch — coming back later should never show something
 // still open or half-typed. Covers every way of navigating, not just Tab
@@ -49,25 +54,88 @@ watch(() => route.path, (path) => {
   closeActiveCard()
   const idx = viewOrder.indexOf(path)
   if (idx !== -1) currentViewIdx = idx
+  if (viewOrder.includes(path)) lastMainViewPath = path
 })
 
+const DESKTOP_BREAKPOINT = 1024
+
+// Single-letter shortcuts (S/G/T/A/X below) never fire while a card is open
+// (its own Tab-cycling already takes priority, same idea as above) or while
+// typing anywhere else — plain letters have to stay safe to type normally —
+// nor with a modifier held, so they don't hijack e.g. Cmd+A/Ctrl+A.
+function shortcutsBlocked(e: KeyboardEvent): boolean {
+  return !!(openTagMenuId.value || openCheckMenuId.value) || isTypingTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey
+}
+
 function onGlobalKeydown(e: KeyboardEvent) {
-  if (e.key !== 'Tab') return
-  // Checked before isTypingTarget: a card being open/edited takes priority
-  // over the "don't interrupt typing" guard below, which exists to protect
-  // the top-level add-todo input specifically — cycleOpenCard() carrying
-  // Tab away from an actively-edited title into the next card (see its own
-  // wasEditing handling) is deliberate, not something to suppress here.
-  if (openTagMenuId.value || openCheckMenuId.value) {
+  if (e.key === 'Tab') {
+    // Checked before isTypingTarget: a card being open/edited takes
+    // priority over the "don't interrupt typing" guard, which exists to
+    // protect the top-level add-todo input specifically — cycleOpenCard()
+    // carrying Tab away from an actively-edited title into the next card
+    // (see its own wasEditing handling) is deliberate, not something to
+    // suppress here.
+    if (openTagMenuId.value || openCheckMenuId.value) {
+      e.preventDefault()
+      cycleOpenCard(e.shiftKey ? -1 : 1)
+      return
+    }
+    if (isTypingTarget(e.target)) return
+    if (currentViewIdx === -1) return
     e.preventDefault()
-    cycleOpenCard(e.shiftKey ? -1 : 1)
+    currentViewIdx = (currentViewIdx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length
+    router.push(viewOrder[currentViewIdx])
     return
   }
-  if (isTypingTarget(e.target)) return
-  if (currentViewIdx === -1) return
-  e.preventDefault()
-  currentViewIdx = (currentViewIdx + (e.shiftKey ? -1 : 1) + viewOrder.length) % viewOrder.length
-  router.push(viewOrder[currentViewIdx])
+
+  if (shortcutsBlocked(e)) return
+  const key = e.key.toLowerCase()
+
+  // S — toggle sort (date / A–Z). Overview only, matching where the sort
+  // button itself is shown; a no-op elsewhere rather than changing state
+  // the user can't currently see.
+  if (key === 's') {
+    if (route.path !== '/all') return
+    e.preventDefault()
+    toggleSort()
+    return
+  }
+
+  // G — toggle grid/list layout. Same Overview-only restriction as S.
+  if (key === 'g') {
+    if (route.path !== '/all') return
+    e.preventDefault()
+    listView.value = !listView.value
+    return
+  }
+
+  // A — jump into the add-todo input. Valid on Overview and Focus, the only
+  // views where that input is actually enabled (dimmed/inert on Settings
+  // and Calendar).
+  if (key === 'a') {
+    if (route.path !== '/all' && route.path !== '/focus') return
+    e.preventDefault()
+    todoInputRef.value?.focus()
+    return
+  }
+
+  // T — jump into the tag input. Desktop only: below the tablet breakpoint
+  // the sidebar (and its tag input) isn't even rendered — reaching it means
+  // first opening the mobile tag panel, a touch-driven flow a keyboard
+  // shortcut doesn't fit anyway. Same Overview/Focus restriction as A.
+  if (key === 't') {
+    if (window.innerWidth <= DESKTOP_BREAKPOINT) return
+    if (route.path !== '/all' && route.path !== '/focus') return
+    e.preventDefault()
+    tagInputRef.value?.focus()
+    return
+  }
+
+  // X — toggle Settings, returning to whichever main view you came from.
+  if (key === 'x') {
+    e.preventDefault()
+    toggleSettings()
+  }
 }
 
 const themeStore = useThemeStore()
@@ -113,6 +181,7 @@ function spawnToast(label: string, offsetY: number) {
 
 // ── Tag sidebar ──
 const tagInput = ref('')
+const tagInputRef = ref<HTMLInputElement | null>(null)
 
 // ── Delete tag confirmation ──
 const deleteConfirm = ref<{ id: string; label: string } | null>(null)
@@ -200,9 +269,12 @@ const listView = ref(false)
 provide('listView', listView)
 
 // ── Settings toggle ──
+// Returns to whichever of the three main views was actually open before —
+// not hardcoded to Overview — so the X shortcut (and the Settings button
+// itself) always lands back where you came from.
 function toggleSettings() {
   showMobileTags.value = false
-  if (route.path === '/settings') router.push('/all')
+  if (route.path === '/settings') router.push(lastMainViewPath)
   else router.push('/settings')
 }
 
@@ -271,6 +343,7 @@ watch(() => route.path, () => {
     <!-- ══ DESKTOP: Sidebar head (tag input) ══ -->
     <div class="sidebar-head desktop-only">
       <input
+        ref="tagInputRef"
         v-model="tagInput"
         class="tag-new-input"
         placeholder="tag, ... + enter"
