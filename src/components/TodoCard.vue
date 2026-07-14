@@ -343,6 +343,15 @@ const emit = defineEmits<{
 const showMenu = computed(() => openCheckMenuId.value === props.todo.id)
 const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
 
+// Focus's check-row (Done for today / Done): defaults to "Done for today"
+// each time it opens fresh — Left/Right toggle it, Enter confirms whichever
+// is focused (see onCardKeydown below), so the pair is fully keyboard-
+// operable without a mouse.
+const focusedCheckOption = ref<'today' | 'done'>('today')
+watch(showMenu, (open) => {
+  if (open) focusedCheckOption.value = 'today'
+})
+
 // After a mouse drag (unlike touch), the browser still synthesizes a plain
 // `click` on mouseup regardless of how far the pointer moved in between —
 // so releasing a swipe back into Hold on desktop was re-toggling the card
@@ -379,17 +388,30 @@ watch(showTagMenu, (isOpen) => {
 })
 
 // Escape closes the card when it's open but not being edited; Enter instead
-// opens straight into text-edit mode (the textarea has its own Escape/Enter
-// handlers for the editing case itself, and ignoring them here keeps the
-// two from double-handling the same key). Tab isn't handled here — App.vue's
-// single document-level handler drives card-to-card cycling via
-// cycleOpenCard() instead, using the activeCardApi registered below.
+// opens straight into text-edit mode for the tag-menu case (the textarea
+// has its own Escape/Enter handlers for the editing case itself, and
+// ignoring them here keeps the two from double-handling the same key), or
+// confirms whichever check-row option is focused for the check-menu case.
+// Left/Right toggle that focus between the two — the pair sits side by
+// side (see .check-row's grid), so left/right reads naturally rather than
+// up/down. Tab isn't handled here — App.vue's single document-level
+// handler drives card-to-card cycling via cycleOpenCard() instead, using
+// the activeCardApi registered below.
 function onCardKeydown(e: KeyboardEvent) {
   if (isEditing.value) return
+  if (showMenu.value && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault()
+    focusedCheckOption.value = focusedCheckOption.value === 'today' ? 'done' : 'today'
+    return
+  }
   if (e.key !== 'Escape' && e.key !== 'Enter') return
   e.preventDefault()
   if (e.key === 'Enter') {
-    if (showTagMenu.value) startEdit()
+    if (showTagMenu.value) { startEdit(); return }
+    if (showMenu.value) {
+      if (focusedCheckOption.value === 'today') handleDoneForToday(props.todo.id)
+      else handleComplete(props.todo.id)
+    }
     return
   }
   if (showMenu.value) openCheckMenuId.value = null
@@ -1139,11 +1161,19 @@ onUnmounted(() => {
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
           <div v-if="showMenu && mode === 'today'" class="check-row">
-            <button class="check-opt" @click.stop="handleDoneForToday(todo.id)">
-              <Clock :size="16" /> Done for today
+            <button
+              class="check-opt"
+              :class="{ 'is-focused': focusedCheckOption === 'today' }"
+              @click.stop="handleDoneForToday(todo.id)"
+            >
+              <Clock :size="16" /> <span>Done for today</span>
             </button>
-            <button class="check-opt" @click.stop="handleComplete(todo.id)">
-              <CheckCheck :size="16" /> Done
+            <button
+              class="check-opt"
+              :class="{ 'is-focused': focusedCheckOption === 'done' }"
+              @click.stop="handleComplete(todo.id)"
+            >
+              <CheckCheck :size="16" /> <span>Done</span>
             </button>
           </div>
         </Transition>
@@ -1462,6 +1492,13 @@ onUnmounted(() => {
   .check-opt:hover {
     color: var(--ink-dark);
   }
+}
+
+/* Default keyboard focus (Left/Right toggle it, Enter confirms it — see
+   onCardKeydown) — underlines just the label text, not the icon next to
+   it, hence the span rather than text-decoration on the whole button. */
+.check-opt.is-focused span {
+  text-decoration: underline;
 }
 
 
