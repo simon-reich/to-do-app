@@ -104,41 +104,43 @@ function confirmDeleteTheme() {
       </div>
     </section>
 
-    <!-- Corner style -->
-    <section class="section">
-      <h2 class="section-title">Corners</h2>
-      <div class="option-row">
-        <button class="btn-outline" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
-        <button class="btn-outline" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
-      </div>
-    </section>
+    <!-- Corner style + Drop shadow -->
+    <div class="section-row">
+      <section class="section">
+        <h2 class="section-title">Corners</h2>
+        <div class="option-row">
+          <button class="btn-outline" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
+          <button class="btn-outline" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
+        </div>
+      </section>
 
-    <!-- Drop shadow -->
-    <section class="section">
-      <h2 class="section-title">Drop shadow</h2>
-      <div class="option-row">
-        <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
-        <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
-      </div>
-    </section>
+      <section class="section">
+        <h2 class="section-title">Drop shadow</h2>
+        <div class="option-row">
+          <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
+          <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
+        </div>
+      </section>
+    </div>
 
-    <!-- Celebrations -->
-    <section class="section">
-      <h2 class="section-title">Celebrations</h2>
-      <div class="option-row">
-        <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">On</button>
-        <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">Off</button>
-      </div>
-    </section>
+    <!-- Celebrations + Tags -->
+    <div class="section-row">
+      <section class="section">
+        <h2 class="section-title">Celebrations</h2>
+        <div class="option-row">
+          <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">On</button>
+          <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">Off</button>
+        </div>
+      </section>
 
-    <!-- Tags -->
-    <section class="section">
-      <h2 class="section-title">Tags</h2>
-      <div class="option-row">
-        <button class="btn-outline" :class="{ active: themeStore.tagsEnabled }" @click="themeStore.tagsEnabled || themeStore.toggleTags()">On</button>
-        <button class="btn-outline" :class="{ active: !themeStore.tagsEnabled }" @click="themeStore.tagsEnabled && themeStore.toggleTags()">Off</button>
-      </div>
-    </section>
+      <section class="section">
+        <h2 class="section-title">Tags</h2>
+        <div class="option-row">
+          <button class="btn-outline" :class="{ active: themeStore.tagsEnabled }" @click="themeStore.tagsEnabled || themeStore.toggleTags()">On</button>
+          <button class="btn-outline" :class="{ active: !themeStore.tagsEnabled }" @click="themeStore.tagsEnabled && themeStore.toggleTags()">Off</button>
+        </div>
+      </section>
+    </div>
 
     <!-- Data -->
     <section class="section">
@@ -176,6 +178,25 @@ function confirmDeleteTheme() {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* Paired sections (Corners+Drop shadow, Celebrations+Tags) side by side on
+   tablet/desktop — the default/unqualified rule here, since Desktop is the
+   unqualified base breakpoint (see base.css's breakpoint convention) and
+   Tablet only differs by the app shell, not this view. Stacked back to a
+   single column below 701px (Mobile), matching every other top-level
+   .settings-view child. */
+.section-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .section-row {
+    grid-template-columns: 1fr;
+    gap: 52px;
+  }
 }
 
 .section-title {
@@ -327,13 +348,25 @@ function confirmDeleteTheme() {
 
 .chip-delete:hover { color: var(--ink-dark); }
 
-/* Same equal-width-without-stretch trick as .theme-io-row above. */
+/* Same equal-width-without-stretch trick as .theme-io-row above — but that
+   only equalizes buttons within their own row (Square/Rounded to each
+   other, On/Off to each other, etc.), not across all four option-rows.
+   Buttons are mono font (see base.css), so every character is a fixed
+   width — "Rounded" (7 chars) is the longest label of the bunch, so a
+   shared fixed width sized to fit it pins every option-row button
+   (Square/Rounded, Mono/Dark, both On/Off pairs) to the exact same size,
+   overriding each row's own content-based 1fr sizing. */
 .option-row {
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   gap: 10px;
   align-self: center;
+}
+
+.option-row .btn-outline {
+  width: 112px;
+  text-align: center;
 }
 
 .btn-row {

@@ -59,6 +59,9 @@ watch(() => route.path, (path) => {
 
 const DESKTOP_BREAKPOINT = 1024
 
+// Y held down — see onGlobalKeydown/onGlobalKeyup below.
+const shortcutHintsVisible = ref(false)
+
 // Single-letter shortcuts (S/G/T/A/X below) never fire while a card is open
 // (its own Tab-cycling already takes priority, same idea as above) or while
 // typing anywhere else — plain letters have to stay safe to type normally —
@@ -136,11 +139,156 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
+  // P — toggle the priority filter (All ↔ Prio). Same Overview/Focus
+  // restriction as A/T — it's the filter that pool actually uses.
+  if (key === 'p') {
+    if (route.path !== '/all' && route.path !== '/focus') return
+    e.preventDefault()
+    toggleTag(PRIORITY_TAG_ID)
+    return
+  }
+
+  // Enter — open the first todo card in the current list, same as clicking
+  // it. A real click (not reimplementing toggleTagMenu/toggleCheckMenu
+  // here) so Overview vs Focus's different open behavior stays exactly
+  // whatever TodoCard.vue itself already does for a click, nothing
+  // duplicated. shortcutsBlocked() above already guarantees no card is
+  // open yet, so there's always at most a "first" card to jump into, never
+  // an already-open one to fight with its own Enter handling (accepting an
+  // edit).
+  if (key === 'enter') {
+    if (route.path !== '/all' && route.path !== '/focus') return
+    e.preventDefault()
+    document.querySelector<HTMLElement>('.content-inner .todo-card-main')?.click()
+    return
+  }
+
   // X — toggle Settings, returning to whichever main view you came from.
   if (key === 'x') {
     e.preventDefault()
     toggleSettings()
+    return
   }
+
+  // Y — hold to reveal which key does what, as a label floating above each
+  // shortcut's own control, all on one shared line (see computeShortcutHints
+  // below). No preventDefault: this isn't an action, just a transient
+  // display state, and swallowing the keystroke isn't needed
+  // (shortcutsBlocked() above already guarantees we're not in a text field
+  // by this point, so there's nothing to accidentally interfere with).
+  if (key === 'y') {
+    computeShortcutHints()
+    shortcutHintsVisible.value = true
+  }
+}
+
+// Released (or the window lost focus entirely while held, which never
+// fires its own keyup) — either way the hints shouldn't stay stuck on.
+function onGlobalKeyup(e: KeyboardEvent) {
+  if (e.key.toLowerCase() === 'y') shortcutHintsVisible.value = false
+}
+
+function onWindowBlur() {
+  shortcutHintsVisible.value = false
+}
+
+// ── Shortcut hints (Y held) ──
+// Measured live off the real DOM rather than positioned via CSS: the
+// targets are scattered across three separate grid columns (sidebar-head,
+// main-head, settings-head) with different internal padding/centering, so
+// there's no shared CSS containing block that would let them land on one
+// horizontal line "for free" — and it needs to keep working unchanged
+// whenever the window is resized (main-head-inner's own max-width
+// re-centers its contents, etc.).
+const topNavRef = ref<HTMLElement | null>(null)
+const sortListBtnRef = ref<HTMLElement | null>(null)
+const sortOrderBtnRef = ref<HTMLElement | null>(null)
+const settingsBtnRef = ref<HTMLElement | null>(null)
+// P's target: whichever All/Prio pair is actually on screen. With tags on
+// that's two loose buttons in the sidebar list (no shared wrapper to ref);
+// with tags off it's already the one desktop-all-priority-row div.
+const allBtnSidebarRef = ref<HTMLElement | null>(null)
+const prioBtnSidebarRef = ref<HTMLElement | null>(null)
+const allPrioRowRef = ref<HTMLElement | null>(null)
+
+interface ShortcutHint { key: string; x: number; y: number }
+const shortcutHints = ref<ShortcutHint[]>([])
+
+// Union of two elements' boxes — used to center the "P" hint over the
+// All+Prio pair as a group when they're two separate buttons rather than
+// one shared container.
+function unionRect(a: DOMRect, b: DOMRect): DOMRect {
+  const left = Math.min(a.left, b.left)
+  const top = Math.min(a.top, b.top)
+  const right = Math.max(a.right, b.right)
+  const bottom = Math.max(a.bottom, b.bottom)
+  return new DOMRect(left, top, right - left, bottom - top)
+}
+
+function getPrioFilterRect(): DOMRect | null {
+  if (themeStore.tagsEnabled) {
+    if (!allBtnSidebarRef.value || !prioBtnSidebarRef.value) return null
+    return unionRect(allBtnSidebarRef.value.getBoundingClientRect(), prioBtnSidebarRef.value.getBoundingClientRect())
+  }
+  return allPrioRowRef.value?.getBoundingClientRect() ?? null
+}
+
+function computeShortcutHints() {
+  const targets: { key: string; el: HTMLElement | null }[] = [
+    { key: 'Tab', el: topNavRef.value },
+    { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
+    { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
+    { key: 'A', el: todoInputRef.value },
+    { key: 'T', el: themeStore.tagsEnabled ? tagInputRef.value : null },
+    { key: 'X', el: settingsBtnRef.value },
+  ]
+  const measured = targets
+    .filter((t): t is { key: string; el: HTMLElement } => !!t.el)
+    .map(t => ({ key: t.key, rect: t.el.getBoundingClientRect() }))
+
+  const hints: ShortcutHint[] = []
+  if (measured.length) {
+    // One shared line, 8px above whichever target sits highest — every
+    // other hint ends up with a slightly bigger gap above its own control,
+    // but all of them still bottom-align on the exact same y.
+    const lineY = Math.min(...measured.map(m => m.rect.top)) - 8
+    hints.push(...measured.map(m => ({ key: m.key, x: m.rect.left + m.rect.width / 2, y: lineY })))
+  }
+
+  // P and Enter only apply on Overview/Focus (same restriction as the
+  // shortcuts themselves) and share their own line, separate from the
+  // header's — they sit far below it, so joining them into that one would
+  // put them nowhere near what they actually label.
+  if (route.path === '/all' || route.path === '/focus') {
+    const poolTargets: { key: string; top: number; x: number }[] = []
+
+    const prioRect = getPrioFilterRect()
+    if (prioRect) poolTargets.push({ key: 'P', top: prioRect.top, x: prioRect.left + prioRect.width / 2 })
+
+    const listRect = contentInnerRef.value?.getBoundingClientRect()
+    if (listRect) {
+      // content-inner's own top edge sits right below the header (before
+      // its 36px padding-top), well above where any card actually starts —
+      // using it directly floated "Enter" up onto the add-todo input. The
+      // first rendered card's own top (still centered on content-inner's
+      // full width, just not its own x) is where the list visually begins.
+      const firstCardTop = document.querySelector('.content-inner .todo-card-main')?.getBoundingClientRect().top
+      poolTargets.push({ key: 'Enter', top: firstCardTop ?? listRect.top, x: listRect.left + listRect.width / 2 })
+    }
+
+    if (poolTargets.length) {
+      const poolLineY = Math.min(...poolTargets.map(t => t.top)) - 13
+      hints.push(...poolTargets.map(t => ({ key: t.key, x: t.x, y: poolLineY })))
+    }
+  }
+
+  shortcutHints.value = hints
+}
+
+// Keeps the hints correctly placed if the window is resized while Y is
+// still held down, rather than only computing them once on keydown.
+function onWindowResizeForHints() {
+  if (shortcutHintsVisible.value) computeShortcutHints()
 }
 
 const themeStore = useThemeStore()
@@ -162,11 +310,17 @@ onMounted(() => {
   lastViewportHeight = window.visualViewport?.height ?? 0
   window.visualViewport?.addEventListener('resize', onViewportResize)
   document.addEventListener('keydown', onGlobalKeydown)
+  document.addEventListener('keyup', onGlobalKeyup)
+  window.addEventListener('blur', onWindowBlur)
+  window.addEventListener('resize', onWindowResizeForHints)
 })
 
 onUnmounted(() => {
   window.visualViewport?.removeEventListener('resize', onViewportResize)
   document.removeEventListener('keydown', onGlobalKeydown)
+  document.removeEventListener('keyup', onGlobalKeyup)
+  window.removeEventListener('blur', onWindowBlur)
+  window.removeEventListener('resize', onWindowResizeForHints)
 })
 
 const store = useTodosStore()
@@ -363,7 +517,7 @@ watch(() => route.path, () => {
         placeholder="tag, ... + enter"
         @keydown="handleTagKey"
       />
-      <div v-else class="desktop-all-priority-row">
+      <div v-else ref="allPrioRowRef" class="desktop-all-priority-row">
         <button
           class="all-btn"
           :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
@@ -388,6 +542,7 @@ watch(() => route.path, () => {
         <!-- Layout + sort buttons (desktop, overview only) -->
         <div v-if="route.path === '/all'" class="sort-nav desktop-only">
           <button
+            ref="sortListBtnRef"
             :title="listView ? 'Switch to grid view' : 'Switch to list view'"
             class="sort-btn"
             @click="listView = !listView"
@@ -395,6 +550,7 @@ watch(() => route.path, () => {
             <component :is="listView ? LayoutGrid : LayoutList" :size="22" />
           </button>
           <button
+            ref="sortOrderBtnRef"
             :title="sortKey === 'createdAt' ? 'By date – switch to A–Z' : 'A–Z – switch to date'"
             class="sort-btn"
             @click="toggleSort"
@@ -430,7 +586,7 @@ watch(() => route.path, () => {
         </div>
 
         <!-- Desktop nav icons -->
-        <nav class="top-nav desktop-only">
+        <nav ref="topNavRef" class="top-nav desktop-only">
           <RouterLink to="/all" class="nav-icon" title="All todos">
             <Globe :size="27" />
           </RouterLink>
@@ -468,6 +624,7 @@ watch(() => route.path, () => {
       <ScrollDivider class="sidebar-scroll-divider" :visible="sidebarScrolled" />
       <div class="tag-list">
         <button
+          ref="allBtnSidebarRef"
           class="all-btn"
           :class="{ active: activeTagIds.length === 0, dimmed: activeTagIds.length > 0 }"
           @click="activeTagIds = []"
@@ -476,6 +633,7 @@ watch(() => route.path, () => {
         </button>
 
         <button
+          ref="prioBtnSidebarRef"
           class="all-btn priority-btn"
           :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
           @click="toggleTag(PRIORITY_TAG_ID)"
@@ -501,6 +659,7 @@ watch(() => route.path, () => {
     <!-- ══ DESKTOP: Settings head ══ -->
     <div class="settings-head desktop-only">
       <button
+        ref="settingsBtnRef"
         class="settings-btn"
         :class="{ active: route.path === '/settings' }"
         title="Settings"
@@ -539,7 +698,7 @@ watch(() => route.path, () => {
             :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID) }"
             @click="toggleTag(PRIORITY_TAG_ID)"
           >
-            priority
+            prio
           </button>
         </div>
 
@@ -614,6 +773,23 @@ watch(() => route.path, () => {
     </nav>
 
   </div>
+
+  <!-- Desktop-only: keyboard shortcuts are disabled below DESKTOP_BREAKPOINT
+       (see onGlobalKeydown), so this hint is meaningless below it too. -->
+  <div class="shortcuts-corner-hint">press Y for shortcuts</div>
+
+  <!-- Y held: dims the screen like the delete-confirmation backdrop, then
+       floats each shortcut's key above its own control (positions computed
+       in computeShortcutHints — see App.vue script). -->
+  <template v-if="shortcutHintsVisible">
+    <div class="shortcuts-backdrop" />
+    <div
+      v-for="hint in shortcutHints"
+      :key="hint.key"
+      class="shortcut-hint"
+      :style="{ left: hint.x + 'px', top: hint.y + 'px' }"
+    >{{ hint.key }}</div>
+  </template>
 
   <!-- Toast bubbles -->
   <div

@@ -670,3 +670,61 @@
 .mobile-all-priority-row .all-btn {
   margin-bottom: 0;
 }
+
+/* ── Keyboard-shortcut hints (Y held — see onGlobalKeydown/keyup) ──
+   Desktop-only, matching DESKTOP_BREAKPOINT in App.vue: below that width
+   the whole keyboard-shortcut system is off, so neither the corner label
+   nor any per-control hint should ever appear. */
+.shortcuts-corner-hint {
+  display: none;
+}
+
+@media (min-width: 1025px) {
+  .shortcuts-corner-hint {
+    display: block;
+    position: fixed;
+    right: 16px;
+    bottom: 12px;
+    font-family: var(--font-mono, monospace);
+    font-size: 15px;
+    color: var(--ink);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 40;
+  }
+}
+
+/* Dims the screen the same way the delete-confirmation backdrop does
+   (see .modal-backdrop) while Y is held, then floats each hint above its
+   own control at the coordinates computeShortcutHints() measured live off
+   the real DOM — the targets sit in three separate grid columns with
+   different internal centering, so there's no shared CSS containing block
+   that would put them on one line "for free"; JS measurement is what
+   actually lines them up, not this positioning itself. */
+.shortcuts-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--ink);
+  opacity: 0.35;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.shortcut-hint {
+  position: fixed;
+  /* Anchors the label's own bottom-center to the (x, y) computed in JS —
+     x is each control's own horizontal center, y is the same for every
+     hint, so they all bottom-align on one shared line above the header. */
+  transform: translate(-50%, -100%);
+  font-family: var(--font-mono, monospace);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 3px 9px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10001;
+}
