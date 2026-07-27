@@ -506,6 +506,26 @@
   overflow-y: hidden;
 }
 
+/* ── Focus active: same dim + lock, but NOT .add-wrapper — Focus still
+   lets you add a todo (auto-sent straight to today), so its tag-picking
+   checkbox row has to stay usable. Focus is deliberately unfilterable
+   (see AllTodos/Focus.vue), so every filter/tag control it can't affect
+   reads as visibly inert instead of just silently doing nothing. */
+#app.is-focus .sidebar-head,
+#app.is-focus .tag-list,
+#app.is-focus .all-btn,
+#app.is-focus .mobile-tags-btn {
+  pointer-events: none;
+  opacity: 0.35;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#app.is-focus .sidebar {
+  overflow-y: hidden;
+}
+
 /* ── Main content ── */
 .main-content {
   grid-column: 2;

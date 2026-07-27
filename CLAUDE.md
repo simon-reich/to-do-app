@@ -153,7 +153,7 @@ Alle Shortcuts leben in **einem einzigen** globalen `keydown`-Listener in `App.v
 - **S** – Sort togglen (Datum ↔ A–Z). Nur Overview, sonst No-Op.
 - **G** – Grid/List togglen. Nur Overview, sonst No-Op.
 - **A** – Fokus ins Add-Todo-Feld. Overview + Focus.
-- **T** – Fokus ins Tag-Input in der Sidebar. Overview + Focus.
+- **T** – Fokus ins Tag-Input in der Sidebar. Nur Overview – Focus ist nicht filterbar, das gesamte Tag-/Filter-Menü ist dort ausgegraut und inert.
 - **X** – Settings togglen, kehrt zum vorher aktiven Haupt-View zurück (nicht hart auf Overview verdrahtet).
 - **Escape** – schließt/blurt immer das, was gerade offen/fokussiert ist (Add-Todo-Input, Tag-Input, offene Karte, Swipe-Delete-Bestätigung).
 

@@ -132,19 +132,21 @@ function onGlobalKeydown(e: KeyboardEvent) {
   // T — jump into the tag input. Desktop only: below the tablet breakpoint
   // the sidebar (and its tag input) isn't even rendered — reaching it means
   // first opening the mobile tag panel, a touch-driven flow a keyboard
-  // shortcut doesn't fit anyway. Same Overview/Focus restriction as A.
+  // shortcut doesn't fit anyway. Overview-only, unlike A — Focus is
+  // deliberately unfilterable, so its whole tag/filter UI is grayed out
+  // and inert (see #app.is-focus), this shortcut included.
   if (key === 't') {
     if (window.innerWidth <= DESKTOP_BREAKPOINT) return
-    if (route.path !== '/all' && route.path !== '/focus') return
+    if (route.path !== '/all') return
     e.preventDefault()
     tagInputRef.value?.focus()
     return
   }
 
-  // P — toggle the priority filter (All ↔ Prio). Same Overview/Focus
-  // restriction as A/T — it's the filter that pool actually uses.
+  // P — toggle the priority filter (All ↔ Prio). Overview-only — see T
+  // above, Focus can't be filtered at all anymore.
   if (key === 'p') {
-    if (route.path !== '/all' && route.path !== '/focus') return
+    if (route.path !== '/all') return
     e.preventDefault()
     toggleTag(PRIORITY_TAG_ID)
     return
@@ -550,6 +552,7 @@ watch(() => route.path, () => {
     :class="{
       'is-settings': route.path === '/settings',
       'is-calendar': route.path === '/calendar',
+      'is-focus': route.path === '/focus',
       'mobile-tags-open': showMobileTags,
     }"
   >
