@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { LoopInterval } from '../stores/todos'
+import { CalendarDays } from '@lucide/vue'
+import type { LoopInterval, LoopUnit } from '../stores/todos'
 
 const props = defineProps<{
   modelValue?: LoopInterval
@@ -12,26 +13,36 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: LoopInterval]
+  /** Fired when the custom day count or date field gains real focus —
+   *  both need it to actually work, which blurs whatever else was
+   *  focused before (e.g. App.vue's add-todo input). Lets a host that
+   *  auto-closes/resets on that blur (see App.vue's onTodoBlur) know
+   *  this wasn't the user leaving. */
+  'focus-inside': []
 }>()
 
-const presetRow1: { label: string; interval: LoopInterval }[] = [
-  { label: 'Daily', interval: { unit: 'day', count: 1 } },
-  { label: 'Weekly', interval: { unit: 'week', count: 1 } },
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+const presetRow1: { label: string; unit: LoopUnit; count: number }[] = [
+  { label: 'daily', unit: 'day', count: 1 },
+  { label: 'weekly', unit: 'week', count: 1 },
 ]
-const presetRow2: { label: string; interval: LoopInterval }[] = [
-  { label: 'Monthly', interval: { unit: 'month', count: 1 } },
-  { label: 'Yearly', interval: { unit: 'year', count: 1 } },
+const presetRow2: { label: string; unit: LoopUnit; count: number }[] = [
+  { label: 'monthly', unit: 'month', count: 1 },
+  { label: 'yearly', unit: 'year', count: 1 },
 ]
 const presets = [...presetRow1, ...presetRow2]
 
-function sameInterval(a: LoopInterval | undefined, b: LoopInterval): boolean {
-  return !!a && a.unit === b.unit && a.count === b.count
+function sameUnitCount(a: LoopInterval | undefined, unit: LoopUnit, count: number): boolean {
+  return !!a && a.unit === unit && a.count === count
 }
 
 // Anything that isn't an exact preset match (including nothing set yet)
 // counts as "Custom" — covers both a genuinely custom every-X-days value
 // and the not-yet-decided state right after the loop tag is first checked.
-const isCustom = computed(() => !presets.some(p => sameInterval(props.modelValue, p.interval)))
+const isCustom = computed(() => !presets.some(p => sameUnitCount(props.modelValue, p.unit, p.count)))
 
 const MAX_CUSTOM_DAYS = 999
 
@@ -41,15 +52,56 @@ watch(() => props.modelValue, (v) => {
   if (v?.unit === 'day' && isCustom.value) customCount.value = v.count
 })
 
-function select(interval: LoopInterval) {
-  emit('update:modelValue', interval)
+// The date to count the recurrence from — kept as-is across preset/count
+// changes, only the "from" picker below touches it directly.
+const startDate = computed(() => props.modelValue?.startDate ?? todayStr())
+
+// Display-only DD/MM/YYYY — startDate itself stays ISO (YYYY-MM-DD) since
+// that's what sorts/compares correctly and matches the rest of the data
+// model (completedAt, workLog).
+const startDateDisplay = computed(() => {
+  const [y, m, d] = startDate.value.split('-')
+  return `${d}/${m}/${y}`
+})
+
+function select(unit: LoopUnit, count: number) {
+  emit('update:modelValue', { unit, count, startDate: startDate.value })
 }
 
 function applyCustomCount() {
   const count = Math.min(MAX_CUSTOM_DAYS, Math.max(1, Math.round(customCount.value) || 1))
   customCount.value = count
-  emit('update:modelValue', { unit: 'day', count })
+  emit('update:modelValue', { unit: 'day', count, startDate: startDate.value })
 }
+
+function updateStartDate(date: string) {
+  const base = props.modelValue ?? { unit: 'day' as const, count: 1, startDate: date }
+  emit('update:modelValue', { unit: base.unit, count: base.count, startDate: date })
+}
+
+// The "from" date picker opens as a centered modal (same pattern as the
+// delete-confirmation modal) rather than a popover anchored to the
+// trigger — v-calendar's own popover isn't teleported anywhere, and
+// nested inside a todo card's own overflow:hidden + transformed
+// stacking context (see .todo-card.loop's z-index tricks elsewhere) it
+// ended up clipped/misstacked. A centered modal sidesteps that entirely
+// and reads better on mobile too, where an anchored popover would have
+// had little room to work with anyway.
+const showDateModal = ref(false)
+
+function pickDate(day: { id: string }) {
+  updateStartDate(day.id)
+  showDateModal.value = false
+}
+
+const dateAttributes = computed(() => [{
+  key: 'selected',
+  highlight: {
+    style: { backgroundColor: 'var(--ink-dark)', borderRadius: '4px' },
+    contentStyle: { color: 'var(--bg)' },
+  },
+  dates: new Date(startDate.value + 'T12:00:00'),
+}])
 </script>
 
 <template>
@@ -60,9 +112,9 @@ function applyCustomCount() {
         :key="preset.label"
         type="button"
         class="loop-opt"
-        :class="{ active: sameInterval(modelValue, preset.interval), dimmed: !sameInterval(modelValue, preset.interval) }"
+        :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
         @mousedown.prevent
-        @click="select(preset.interval)"
+        @click="select(preset.unit, preset.count)"
       >
         {{ preset.label }}
       </button>
@@ -74,9 +126,9 @@ function applyCustomCount() {
         :key="preset.label"
         type="button"
         class="loop-opt"
-        :class="{ active: sameInterval(modelValue, preset.interval), dimmed: !sameInterval(modelValue, preset.interval) }"
+        :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
         @mousedown.prevent
-        @click="select(preset.interval)"
+        @click="select(preset.unit, preset.count)"
       >
         {{ preset.label }}
       </button>
@@ -92,12 +144,39 @@ function applyCustomCount() {
           maxlength="3"
           class="loop-custom-input"
           v-model.number="customCount"
-          @focus="!isCustom && applyCustomCount()"
+          @focus="!isCustom && applyCustomCount(); emit('focus-inside')"
           @change="applyCustomCount"
         />
         <span>days</span>
       </div>
     </div>
+
+    <div class="loop-row">
+      <div class="loop-from">
+        <span>start: {{ startDateDisplay }}</span>
+        <button
+          type="button"
+          class="loop-date-btn"
+          title="Change start date"
+          @mousedown.prevent
+          @click="showDateModal = true"
+        >
+          <CalendarDays :size="14" />
+        </button>
+      </div>
+    </div>
+
+    <Teleport to="body">
+      <template v-if="showDateModal">
+        <div class="modal-backdrop" @click="showDateModal = false" />
+        <div class="modal-box" role="dialog" @click.stop>
+          <VCalendar :attributes="dateAttributes" expanded locale="en" @dayclick="pickDate" />
+          <div class="modal-actions">
+            <button class="modal-btn modal-btn--cancel" @click="showDateModal = false">Close</button>
+          </div>
+        </div>
+      </template>
+    </Teleport>
   </div>
 </template>
 
@@ -110,6 +189,8 @@ function applyCustomCount() {
 
 .loop-row {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
 }
 
@@ -192,5 +273,34 @@ function applyCustomCount() {
 .loop-custom-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.loop-from {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 4px;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+}
+
+.inverted .loop-from {
+  color: var(--bg);
+}
+
+.loop-date-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+}
+
+.inverted .loop-date-btn {
+  color: var(--bg);
 }
 </style>

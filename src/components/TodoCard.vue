@@ -333,7 +333,7 @@ const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
 // the picker in its ambiguous "nothing selected" state.
 watch(isLoop, (loop) => {
   if (loop && !props.todo.loopInterval) {
-    store.updateTodo(props.todo.id, { loopInterval: { unit: 'day', count: 1 } })
+    store.updateTodo(props.todo.id, { loopInterval: { unit: 'day', count: 1, startDate: new Date().toISOString().slice(0, 10) } })
   }
 })
 

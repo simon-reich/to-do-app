@@ -22,6 +22,8 @@ export type LoopUnit = 'day' | 'week' | 'month' | 'year'
 export interface LoopInterval {
   unit: LoopUnit
   count: number
+  /** ISO date (YYYY-MM-DD) the recurrence counts from. */
+  startDate: string
 }
 
 export interface Todo {

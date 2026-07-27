@@ -423,11 +423,15 @@ const newTodoLoopInterval = ref<LoopInterval | undefined>(undefined)
 // this row.
 const addTagModalTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID || t.id === LOOP_TAG_ID))
 
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 // Loop checked for the first time in this add-session: default to Daily
 // instead of leaving the picker in its ambiguous "nothing selected" state.
 watch(newTodoTagIds, (ids) => {
   if (ids.includes(LOOP_TAG_ID) && !newTodoLoopInterval.value) {
-    newTodoLoopInterval.value = { unit: 'day', count: 1 }
+    newTodoLoopInterval.value = { unit: 'day', count: 1, startDate: todayStr() }
   }
 })
 
@@ -439,11 +443,25 @@ function onTodoInput() {
   if (addTagModalTags.value.length > 0) showTagModal.value = true
 }
 
+// Tracked so a genuinely-focusable control inside the panel itself (the
+// loop picker's custom day count / date fields) can cancel this — those
+// need real focus to work, which blurs the main input same as clicking
+// fully away does, but shouldn't be treated as abandoning the draft.
+let todoBlurCloseTimer: ReturnType<typeof setTimeout> | null = null
+
 function onTodoBlur() {
-  setTimeout(() => {
+  todoBlurCloseTimer = setTimeout(() => {
     showTagModal.value = false
     resetTodoDraft()
   }, 200)
+}
+
+function keepTodoModalOpen() {
+  if (todoBlurCloseTimer) {
+    clearTimeout(todoBlurCloseTimer)
+    todoBlurCloseTimer = null
+  }
+  showTagModal.value = true
 }
 
 // Abandoning a not-yet-submitted todo (Escape, or clicking/tabbing away
@@ -642,7 +660,7 @@ watch(() => route.path, () => {
           <div v-if="showTagModal && addTagModalTags.length" class="add-tag-row">
             <Transition :css="false" @enter="onQuickExpandEnter" @leave="onQuickExpandLeave">
               <div v-if="newTodoTagIds.includes(LOOP_TAG_ID)" class="add-loop-row">
-                <LoopPicker v-model="newTodoLoopInterval" />
+                <LoopPicker v-model="newTodoLoopInterval" @focus-inside="keepTodoModalOpen" />
               </div>
             </Transition>
 
