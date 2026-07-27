@@ -556,7 +556,15 @@ function handleTitleClick() {
 }
 
 function updateTags(tags: string[]) {
-  store.updateTodo(props.todo.id, { tags })
+  // Unchecking loop should drop its recurrence config too — otherwise it
+  // sits there orphaned (tags: [], loopInterval still set) and, if loop
+  // gets checked again later, reappears as whatever it was last time
+  // instead of resetting to the normal Daily/today default.
+  if (tags.includes(LOOP_TAG_ID)) {
+    store.updateTodo(props.todo.id, { tags })
+  } else {
+    store.updateTodo(props.todo.id, { tags, loopInterval: undefined })
+  }
 }
 
 // ── Edit title ──────────────────────────────────────────
