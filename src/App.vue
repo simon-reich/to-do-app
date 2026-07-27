@@ -438,7 +438,21 @@ function onTodoInput() {
 }
 
 function onTodoBlur() {
-  setTimeout(() => { showTagModal.value = false }, 200)
+  setTimeout(() => {
+    showTagModal.value = false
+    resetTodoDraft()
+  }, 200)
+}
+
+// Abandoning a not-yet-submitted todo (Escape, or clicking/tabbing away
+// without hitting Enter) should leave nothing behind — otherwise the
+// tags/loop interval you'd picked stay staged in memory and reappear
+// still checked next time the input is focused, even though nothing was
+// ever actually added.
+function resetTodoDraft() {
+  todoInput.value = ''
+  newTodoTagIds.value = []
+  newTodoLoopInterval.value = undefined
 }
 
 function clearTodoInput() {
@@ -453,9 +467,7 @@ function addTodo() {
     loopInterval: newTodoTagIds.value.includes(LOOP_TAG_ID) ? newTodoLoopInterval.value : undefined,
   })
   if (route.path === '/focus') store.sendToToday(todo.id)
-  todoInput.value = ''
-  newTodoTagIds.value = []
-  newTodoLoopInterval.value = undefined
+  resetTodoDraft()
   todoInputRef.value?.blur()
 }
 
