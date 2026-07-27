@@ -82,7 +82,7 @@
   margin-top: 8.75px;
 }
 
-.desktop-all-priority-row .priority-btn {
+.desktop-all-priority-row .loop-btn {
   margin-bottom: 0;
 }
 
@@ -228,6 +228,13 @@
   border-radius: 0 0 var(--radius) var(--radius);
   box-shadow: 0 5px 0 var(--ink-dark);
   z-index: 30;
+}
+
+.add-loop-row {
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ink);
 }
 
 .tag-row-opt {
@@ -379,10 +386,10 @@
   color: var(--bg);
 }
 
-/* All + Priority read as one grouped pair (just the list's own 7px gap
+/* All + Prio + Loop read as one grouped trio (just the list's own 7px gap
    between them), then a clear gap sets them apart from the actual tags —
    matching the gap above the list, between the tag input and "All". */
-.priority-btn {
+.loop-btn {
   margin-bottom: 34px;
 }
 

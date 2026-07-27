@@ -2,10 +2,11 @@
 import { ref, computed, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, Flag, CircleArrowDown, LayoutList, LayoutGrid, X } from '@lucide/vue'
-import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
+import { useTodosStore, PRIORITY_TAG_ID, LOOP_TAG_ID, type LoopInterval } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
 import ScrollDivider from './components/ScrollDivider.vue'
+import LoopPicker from './components/LoopPicker.vue'
 import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
 
 const router = useRouter()
@@ -397,13 +398,22 @@ const todoInput = ref('')
 const todoInputRef = ref<HTMLInputElement | null>(null)
 const showTagModal = ref(false)
 const newTodoTagIds = ref<string[]>([])
+const newTodoLoopInterval = ref<LoopInterval | undefined>(undefined)
 
 // Tags off: the add-todo checkbox row still offers the priority tag (it's
 // not a real tag from the user's point of view, just the marker the
 // All/Priority filter reads), but user-created tags stay hidden here too —
 // otherwise disabling tags in Settings wouldn't actually hide them from
 // this row.
-const addTagModalTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID))
+const addTagModalTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID || t.id === LOOP_TAG_ID))
+
+// Loop checked for the first time in this add-session: default to Daily
+// instead of leaving the picker in its ambiguous "nothing selected" state.
+watch(newTodoTagIds, (ids) => {
+  if (ids.includes(LOOP_TAG_ID) && !newTodoLoopInterval.value) {
+    newTodoLoopInterval.value = { unit: 'day', count: 1 }
+  }
+})
 
 function onTodoFocus() {
   if (addTagModalTags.value.length > 0) showTagModal.value = true
@@ -424,10 +434,14 @@ function clearTodoInput() {
 
 function addTodo() {
   if (!todoInput.value.trim()) return
-  const todo = store.addTodo(todoInput.value, { tags: [...newTodoTagIds.value] })
+  const todo = store.addTodo(todoInput.value, {
+    tags: [...newTodoTagIds.value],
+    loopInterval: newTodoTagIds.value.includes(LOOP_TAG_ID) ? newTodoLoopInterval.value : undefined,
+  })
   if (route.path === '/focus') store.sendToToday(todo.id)
   todoInput.value = ''
   newTodoTagIds.value = []
+  newTodoLoopInterval.value = undefined
   todoInputRef.value?.blur()
 }
 
@@ -539,6 +553,14 @@ watch(() => route.path, () => {
         >
           prio
         </button>
+
+        <button
+          class="all-btn loop-btn"
+          :class="{ active: activeTagIds.includes(LOOP_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(LOOP_TAG_ID) }"
+          @click="toggleTag(LOOP_TAG_ID)"
+        >
+          loop
+        </button>
       </div>
     </div>
 
@@ -587,16 +609,21 @@ watch(() => route.path, () => {
           >
             <X :size="12" />
           </button>
-          <div v-if="showTagModal && addTagModalTags.length" class="add-tag-row" @mousedown.prevent>
+          <div v-if="showTagModal && addTagModalTags.length" class="add-tag-row">
             <label
               v-for="tag in addTagModalTags"
               :key="tag.id"
               class="tag-row-opt"
               :class="{ checked: newTodoTagIds.includes(tag.id), dimmed: newTodoTagIds.length > 0 && !newTodoTagIds.includes(tag.id) }"
+              @mousedown.prevent
             >
               <input type="checkbox" :checked="newTodoTagIds.includes(tag.id)" @change="newTodoTagIds = newTodoTagIds.includes(tag.id) ? newTodoTagIds.filter(i => i !== tag.id) : [...newTodoTagIds, tag.id]" />
               <span>{{ tag.label }}</span>
             </label>
+
+            <div v-if="newTodoTagIds.includes(LOOP_TAG_ID)" class="add-loop-row">
+              <LoopPicker v-model="newTodoLoopInterval" />
+            </div>
           </div>
         </div>
 
@@ -654,6 +681,14 @@ watch(() => route.path, () => {
           @click="toggleTag(PRIORITY_TAG_ID)"
         >
           prio
+        </button>
+
+        <button
+          class="all-btn loop-btn"
+          :class="{ active: activeTagIds.includes(LOOP_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(LOOP_TAG_ID) }"
+          @click="toggleTag(LOOP_TAG_ID)"
+        >
+          loop
         </button>
 
         <div
@@ -714,6 +749,14 @@ watch(() => route.path, () => {
             @click="toggleTag(PRIORITY_TAG_ID)"
           >
             prio
+          </button>
+
+          <button
+            class="all-btn loop-btn"
+            :class="{ active: activeTagIds.includes(LOOP_TAG_ID), dimmed: activeTagIds.length > 0 && !activeTagIds.includes(LOOP_TAG_ID) }"
+            @click="toggleTag(LOOP_TAG_ID)"
+          >
+            loop
           </button>
         </div>
 

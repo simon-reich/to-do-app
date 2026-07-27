@@ -10,10 +10,18 @@ function uuid(): string {
 }
 
 export const PRIORITY_TAG_ID = '__priority__'
+export const LOOP_TAG_ID = '__loop__'
 
 export interface Tag {
   id: string
   label: string
+}
+
+export type LoopUnit = 'day' | 'week' | 'month' | 'year'
+
+export interface LoopInterval {
+  unit: LoopUnit
+  count: number
 }
 
 export interface Todo {
@@ -24,6 +32,7 @@ export interface Todo {
   inToday: boolean
   completedAt?: string
   workLog: string[]
+  loopInterval?: LoopInterval
 }
 
 export const useTodosStore = defineStore('todos', () => {
@@ -53,7 +62,7 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   // ── Todo Actions ──
-  function addTodo(title: string, extra: Partial<Pick<Todo, 'tags'>> = {}): Todo {
+  function addTodo(title: string, extra: Partial<Pick<Todo, 'tags' | 'loopInterval'>> = {}): Todo {
     const todo: Todo = {
       id: uuid(),
       title: title.trim(),
@@ -61,16 +70,18 @@ export const useTodosStore = defineStore('todos', () => {
       createdAt: new Date().toISOString(),
       inToday: false,
       workLog: [],
+      loopInterval: extra.loopInterval,
     }
     todos.value.unshift(todo)
     return todo
   }
 
-  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags'>>) {
+  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags' | 'loopInterval'>>) {
     const todo = todos.value.find(t => t.id === id)
     if (!todo) return
     if (patch.title !== undefined) todo.title = patch.title.trim()
     if (patch.tags !== undefined) todo.tags = patch.tags
+    if ('loopInterval' in patch) todo.loopInterval = patch.loopInterval
   }
 
   function deleteTodo(id: string) {
@@ -104,7 +115,7 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   // ── System tags ──
-  const userTags = computed(() => tags.value.filter(t => t.id !== PRIORITY_TAG_ID))
+  const userTags = computed(() => tags.value.filter(t => t.id !== PRIORITY_TAG_ID && t.id !== LOOP_TAG_ID))
 
   function ensureSystemTags() {
     const existing = tags.value.find(t => t.id === PRIORITY_TAG_ID)
@@ -116,6 +127,12 @@ export const useTodosStore = defineStore('todos', () => {
       // only applying it to brand-new tag lists.
       existing.label = 'prio'
     }
+
+    const existingLoop = tags.value.find(t => t.id === LOOP_TAG_ID)
+    if (!existingLoop) {
+      const prioIdx = tags.value.findIndex(t => t.id === PRIORITY_TAG_ID)
+      tags.value.splice(prioIdx + 1, 0, { id: LOOP_TAG_ID, label: 'loop' })
+    }
   }
 
   // ── Tag Actions ──
@@ -126,7 +143,7 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   function deleteTag(id: string) {
-    if (id === PRIORITY_TAG_ID) return
+    if (id === PRIORITY_TAG_ID || id === LOOP_TAG_ID) return
     tags.value = tags.value.filter(t => t.id !== id)
     todos.value.forEach(todo => {
       todo.tags = todo.tags.filter(tid => tid !== id)

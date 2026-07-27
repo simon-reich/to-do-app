@@ -288,8 +288,9 @@ export function closeActiveCard() {
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
 import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
-import { useTodosStore, type Todo, PRIORITY_TAG_ID } from '../stores/todos'
+import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
+import LoopPicker from './LoopPicker.vue'
 
 const props = defineProps<{
   todo: Todo
@@ -325,11 +326,24 @@ const store = useTodosStore()
 const themeStore = useThemeStore()
 
 const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
+const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
 
-// Tags off: the per-card tag menu still offers the priority tag (the
-// All/Priority filter's marker, not a user tag) but hides user-created
-// tags, matching the same rule the add-todo tag row follows in App.vue.
-const tagMenuTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID))
+// Loop checked for the first time: default to Daily instead of leaving
+// the picker in its ambiguous "nothing selected" state.
+watch(isLoop, (loop) => {
+  if (loop && !props.todo.loopInterval) {
+    store.updateTodo(props.todo.id, { loopInterval: { unit: 'day', count: 1 } })
+  }
+})
+
+function updateLoopInterval(interval: LoopInterval) {
+  store.updateTodo(props.todo.id, { loopInterval: interval })
+}
+
+// Tags off: the per-card tag menu still offers the priority + loop tags
+// (system markers, not user tags) but hides user-created tags, matching
+// the same rule the add-todo tag row follows in App.vue.
+const tagMenuTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID || t.id === LOOP_TAG_ID))
 
 
 const emit = defineEmits<{
@@ -1038,7 +1052,7 @@ onUnmounted(() => {
     <div
       ref="swipeContainerRef"
       class="swipe-container"
-      :class="{ open: showMenu || showTagMenu }"
+      :class="{ open: showMenu || showTagMenu, loop: isLoop }"
     >
       <Teleport to="body">
         <Transition name="swipe-indicator">
@@ -1068,7 +1082,7 @@ onUnmounted(() => {
 
       <motion.div
         class="todo-card"
-        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: isPriority }"
+        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: isPriority, loop: isLoop }"
         :style="{ x, y, rotate, opacity: cardOpacity }"
         :drag="canDrag ? 'x' : false"
         :drag-momentum="false"
@@ -1193,6 +1207,10 @@ onUnmounted(() => {
               </label>
             </template>
             <span v-else class="tag-row-empty">No tags yet</span>
+
+            <div v-if="isLoop" class="add-loop-row" @click.stop>
+              <LoopPicker :model-value="todo.loopInterval" @update:model-value="updateLoopInterval" />
+            </div>
           </div>
         </Transition>
       </motion.div>
@@ -1392,6 +1410,58 @@ onUnmounted(() => {
 
 .priority .tag-row-opt.dimmed {
   opacity: 0.35;
+}
+
+/* Loop cards: border + drop shadow + fill, all in pale ink (the "faded
+   priority" look), text untouched. .todo-card itself goes fully
+   transparent (bg, border, shadow) — just a frame around the text — and
+   one pseudo on .swipe-container redraws all three together, so the
+   border and the fill meet flush with no seam between them (splitting
+   fill from border/shadow across two differently-inset boxes, as before,
+   left a ring of the normal opaque background showing between them).
+   It has to live on .swipe-container rather than .todo-card because
+   .todo-card has its own overflow:hidden (for its internal
+   check-row/tag-row corners), which would clip the shadow.
+   Negative z-index sits it below .todo-card's own in-flow content (text)
+   instead of covering it; position+z-index together pin a local stacking
+   context on .swipe-container itself, otherwise z-index:-1 would escape
+   outward past it entirely. */
+.todo-card.loop {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.swipe-container.loop {
+  position: relative;
+  z-index: 0;
+}
+
+.swipe-container.loop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  opacity: 0.35;
+  border-radius: var(--radius);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Priority + loop together: full solid ink fill/border like plain
+   priority (text already reads var(--bg) from .priority, untouched here)
+   but the drop shadow stays the loop's pale ink instead of priority's
+   solid one. No new pseudo needed — .swipe-container.loop::before above
+   still draws its pale border+fill+shadow underneath, but this rule's
+   opaque background/border sit on top and fully mask the pale border and
+   fill (same position, same size); only the shadow, which spills outside
+   the card's own box, isn't covered by anything and stays visible. */
+.todo-card.priority.loop {
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: none;
 }
 
 .todo-card-main {
