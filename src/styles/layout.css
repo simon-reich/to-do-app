@@ -395,6 +395,18 @@
   opacity: 0.35;
 }
 
+/* Loop's default (unfiltered) state — same solid ink fill as .active, but
+   pale, echoing how a loop-tagged card itself looks. Only vs. hide (the
+   other two states) then reuse the existing .active/.dimmed look
+   unchanged, so all three states stay inside the app's usual filled/
+   outline × full/pale combinations instead of introducing a new visual
+   language just for this one button. */
+.loop-filter-default {
+  background: var(--ink);
+  color: var(--bg);
+  opacity: 0.35;
+}
+
 .tag-chip {
   display: inline-flex;
   align-items: center;

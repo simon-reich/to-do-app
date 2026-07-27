@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import type { Ref } from 'vue'
-import { useTodosStore, PRIORITY_TAG_ID } from '../stores/todos'
+import { useTodosStore, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
 
 const store = useTodosStore()
 const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
+const loopFilterMode = inject<Ref<'default' | 'only' | 'hide'>>('loopFilterMode')!
 
 const filteredTodos = computed(() => {
   let result = store.todayTodos
   if (activeTagIds.value.length > 0) {
     result = result.filter(t => t.tags.some(tid => activeTagIds.value.includes(tid)))
+  }
+  if (loopFilterMode.value === 'only') {
+    result = result.filter(t => t.tags.includes(LOOP_TAG_ID))
+  } else if (loopFilterMode.value === 'hide') {
+    result = result.filter(t => !t.tags.includes(LOOP_TAG_ID))
   }
   return [...result].sort((a, b) => {
     const aPrio = a.tags.includes(PRIORITY_TAG_ID) ? 0 : 1
