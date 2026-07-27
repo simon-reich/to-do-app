@@ -7,7 +7,11 @@ import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
 
 const store = useTodosStore()
-const activeTagIds = inject<Ref<string[]>>('activeTagIds')!
+// Already unions loop in when loopFilterMode is "only" — see App.vue,
+// which also drives the All/Prio/tag-chip active/dimmed state off this
+// exact same computed, so what's highlighted always matches what's
+// actually shown.
+const effectiveFilterTagIds = inject<Ref<string[]>>('effectiveFilterTagIds')!
 const loopFilterMode = inject<Ref<'default' | 'only' | 'hide'>>('loopFilterMode')!
 const sortKey = inject<Ref<'createdAt' | 'title'>>('sortKey')!
 const listView = inject<Ref<boolean>>('listView')!
@@ -21,12 +25,13 @@ watch([listView, sortKey], () => { renderGen.value++ })
 
 const filteredTodos = computed(() => {
   let result = store.activeTodos.filter(t => !t.inToday)
-  if (activeTagIds.value.length > 0) {
-    result = result.filter(t => t.tags.some(tid => activeTagIds.value.includes(tid)))
+  if (effectiveFilterTagIds.value.length > 0) {
+    result = result.filter(t => t.tags.some(tid => effectiveFilterTagIds.value.includes(tid)))
   }
-  if (loopFilterMode.value === 'only') {
-    result = result.filter(t => t.tags.includes(LOOP_TAG_ID))
-  } else if (loopFilterMode.value === 'hide') {
+  // Hide is a standing exclusion on top of whatever the union above
+  // already selected — not an additional AND alongside "only" (which no
+  // longer exists as a separate branch; it's folded into the union).
+  if (loopFilterMode.value === 'hide') {
     result = result.filter(t => !t.tags.includes(LOOP_TAG_ID))
   }
   return [...result].sort((a, b) =>
@@ -61,7 +66,7 @@ useListFlip(() => siblingIds.value, '.todo-wrap')
       />
     </div>
     <p v-else class="empty">
-      {{ store.activeTodos.filter(t => !t.inToday).length === 0 && activeTagIds.length === 0 ? 'No todos yet.' : 'No todos for this filter.' }}
+      {{ store.activeTodos.filter(t => !t.inToday).length === 0 && effectiveFilterTagIds.length === 0 ? 'No todos yet.' : 'No todos for this filter.' }}
     </p>
   </div>
 </template>

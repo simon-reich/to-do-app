@@ -398,16 +398,38 @@ function toggleTag(id: string) {
 
 // Loop gets its own three-state cycle instead of the plain multi-select
 // toggle every other filter uses: default (loop todos shown like
-// everything else), only (show just loop todos), hide (filter loop
-// todos out entirely) — see AllTodos.vue/Focus.vue for where this
-// actually filters the list.
+// everything else) → hide (filter loop todos out entirely) → only (show
+// just loop todos) → back to default — see AllTodos.vue/Focus.vue for
+// where this actually filters the list.
 const loopFilterMode = ref<'default' | 'only' | 'hide'>('default')
 
 function cycleLoopFilter() {
   loopFilterMode.value =
-    loopFilterMode.value === 'default' ? 'only' :
-    loopFilterMode.value === 'only' ? 'hide' : 'default'
+    loopFilterMode.value === 'default' ? 'hide' :
+    loopFilterMode.value === 'hide' ? 'only' : 'default'
 }
+
+// "All" means all — clearing just activeTagIds left loopFilterMode's
+// only/hide still narrowing the list behind the scenes, so clicking All
+// while loop was "only" looked like nothing happened. Loop's own state
+// only resets here, on this explicit clear-everything action — never as
+// a side effect of toggling some other tag.
+function clearAllFilters() {
+  activeTagIds.value = []
+  loopFilterMode.value = 'default'
+}
+
+// The filtering is additive/OR (activeTagIds already works that way: any
+// todo matching *any* selected tag shows) — loop's "only" state should
+// join that same union instead of being ANDed on top separately, which
+// used to mean picking e.g. Prio while loop was "only" left just the
+// prio+loop intersection instead of adding prio-tagged todos in too.
+// This single computed drives both the actual filtering (AllTodos.vue)
+// and every All/Prio/tag-chip's active/dimmed state below, so both stay
+// in sync with what's really being matched.
+const effectiveFilterTagIds = computed(() =>
+  loopFilterMode.value === 'only' ? [...activeTagIds.value, LOOP_TAG_ID] : activeTagIds.value
+)
 
 // ── Add todo ──
 const todoInput = ref('')
@@ -516,6 +538,7 @@ const showMobileTags = ref(false)
 
 provide('activeTagIds', activeTagIds)
 provide('loopFilterMode', loopFilterMode)
+provide('effectiveFilterTagIds', effectiveFilterTagIds)
 provide('sortKey', sortKey)
 
 // ── Scroll dividers ──
@@ -588,15 +611,15 @@ watch(() => route.path, () => {
       <div v-else ref="allPrioRowRef" class="desktop-all-priority-row">
         <button
           class="all-btn"
-          :class="{ active: activeTagIds.length === 0 && loopFilterMode !== 'only', dimmed: activeTagIds.length > 0 || loopFilterMode === 'only' }"
-          @click="activeTagIds = []"
+          :class="{ active: effectiveFilterTagIds.length === 0, dimmed: effectiveFilterTagIds.length > 0 }"
+          @click="clearAllFilters"
         >
           all
         </button>
 
         <button
           class="all-btn priority-btn"
-          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: (activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID)) || loopFilterMode === 'only' }"
+          :class="{ active: effectiveFilterTagIds.includes(PRIORITY_TAG_ID), dimmed: effectiveFilterTagIds.length > 0 && !effectiveFilterTagIds.includes(PRIORITY_TAG_ID) }"
           @click="toggleTag(PRIORITY_TAG_ID)"
         >
           prio
@@ -718,8 +741,8 @@ watch(() => route.path, () => {
         <button
           ref="allBtnSidebarRef"
           class="all-btn"
-          :class="{ active: activeTagIds.length === 0 && loopFilterMode !== 'only', dimmed: activeTagIds.length > 0 || loopFilterMode === 'only' }"
-          @click="activeTagIds = []"
+          :class="{ active: effectiveFilterTagIds.length === 0, dimmed: effectiveFilterTagIds.length > 0 }"
+          @click="clearAllFilters"
         >
           all
         </button>
@@ -727,7 +750,7 @@ watch(() => route.path, () => {
         <button
           ref="prioBtnSidebarRef"
           class="all-btn priority-btn"
-          :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: (activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID)) || loopFilterMode === 'only' }"
+          :class="{ active: effectiveFilterTagIds.includes(PRIORITY_TAG_ID), dimmed: effectiveFilterTagIds.length > 0 && !effectiveFilterTagIds.includes(PRIORITY_TAG_ID) }"
           @click="toggleTag(PRIORITY_TAG_ID)"
         >
           prio
@@ -746,8 +769,8 @@ watch(() => route.path, () => {
           :key="tag.id"
           class="tag-chip"
           :class="{
-            active: activeTagIds.includes(tag.id),
-            dimmed: (activeTagIds.length > 0 && !activeTagIds.includes(tag.id)) || loopFilterMode === 'only'
+            active: effectiveFilterTagIds.includes(tag.id),
+            dimmed: effectiveFilterTagIds.length > 0 && !effectiveFilterTagIds.includes(tag.id)
           }"
         >
           <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
@@ -787,15 +810,15 @@ watch(() => route.path, () => {
         <div class="mobile-all-priority-row">
           <button
             class="all-btn"
-            :class="{ active: activeTagIds.length === 0 && loopFilterMode !== 'only', dimmed: activeTagIds.length > 0 || loopFilterMode === 'only' }"
-            @click="activeTagIds = []"
+            :class="{ active: effectiveFilterTagIds.length === 0, dimmed: effectiveFilterTagIds.length > 0 }"
+            @click="clearAllFilters"
           >
             all
           </button>
 
           <button
             class="all-btn priority-btn"
-            :class="{ active: activeTagIds.includes(PRIORITY_TAG_ID), dimmed: (activeTagIds.length > 0 && !activeTagIds.includes(PRIORITY_TAG_ID)) || loopFilterMode === 'only' }"
+            :class="{ active: effectiveFilterTagIds.includes(PRIORITY_TAG_ID), dimmed: effectiveFilterTagIds.length > 0 && !effectiveFilterTagIds.includes(PRIORITY_TAG_ID) }"
             @click="toggleTag(PRIORITY_TAG_ID)"
           >
             prio
@@ -820,8 +843,8 @@ watch(() => route.path, () => {
             :key="tag.id"
             class="tag-chip"
             :class="{
-              active: activeTagIds.includes(tag.id),
-              dimmed: (activeTagIds.length > 0 && !activeTagIds.includes(tag.id)) || loopFilterMode === 'only'
+              active: effectiveFilterTagIds.includes(tag.id),
+              dimmed: effectiveFilterTagIds.length > 0 && !effectiveFilterTagIds.includes(tag.id)
             }"
           >
             <span class="tag-label" @click="toggleTag(tag.id)">{{ tag.label }}</span>
