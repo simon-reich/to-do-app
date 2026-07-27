@@ -171,10 +171,31 @@
   background: transparent;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
-  padding: 10px 16px;
+  padding: 10px 40px 10px 16px;
   outline: none;
   box-shadow: 0 5px 0 var(--ink);
   transition: border-color 0.15s, box-shadow 0.15s, border-radius 0.15s;
+}
+
+.add-input-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  opacity: 0.35;
+}
+
+.add-input-clear:hover {
+  opacity: 1;
 }
 
 .add-input:focus {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, provide, watch, onMounted, onUnmounted, nextTick, useTemplateRef } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
-import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, Flag, CircleArrowDown, LayoutList, LayoutGrid } from '@lucide/vue'
+import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, Flag, CircleArrowDown, LayoutList, LayoutGrid, X } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
@@ -417,12 +417,18 @@ function onTodoBlur() {
   setTimeout(() => { showTagModal.value = false }, 200)
 }
 
+function clearTodoInput() {
+  todoInput.value = ''
+  todoInputRef.value?.focus()
+}
+
 function addTodo() {
   if (!todoInput.value.trim()) return
   const todo = store.addTodo(todoInput.value, { tags: [...newTodoTagIds.value] })
   if (route.path === '/focus') store.sendToToday(todo.id)
   todoInput.value = ''
   newTodoTagIds.value = []
+  todoInputRef.value?.blur()
 }
 
 // ── Sort: toggle between date (newest first) and A–Z ──
@@ -572,6 +578,15 @@ watch(() => route.path, () => {
             @keydown.enter.prevent="addTodo"
             @keydown.escape="showTagModal = false; todoInputRef?.blur()"
           />
+          <button
+            v-if="todoInput.length"
+            type="button"
+            class="add-input-clear"
+            title="Clear"
+            @mousedown.prevent="clearTodoInput"
+          >
+            <X :size="12" />
+          </button>
           <div v-if="showTagModal && addTagModalTags.length" class="add-tag-row" @mousedown.prevent>
             <label
               v-for="tag in addTagModalTags"
