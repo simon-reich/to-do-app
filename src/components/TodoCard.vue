@@ -1000,23 +1000,24 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
   }
 }
 
-// Shared by the swipe-confirmed delete below and the plain Delete button
-// click — same puff-then-delete either way.
+// Shared by both delete paths (swipe and the open-card Delete button) —
+// same puff-then-delete either way, once confirmed below.
 async function deleteWithPuff() {
   await animateOutPuff()
   emit('delete', props.todo.id)
 }
 
-// Confirmation for a swipe-triggered delete (see onDragEnd) — mirrors the
-// tag-delete confirmation modal in App.vue, same markup/classes/style.
+// Confirmation modal shared by both delete paths (swipe, see onDragEnd,
+// and the open-card Delete button) — mirrors the tag-delete confirmation
+// modal in App.vue, same markup/classes/style.
 const pendingDelete = ref(false)
 
-async function confirmSwipeDelete() {
+async function confirmDelete() {
   pendingDelete.value = false
   await deleteWithPuff()
 }
 
-function cancelSwipeDelete() {
+function cancelDelete() {
   pendingDelete.value = false
 }
 
@@ -1070,12 +1071,12 @@ onUnmounted(() => {
 
       <Teleport to="body">
         <template v-if="pendingDelete">
-          <div class="modal-backdrop" @click="cancelSwipeDelete" />
+          <div class="modal-backdrop" @click="cancelDelete" />
           <div class="modal-box" role="dialog">
             <p class="modal-text">Delete <strong>{{ todo.title }}</strong>?</p>
             <div class="modal-actions">
-              <button class="modal-btn modal-btn--cancel" @click="cancelSwipeDelete">Cancel</button>
-              <button class="modal-btn modal-btn--delete" @click="confirmSwipeDelete">Delete</button>
+              <button class="modal-btn modal-btn--cancel" @click="cancelDelete">Cancel</button>
+              <button class="modal-btn modal-btn--delete" @click="confirmDelete">Delete</button>
             </div>
           </div>
         </template>
@@ -1117,8 +1118,17 @@ onUnmounted(() => {
           >{{ todo.title }}</span>
 
           <!-- When card is open (all mode): pencil starts editing; once
-               editing, it swaps to the accept/check button. -->
+               editing, it swaps to the accept/check button. Delete now
+               only lives here — not on the closed card — so it isn't a
+               single stray click away during normal browsing. -->
           <template v-if="showTagMenu && mode === 'all' && !isEditing">
+            <button
+              class="card-btn card-btn--delete"
+              title="Delete"
+              @click.stop="pendingDelete = true"
+            >
+              <Trash2 :size="18" />
+            </button>
             <button class="card-btn card-btn--edit" title="Edit" @click.stop="startEdit">
               <Pencil :size="10" />
             </button>
@@ -1136,15 +1146,9 @@ onUnmounted(() => {
             </button>
           </template>
 
-          <!-- When card is closed (all mode): show original action icons -->
+          <!-- When card is closed (all mode): show original action icons
+               (delete moved into the open state, see above) -->
           <template v-else-if="mode === 'all'">
-            <button
-              class="card-btn card-btn--delete"
-              title="Delete"
-              @click.stop="deleteWithPuff"
-            >
-              <Trash2 :size="16" />
-            </button>
             <button
               v-if="!todo.inToday"
               class="card-btn"
