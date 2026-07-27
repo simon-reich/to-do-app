@@ -1502,8 +1502,18 @@ onUnmounted(() => {
 
 .card-btn.active { color: var(--ink-dark); }
 
+/* Hover swaps the icon to the card's own background color, same idea as
+   priority's bg<->ink swap below — the icon blends into the card itself
+   rather than just shifting to a nearby shade of ink, which barely read
+   as a change at all. */
 @media (hover: hover) {
-  .card-btn:hover { color: var(--ink-dark); }
+  .card-btn:hover {
+    color: var(--bg);
+  }
+
+  .priority .card-btn:hover {
+    color: var(--ink);
+  }
 }
 
 /* Deliberately no align-self override — this sits in the exact same spot
