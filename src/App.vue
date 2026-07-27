@@ -5,6 +5,7 @@ import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, Flag, CircleArrow
 import { useTodosStore, PRIORITY_TAG_ID, LOOP_TAG_ID, type LoopInterval } from './stores/todos'
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
+import { onQuickExpandEnter, onQuickExpandLeave } from './composables/useQuickExpand'
 import ScrollDivider from './components/ScrollDivider.vue'
 import LoopPicker from './components/LoopPicker.vue'
 import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
@@ -610,6 +611,12 @@ watch(() => route.path, () => {
             <X :size="12" />
           </button>
           <div v-if="showTagModal && addTagModalTags.length" class="add-tag-row">
+            <Transition :css="false" @enter="onQuickExpandEnter" @leave="onQuickExpandLeave">
+              <div v-if="newTodoTagIds.includes(LOOP_TAG_ID)" class="add-loop-row">
+                <LoopPicker v-model="newTodoLoopInterval" />
+              </div>
+            </Transition>
+
             <label
               v-for="tag in addTagModalTags"
               :key="tag.id"
@@ -620,10 +627,6 @@ watch(() => route.path, () => {
               <input type="checkbox" :checked="newTodoTagIds.includes(tag.id)" @change="newTodoTagIds = newTodoTagIds.includes(tag.id) ? newTodoTagIds.filter(i => i !== tag.id) : [...newTodoTagIds, tag.id]" />
               <span>{{ tag.label }}</span>
             </label>
-
-            <div v-if="newTodoTagIds.includes(LOOP_TAG_ID)" class="add-loop-row">
-              <LoopPicker v-model="newTodoLoopInterval" />
-            </div>
           </div>
         </div>
 

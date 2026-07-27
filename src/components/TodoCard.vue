@@ -290,6 +290,7 @@ import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } fro
 import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
 import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
+import { onQuickExpandEnter, onQuickExpandLeave } from '../composables/useQuickExpand'
 import LoopPicker from './LoopPicker.vue'
 
 const props = defineProps<{
@@ -1194,6 +1195,12 @@ onUnmounted(() => {
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
           <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
+            <Transition :css="false" @enter="onQuickExpandEnter" @leave="onQuickExpandLeave">
+              <div v-if="isLoop" class="add-loop-row" @click.stop>
+                <LoopPicker :model-value="todo.loopInterval" :inverted="isPriority" @update:model-value="updateLoopInterval" />
+              </div>
+            </Transition>
+
             <template v-if="tagMenuTags.length">
               <label
                 v-for="tag in tagMenuTags"
@@ -1207,10 +1214,6 @@ onUnmounted(() => {
               </label>
             </template>
             <span v-else class="tag-row-empty">No tags yet</span>
-
-            <div v-if="isLoop" class="add-loop-row" @click.stop>
-              <LoopPicker :model-value="todo.loopInterval" @update:model-value="updateLoopInterval" />
-            </div>
           </div>
         </Transition>
       </motion.div>
