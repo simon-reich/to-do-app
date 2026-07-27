@@ -55,16 +55,16 @@ function confirmDeleteTheme() {
 
     <!-- Appearance -->
     <section class="section">
-      <h2 class="section-title">Colors</h2>
+      <h2 class="section-title">colors</h2>
 
       <div class="color-picker-group">
         <div class="color-row">
           <div class="color-field">
-            <span class="color-label">Background</span>
+            <span class="color-label">background</span>
             <ColorPicker v-model="pickerBg" />
           </div>
           <div class="color-field">
-            <span class="color-label">Ink</span>
+            <span class="color-label">ink</span>
             <ColorPicker v-model="pickerGray" />
           </div>
         </div>
@@ -73,7 +73,7 @@ function confirmDeleteTheme() {
           ref="nameInputRef"
           v-model="themeName"
           class="name-input"
-          placeholder="Theme name + Enter to save…"
+          placeholder="theme name + enter"
           maxlength="32"
           @keydown.enter="saveTheme"
         />
@@ -97,28 +97,23 @@ function confirmDeleteTheme() {
           </span>
         </button>
       </div>
-
-      <div class="theme-io-row">
-        <button class="btn-outline" @click="exportThemes">Export themes</button>
-        <button class="btn-outline" @click="importThemes">Import themes</button>
-      </div>
     </section>
 
     <!-- Corner style + Drop shadow -->
     <div class="section-row">
       <section class="section">
-        <h2 class="section-title">Corners</h2>
+        <h2 class="section-title">corners</h2>
         <div class="option-row">
-          <button class="btn-outline" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">Square</button>
-          <button class="btn-outline" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">Rounded</button>
+          <button class="btn-outline" :class="{ active: !themeStore.rounded }" @click="themeStore.rounded && themeStore.toggleRounded()">square</button>
+          <button class="btn-outline" :class="{ active: themeStore.rounded }" @click="themeStore.rounded || themeStore.toggleRounded()">rounded</button>
         </div>
       </section>
 
       <section class="section">
-        <h2 class="section-title">Drop shadow</h2>
+        <h2 class="section-title">drop shadow</h2>
         <div class="option-row">
-          <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">Mono</button>
-          <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">Dark</button>
+          <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'mono' }" @click="themeStore.priorityShadow !== 'mono' && themeStore.togglePriorityShadow()">mono</button>
+          <button class="btn-outline" :class="{ active: themeStore.priorityShadow === 'dark' }" @click="themeStore.priorityShadow !== 'dark' && themeStore.togglePriorityShadow()">dark</button>
         </div>
       </section>
     </div>
@@ -126,28 +121,32 @@ function confirmDeleteTheme() {
     <!-- Celebrations + Tags -->
     <div class="section-row">
       <section class="section">
-        <h2 class="section-title">Celebrations</h2>
+        <h2 class="section-title">celebrations</h2>
         <div class="option-row">
-          <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">On</button>
-          <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">Off</button>
+          <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">on</button>
+          <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">off</button>
         </div>
       </section>
 
       <section class="section">
-        <h2 class="section-title">Tags</h2>
+        <h2 class="section-title">tags</h2>
         <div class="option-row">
-          <button class="btn-outline" :class="{ active: themeStore.tagsEnabled }" @click="themeStore.tagsEnabled || themeStore.toggleTags()">On</button>
-          <button class="btn-outline" :class="{ active: !themeStore.tagsEnabled }" @click="themeStore.tagsEnabled && themeStore.toggleTags()">Off</button>
+          <button class="btn-outline" :class="{ active: themeStore.tagsEnabled }" @click="themeStore.tagsEnabled || themeStore.toggleTags()">on</button>
+          <button class="btn-outline" :class="{ active: !themeStore.tagsEnabled }" @click="themeStore.tagsEnabled && themeStore.toggleTags()">off</button>
         </div>
       </section>
     </div>
 
     <!-- Data -->
     <section class="section">
-      <h2 class="section-title">Data</h2>
+      <h2 class="section-title">data</h2>
       <div class="btn-row">
-        <button class="btn-outline" @click="exportData">Export todos</button>
-        <button class="btn-outline" @click="handleImport">Import todos</button>
+        <button class="btn-outline" @click="exportData">export todos</button>
+        <button class="btn-outline" @click="handleImport">import todos</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-outline" @click="exportThemes">export themes</button>
+        <button class="btn-outline" @click="importThemes">import themes</button>
       </div>
     </section>
 
@@ -156,10 +155,10 @@ function confirmDeleteTheme() {
   <template v-if="deleteThemeConfirm">
     <div class="modal-backdrop" @click="deleteThemeConfirm = null" />
     <div class="modal-box" role="dialog">
-      <p class="modal-text">Delete theme <strong>{{ deleteThemeConfirm.name }}</strong>?</p>
+      <p class="modal-text">delete theme <strong>{{ deleteThemeConfirm.name }}</strong>?</p>
       <div class="modal-actions">
-        <button class="modal-btn modal-btn--cancel" @click="deleteThemeConfirm = null">Cancel</button>
-        <button class="modal-btn modal-btn--delete" @click="confirmDeleteTheme">Delete</button>
+        <button class="modal-btn modal-btn--cancel" @click="deleteThemeConfirm = null">cancel</button>
+        <button class="modal-btn modal-btn--delete" @click="confirmDeleteTheme">delete</button>
       </div>
     </div>
   </template>
@@ -263,17 +262,6 @@ function confirmDeleteTheme() {
   justify-content: center;
 }
 
-/* inline-grid + 1fr columns: the standard trick for equal-width siblings
-   sized to the widest one's own content, without stretching the row to
-   fill the section (align-self: center keeps it shrink-wrapped). */
-.theme-io-row {
-  display: inline-grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 10px;
-  align-self: center;
-}
-
 /* Shared outlined-pill look for every plain button in Settings (corners,
    drop shadow, data import/export, theme import/export) plus the base for
    .theme-chip below — must come before .theme-chip so its smaller
@@ -348,8 +336,8 @@ function confirmDeleteTheme() {
 
 .chip-delete:hover { color: var(--ink-dark); }
 
-/* Same equal-width-without-stretch trick as .theme-io-row above — but that
-   only equalizes buttons within their own row (Square/Rounded to each
+/* Same equal-width-without-stretch trick as .btn-row/.theme-chip above —
+   but that only equalizes buttons within their own row (Square/Rounded to each
    other, On/Off to each other, etc.), not across all four option-rows.
    Buttons are mono font (see base.css), so every character is a fixed
    width — "Rounded" (7 chars) is the longest label of the bunch, so a
