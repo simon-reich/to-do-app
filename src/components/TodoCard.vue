@@ -291,6 +291,7 @@ import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, typ
 import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
 import { onQuickExpandEnter, onQuickExpandLeave } from '../composables/useQuickExpand'
+import { activeModal } from '../composables/useModalGuard'
 import LoopPicker from './LoopPicker.vue'
 
 const props = defineProps<{
@@ -1028,6 +1029,10 @@ async function confirmDelete() {
 function cancelDelete() {
   pendingDelete.value = false
 }
+
+watch(pendingDelete, (open) => {
+  activeModal.value = open ? { onCancel: cancelDelete, onConfirm: confirmDelete } : null
+})
 
 onUnmounted(() => {
   window.removeEventListener('pointerup', releaseGripFallback)

@@ -6,6 +6,7 @@ import { useTodosStore, PRIORITY_TAG_ID, LOOP_TAG_ID, type LoopInterval } from '
 import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
 import { onQuickExpandEnter, onQuickExpandLeave } from './composables/useQuickExpand'
+import { activeModal } from './composables/useModalGuard'
 import ScrollDivider from './components/ScrollDivider.vue'
 import LoopPicker from './components/LoopPicker.vue'
 import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
@@ -78,6 +79,30 @@ function onGlobalKeydown(e: KeyboardEvent) {
   // and leaving them active here was exactly the kind of surface that kept
   // producing odd side effects (see the Tab-cycling fixes above this file).
   if (window.innerWidth <= DESKTOP_BREAKPOINT) return
+
+  // A confirmation modal being open overrides everything else here —
+  // Escape cancels it, Enter confirms it, and nothing else (Tab-cycling,
+  // single-letter shortcuts, a card's own Escape/Enter handling further
+  // down its own separate listener) should fire underneath while it's
+  // up. stopImmediatePropagation matters: TodoCard's own onCardKeydown
+  // listens on this same document too, registered later (only once a
+  // card opens), so without it Escape would also reach that handler and
+  // close the card behind the modal.
+  if (activeModal.value) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      activeModal.value.onCancel()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      activeModal.value.onConfirm?.()
+    } else {
+      e.stopImmediatePropagation()
+    }
+    return
+  }
+
   if (e.key === 'Tab') {
     // Checked before isTypingTarget: a card being open/edited takes
     // priority over the "don't interrupt typing" guard, which exists to
@@ -385,6 +410,10 @@ function confirmDeleteTag() {
   }
   deleteConfirm.value = null
 }
+
+watch(deleteConfirm, (open) => {
+  activeModal.value = open ? { onCancel: () => { deleteConfirm.value = null }, onConfirm: confirmDeleteTag } : null
+})
 
 function handleTagKey(e: KeyboardEvent) {
   if (e.key === 'Escape') { (e.target as HTMLElement)?.blur(); return }

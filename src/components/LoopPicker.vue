@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { activeModal } from '../composables/useModalGuard'
 import type { LoopInterval, LoopUnit } from '../stores/todos'
 
 const props = defineProps<{
@@ -103,6 +104,12 @@ function pickDate(day: { id: string }) {
   updateStartDate(day.id)
   showDateModal.value = false
 }
+
+// No separate "confirm" action here — clicking a day already applies and
+// closes it (pickDate above). Enter just closes, same as Escape/Cancel.
+watch(showDateModal, (open) => {
+  activeModal.value = open ? { onCancel: () => { showDateModal.value = false }, onConfirm: () => { showDateModal.value = false } } : null
+})
 
 const dateAttributes = computed(() => [{
   key: 'selected',
