@@ -61,6 +61,7 @@ function applyCustomCount() {
         type="button"
         class="loop-opt"
         :class="{ active: sameInterval(modelValue, preset.interval), dimmed: !sameInterval(modelValue, preset.interval) }"
+        @mousedown.prevent
         @click="select(preset.interval)"
       >
         {{ preset.label }}
@@ -74,6 +75,7 @@ function applyCustomCount() {
         type="button"
         class="loop-opt"
         :class="{ active: sameInterval(modelValue, preset.interval), dimmed: !sameInterval(modelValue, preset.interval) }"
+        @mousedown.prevent
         @click="select(preset.interval)"
       >
         {{ preset.label }}
