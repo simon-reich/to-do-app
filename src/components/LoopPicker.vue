@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { CalendarDays } from '@lucide/vue'
 import type { LoopInterval, LoopUnit } from '../stores/todos'
 
 const props = defineProps<{
@@ -74,6 +73,17 @@ function applyCustomCount() {
   emit('update:modelValue', { unit: 'day', count, startDate: startDate.value })
 }
 
+// maxlength doesn't actually clamp type="number" inputs in most browsers
+// — Math.min in applyCustomCount only kicks in on change/blur, so typing
+// a 4th+ digit still showed while focused. Truncate live instead.
+function onCustomCountInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (input.value.length > 3) {
+    input.value = input.value.slice(0, 3)
+    customCount.value = Number(input.value)
+  }
+}
+
 function updateStartDate(date: string) {
   const base = props.modelValue ?? { unit: 'day' as const, count: 1, startDate: date }
   emit('update:modelValue', { unit: base.unit, count: base.count, startDate: date })
@@ -145,6 +155,7 @@ const dateAttributes = computed(() => [{
           class="loop-custom-input"
           v-model.number="customCount"
           @focus="!isCustom && applyCustomCount(); emit('focus-inside')"
+          @input="onCustomCountInput"
           @change="applyCustomCount"
         />
         <span>days</span>
@@ -153,7 +164,7 @@ const dateAttributes = computed(() => [{
 
     <div class="loop-row">
       <div class="loop-from">
-        <span>start: {{ startDateDisplay }}</span>
+        <span>starts</span>
         <button
           type="button"
           class="loop-date-btn"
@@ -161,7 +172,7 @@ const dateAttributes = computed(() => [{
           @mousedown.prevent
           @click="showDateModal = true"
         >
-          <CalendarDays :size="14" />
+          {{ startDateDisplay }}
         </button>
       </div>
     </div>
@@ -234,7 +245,7 @@ const dateAttributes = computed(() => [{
   gap: 5px;
   padding-left: 4px;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   font-family: var(--font-mono, monospace);
   cursor: default;
   transition: opacity 0.1s;
@@ -254,16 +265,16 @@ const dateAttributes = computed(() => [{
 }
 
 .loop-custom-input {
-  width: 32px;
+  width: 34px;
   color: var(--ink);
   background: none;
   border: none;
   border-bottom: 1px solid var(--ink);
   font-family: var(--font-mono, monospace);
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
   outline: none;
-  padding: 0;
+  padding: 0 0 2px;
   /* Hide the native spinner arrows — they don't match anything else in
      the app's own control styling. */
   -moz-appearance: textfield;
@@ -281,7 +292,7 @@ const dateAttributes = computed(() => [{
   gap: 8px;
   padding-left: 4px;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   font-family: var(--font-mono, monospace);
 }
 
@@ -290,17 +301,18 @@ const dateAttributes = computed(() => [{
 }
 
 .loop-date-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: none;
+  border-bottom: 1px solid var(--ink);
   background: none;
+  padding: 0 0 2px;
   color: var(--ink);
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
   cursor: pointer;
-  padding: 0;
 }
 
 .inverted .loop-date-btn {
   color: var(--bg);
+  border-bottom-color: var(--bg);
 }
 </style>
