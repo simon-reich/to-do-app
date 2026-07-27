@@ -664,7 +664,7 @@ watch(() => route.path, () => {
             ref="todoInputRef"
             v-model="todoInput"
             class="add-input"
-            placeholder="add + enter"
+            placeholder="todo + enter"
             @focus="onTodoFocus"
             @input="onTodoInput"
             @blur="onTodoBlur"
