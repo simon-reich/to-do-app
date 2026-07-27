@@ -7,6 +7,13 @@ import { useListFlip } from '../composables/useListFlip'
 
 const store = useTodosStore()
 
+// Priority (with or without loop) floats to the top; everything else —
+// loop or plain — sorts by when it was actually sent to Focus (oldest
+// addition first), not by how recently it was created.
+function rank(t: { tags: string[] }): number {
+  return t.tags.includes(PRIORITY_TAG_ID) ? 0 : 1
+}
+
 // Focus is deliberately unfilterable — it's already the curated, small
 // subset by design, and always shows every todo that's in it regardless
 // of whatever All/Prio/Loop/tag filter happens to be active in Overview
@@ -14,9 +21,11 @@ const store = useTodosStore()
 // UI here instead of just silently ignoring it).
 const filteredTodos = computed(() => {
   return [...store.todayTodos].sort((a, b) => {
-    const aPrio = a.tags.includes(PRIORITY_TAG_ID) ? 0 : 1
-    const bPrio = b.tags.includes(PRIORITY_TAG_ID) ? 0 : 1
-    return aPrio - bPrio
+    const rankDiff = rank(a) - rank(b)
+    if (rankDiff !== 0) return rankDiff
+    // Falls back to createdAt for todos already in Focus from before
+    // focusAddedAt existed.
+    return (a.focusAddedAt ?? a.createdAt).localeCompare(b.focusAddedAt ?? b.createdAt)
   })
 })
 

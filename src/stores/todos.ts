@@ -32,6 +32,9 @@ export interface Todo {
   tags: string[]
   createdAt: string
   inToday: boolean
+  /** When this todo was last sent to Focus — drives Focus's own sort
+   *  order (oldest addition first), separate from createdAt. */
+  focusAddedAt?: string
   completedAt?: string
   workLog: string[]
   loopInterval?: LoopInterval
@@ -92,7 +95,10 @@ export const useTodosStore = defineStore('todos', () => {
 
   function sendToToday(id: string) {
     const todo = todos.value.find(t => t.id === id)
-    if (todo) todo.inToday = true
+    if (todo) {
+      todo.inToday = true
+      todo.focusAddedAt = new Date().toISOString()
+    }
   }
 
   function removeFromToday(id: string) {
