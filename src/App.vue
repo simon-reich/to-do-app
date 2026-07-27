@@ -119,13 +119,32 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
-  // A — jump into the add-todo input. Valid on Overview and Focus, the only
-  // views where that input is actually enabled (dimmed/inert on Settings
-  // and Calendar).
-  if (key === 'a') {
+  // N — jump into the add-todo input ("new"). Valid on Overview and Focus,
+  // the only views where that input is actually enabled (dimmed/inert on
+  // Settings and Calendar).
+  if (key === 'n') {
     if (route.path !== '/all' && route.path !== '/focus') return
     e.preventDefault()
     todoInputRef.value?.focus()
+    return
+  }
+
+  // A — the All filter (clears every active tag/prio/loop filter at
+  // once). Overview-only, like every other filter shortcut — Focus can't
+  // be filtered at all.
+  if (key === 'a') {
+    if (route.path !== '/all') return
+    e.preventDefault()
+    clearAllFilters()
+    return
+  }
+
+  // L — cycle the loop filter (default → hide → only → default), same
+  // three states as clicking the Loop button itself.
+  if (key === 'l') {
+    if (route.path !== '/all') return
+    e.preventDefault()
+    cycleLoopFilter()
     return
   }
 
@@ -208,33 +227,29 @@ const topNavRef = ref<HTMLElement | null>(null)
 const sortListBtnRef = ref<HTMLElement | null>(null)
 const sortOrderBtnRef = ref<HTMLElement | null>(null)
 const settingsBtnRef = ref<HTMLElement | null>(null)
-// P's target: whichever All/Prio pair is actually on screen. With tags on
-// that's two loose buttons in the sidebar list (no shared wrapper to ref);
-// with tags off it's already the one desktop-all-priority-row div.
+// A/P/L's targets: whichever All/Prio/Loop trio is actually on screen —
+// the sidebar list's own buttons with tags on, the standalone
+// desktop-all-priority-row's with tags off.
 const allBtnSidebarRef = ref<HTMLElement | null>(null)
 const prioBtnSidebarRef = ref<HTMLElement | null>(null)
-const allPrioRowRef = ref<HTMLElement | null>(null)
+const loopBtnSidebarRef = ref<HTMLElement | null>(null)
+const allBtnRowRef = ref<HTMLElement | null>(null)
+const prioBtnRowRef = ref<HTMLElement | null>(null)
+const loopBtnRowRef = ref<HTMLElement | null>(null)
 
-interface ShortcutHint { key: string; x: number; y: number }
+interface ShortcutHint { key: string; x: number; y: number; anchor?: 'above' | 'right' }
 const shortcutHints = ref<ShortcutHint[]>([])
 
-// Union of two elements' boxes — used to center the "P" hint over the
-// All+Prio pair as a group when they're two separate buttons rather than
-// one shared container.
-function unionRect(a: DOMRect, b: DOMRect): DOMRect {
-  const left = Math.min(a.left, b.left)
-  const top = Math.min(a.top, b.top)
-  const right = Math.max(a.right, b.right)
-  const bottom = Math.max(a.bottom, b.bottom)
-  return new DOMRect(left, top, right - left, bottom - top)
+function getAllBtnRect(): DOMRect | null {
+  return (themeStore.tagsEnabled ? allBtnSidebarRef.value : allBtnRowRef.value)?.getBoundingClientRect() ?? null
 }
 
-function getPrioFilterRect(): DOMRect | null {
-  if (themeStore.tagsEnabled) {
-    if (!allBtnSidebarRef.value || !prioBtnSidebarRef.value) return null
-    return unionRect(allBtnSidebarRef.value.getBoundingClientRect(), prioBtnSidebarRef.value.getBoundingClientRect())
-  }
-  return allPrioRowRef.value?.getBoundingClientRect() ?? null
+function getPrioBtnRect(): DOMRect | null {
+  return (themeStore.tagsEnabled ? prioBtnSidebarRef.value : prioBtnRowRef.value)?.getBoundingClientRect() ?? null
+}
+
+function getLoopBtnRect(): DOMRect | null {
+  return (themeStore.tagsEnabled ? loopBtnSidebarRef.value : loopBtnRowRef.value)?.getBoundingClientRect() ?? null
 }
 
 function computeShortcutHints() {
@@ -242,7 +257,7 @@ function computeShortcutHints() {
     { key: 'Tab', el: topNavRef.value },
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
     { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
-    { key: 'A', el: todoInputRef.value },
+    { key: 'N', el: todoInputRef.value },
     { key: 'T', el: themeStore.tagsEnabled ? tagInputRef.value : null },
     { key: 'X', el: settingsBtnRef.value },
   ]
@@ -259,16 +274,9 @@ function computeShortcutHints() {
     hints.push(...measured.map(m => ({ key: m.key, x: m.rect.left + m.rect.width / 2, y: lineY })))
   }
 
-  // P and Enter only apply on Overview/Focus (same restriction as the
-  // shortcuts themselves) and share their own line, separate from the
-  // header's — they sit far below it, so joining them into that one would
-  // put them nowhere near what they actually label.
+  // Enter only applies on Overview/Focus (same restriction as the
+  // shortcut itself), floated above the first card.
   if (route.path === '/all' || route.path === '/focus') {
-    const poolTargets: { key: string; top: number; x: number }[] = []
-
-    const prioRect = getPrioFilterRect()
-    if (prioRect) poolTargets.push({ key: 'P', top: prioRect.top, x: prioRect.left + prioRect.width / 2 })
-
     const listRect = contentInnerRef.value?.getBoundingClientRect()
     if (listRect) {
       // content-inner's own top edge sits right below the header (before
@@ -277,13 +285,27 @@ function computeShortcutHints() {
       // first rendered card's own top (still centered on content-inner's
       // full width, just not its own x) is where the list visually begins.
       const firstCardTop = document.querySelector('.content-inner .todo-card-main')?.getBoundingClientRect().top
-      poolTargets.push({ key: 'Enter', top: firstCardTop ?? listRect.top, x: listRect.left + listRect.width / 2 })
+      const enterY = (firstCardTop ?? listRect.top) - 13
+      hints.push({ key: 'Enter', x: listRect.left + listRect.width / 2, y: enterY })
     }
+  }
 
-    if (poolTargets.length) {
-      const poolLineY = Math.min(...poolTargets.map(t => t.top)) - 13
-      hints.push(...poolTargets.map(t => ({ key: t.key, x: t.x, y: poolLineY })))
-    }
+  // A/P/L are Overview-only (Focus can't be filtered at all) and each
+  // float to the right of their own button, vertically centered —
+  // they used to share one line above the whole All/Prio pair, but with
+  // three of them now individually labeling separate buttons reads
+  // clearer right next to each one than stacked above the group.
+  if (route.path === '/all') {
+    const rightOf = (key: string, rect: DOMRect | null) =>
+      rect ? { key, x: rect.right + 16, y: rect.top + rect.height / 2, anchor: 'right' as const } : null
+
+    hints.push(
+      ...[
+        rightOf('A', getAllBtnRect()),
+        rightOf('P', getPrioBtnRect()),
+        rightOf('L', getLoopBtnRect()),
+      ].filter((h): h is NonNullable<typeof h> => !!h)
+    )
   }
 
   shortcutHints.value = hints
@@ -608,8 +630,9 @@ watch(() => route.path, () => {
         placeholder="tag, ... + enter"
         @keydown="handleTagKey"
       />
-      <div v-else ref="allPrioRowRef" class="desktop-all-priority-row">
+      <div v-else class="desktop-all-priority-row">
         <button
+          ref="allBtnRowRef"
           class="all-btn"
           :class="{ active: effectiveFilterTagIds.length === 0, dimmed: effectiveFilterTagIds.length > 0 }"
           @click="clearAllFilters"
@@ -618,6 +641,7 @@ watch(() => route.path, () => {
         </button>
 
         <button
+          ref="prioBtnRowRef"
           class="all-btn priority-btn"
           :class="{ active: effectiveFilterTagIds.includes(PRIORITY_TAG_ID), dimmed: effectiveFilterTagIds.length > 0 && !effectiveFilterTagIds.includes(PRIORITY_TAG_ID) }"
           @click="toggleTag(PRIORITY_TAG_ID)"
@@ -626,6 +650,7 @@ watch(() => route.path, () => {
         </button>
 
         <button
+          ref="loopBtnRowRef"
           class="all-btn loop-btn"
           :class="{ 'loop-filter-default': loopFilterMode === 'default', active: loopFilterMode === 'only', dimmed: loopFilterMode === 'hide' }"
           @click="cycleLoopFilter"
@@ -757,6 +782,7 @@ watch(() => route.path, () => {
         </button>
 
         <button
+          ref="loopBtnSidebarRef"
           class="all-btn loop-btn"
           :class="{ 'loop-filter-default': loopFilterMode === 'default', active: loopFilterMode === 'only', dimmed: loopFilterMode === 'hide' }"
           @click="cycleLoopFilter"
@@ -918,6 +944,7 @@ watch(() => route.path, () => {
       v-for="hint in shortcutHints"
       :key="hint.key"
       class="shortcut-hint"
+      :class="{ 'shortcut-hint--right': hint.anchor === 'right' }"
       :style="{ left: hint.x + 'px', top: hint.y + 'px' }"
     >{{ hint.key }}</div>
   </template>
