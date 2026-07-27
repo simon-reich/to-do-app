@@ -1458,7 +1458,10 @@ onUnmounted(() => {
   inset: 0;
   background: var(--ink);
   border: 2px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--ink);
+  /* Unlike the fill/border, the shadow follows the Mono/Dark drop-shadow
+     setting (--priority-shadow) — same as priority cards — instead of
+     always being plain ink. */
+  box-shadow: 5px 5px 0 var(--priority-shadow);
   opacity: 0.35;
   border-radius: var(--radius);
   z-index: -1;
