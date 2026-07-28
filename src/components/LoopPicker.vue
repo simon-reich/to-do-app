@@ -186,8 +186,8 @@ const dateAttributes = computed(() => [{
 
     <Teleport to="body">
       <template v-if="showDateModal">
-        <div class="modal-backdrop" @click="showDateModal = false" />
-        <div class="modal-box" role="dialog" @click.stop>
+        <div class="modal-backdrop" @mousedown.prevent @click="showDateModal = false" />
+        <div class="modal-box" role="dialog" @mousedown.prevent @click.stop>
           <VCalendar :attributes="dateAttributes" expanded locale="en" @dayclick="pickDate" />
           <div class="modal-actions">
             <button class="modal-btn modal-btn--cancel" @click="showDateModal = false">Close</button>

@@ -1102,6 +1102,7 @@ onUnmounted(() => {
 
       <motion.div
         class="todo-card"
+        :data-todo-id="todo.id"
         :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: isPriority, loop: isLoop }"
         :style="{ x, y, rotate, opacity: cardOpacity }"
         :drag="canDrag ? 'x' : false"

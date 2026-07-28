@@ -194,8 +194,8 @@
     color: var(--ink);
   }
 
-  .toast {
-    left: 50%;
-    top: 72px;
+  .toast--dup-tag {
+    left: 50% !important;
+    top: 72px !important;
   }
 }
