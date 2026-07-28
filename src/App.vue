@@ -284,7 +284,7 @@ function computeShortcutHints() {
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
     { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
     { key: 'N', el: todoInputRef.value },
-    { key: 'T', el: themeStore.tagsEnabled ? tagInputRef.value : null },
+    { key: 'T', el: route.path === '/all' && themeStore.tagsEnabled ? tagInputRef.value : null },
     { key: 'X', el: settingsBtnRef.value },
   ]
   const measured = targets
@@ -310,8 +310,12 @@ function computeShortcutHints() {
       // using it directly floated "Enter" up onto the add-todo input. The
       // first rendered card's own top (still centered on content-inner's
       // full width, just not its own x) is where the list visually begins.
+      // With no cards at all, fall back to the "No todos"/"Nothing in
+      // focus" placeholder's own top instead of content-inner's — same
+      // reasoning, just no card to measure.
       const firstCardTop = document.querySelector('.content-inner .todo-card-main')?.getBoundingClientRect().top
-      const enterY = (firstCardTop ?? listRect.top) - 13
+      const emptyTop = document.querySelector('.content-inner .empty')?.getBoundingClientRect().top
+      const enterY = (firstCardTop ?? emptyTop ?? listRect.top) - 13
       hints.push({ key: 'Enter', x: listRect.left + listRect.width / 2, y: enterY })
     }
   }
