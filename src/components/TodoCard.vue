@@ -1497,6 +1497,17 @@ onUnmounted(() => {
   border-radius: var(--radius);
   z-index: -1;
   pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+/* This pseudo lives on .swipe-container (see comment above) while the
+   drag transform lives on .todo-card, one level in — so during an actual
+   swipe the text moves and this fill/border/shadow doesn't, visibly
+   splitting the card in two. Hiding it for the duration of the drag (it
+   reappears the instant the card settles back at rest) reads far better
+   than a card that visibly tears apart mid-swipe. */
+.todo-card-wrap.dragging .swipe-container.loop::before {
+  opacity: 0;
 }
 
 /* Priority + loop together: full solid ink fill/border like plain
