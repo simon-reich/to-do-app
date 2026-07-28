@@ -286,7 +286,7 @@ export function closeActiveCard() {
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
-import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check } from '@lucide/vue'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check, Flag } from '@lucide/vue'
 import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
 import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
@@ -559,6 +559,14 @@ function handleTitleClick() {
     if (props.mode === 'today') toggleCheckMenu()
     else toggleTagMenu()
   }, 280)
+}
+
+// Quick priority toggle for Focus's card row — the only other way to set
+// priority is opening the tag menu, which doesn't exist in 'today' mode
+// (Focus cards use the check-menu instead, see toggleCheckMenu). Reuses
+// updateTags so unchecking loop-orphan cleanup etc. stays in one place.
+function togglePriority() {
+  updateTags(isPriority.value ? props.todo.tags.filter(id => id !== PRIORITY_TAG_ID) : [...props.todo.tags, PRIORITY_TAG_ID])
 }
 
 function updateTags(tags: string[]) {
@@ -1148,7 +1156,7 @@ onUnmounted(() => {
             >
               <Trash2 :size="18" />
             </button>
-            <button class="card-btn card-btn--edit" title="Edit" @click.stop="startEdit">
+            <button class="card-btn card-btn--circle" title="Edit" @click.stop="startEdit">
               <Pencil :size="10" />
             </button>
           </template>
@@ -1160,7 +1168,7 @@ onUnmounted(() => {
                this button out for the Edit one mid-click so the click lands
                on nothing/the wrong button and the card never closes. -->
           <template v-else-if="showTagMenu && mode === 'all' && isEditing">
-            <button class="card-btn card-btn--edit" title="Accept" @mousedown.prevent @click.stop="acceptEdit">
+            <button class="card-btn card-btn--circle" title="Accept" @mousedown.prevent @click.stop="acceptEdit">
               <Check :size="11" />
             </button>
           </template>
@@ -1186,15 +1194,27 @@ onUnmounted(() => {
             </button>
           </template>
 
-          <!-- Today mode: remove from today button -->
-          <button
-            v-else
-            class="card-btn"
-            title="Move back to overview"
-            @click.stop="emit('remove-from-today', todo.id)"
-          >
-            <CircleMinus :size="18" />
-          </button>
+          <!-- Today mode: quick priority toggle + remove from today -->
+          <template v-else>
+            <!-- No separate "active" tint here: the whole card already goes
+                 ink-colored once priority is on (see .priority above), so
+                 layering ink-dark on top of that would just read as low
+                 contrast rather than a clearer state. -->
+            <button
+              class="card-btn card-btn--circle"
+              :title="isPriority ? 'Remove priority' : 'Set priority'"
+              @click.stop="togglePriority"
+            >
+              <Flag :size="10" :fill="isPriority ? 'currentColor' : 'none'" />
+            </button>
+            <button
+              class="card-btn"
+              title="Move back to overview"
+              @click.stop="emit('remove-from-today', todo.id)"
+            >
+              <CircleMinus :size="18" />
+            </button>
+          </template>
         </div>
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
@@ -1542,7 +1562,7 @@ onUnmounted(() => {
    as the plain trash/plus/minus icons (which rely on .todo-card-main's own
    flex-start alignment), just swapped in conditionally. Sized to match
    CirclePlus's own 18px footprint. */
-.card-btn--edit {
+.card-btn--circle {
   justify-content: center;
   width: 18px;
   height: 18px;
@@ -1642,7 +1662,7 @@ onUnmounted(() => {
     display: none;
   }
 
-  .card-btn--edit {
+  .card-btn--circle {
     display: flex;
   }
 }
@@ -1660,9 +1680,24 @@ onUnmounted(() => {
     gap: 6px;
   }
 
-  .card-btn svg {
+  /* Excludes card-btn--circle (edit/accept/flag): they're not bare icons
+     like plus/minus/trash, but a fixed 18px circle around a deliberately
+     smaller icon (10-11px) — this rule blowing that icon up to 15px
+     overflowed the circle instead of scaling it. Scaled down separately
+     below instead, keeping the same circle-to-icon ratio. */
+  .card-btn:not(.card-btn--circle) svg {
     width: 15px;
     height: 15px;
+  }
+
+  .card-btn--circle {
+    width: 15px;
+    height: 15px;
+  }
+
+  .card-btn--circle svg {
+    width: 8px;
+    height: 8px;
   }
 }
 </style>
