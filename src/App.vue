@@ -7,6 +7,7 @@ import { useThemeStore } from './stores/theme'
 import { useScrollTracking } from './composables/useScrollTracking'
 import { onQuickExpandEnter, onQuickExpandLeave } from './composables/useQuickExpand'
 import { activeModal } from './composables/useModalGuard'
+import { runLoopSchedule, scheduleLoopMidnightCheck } from './composables/useLoopSchedule'
 import ScrollDivider from './components/ScrollDivider.vue'
 import LoopPicker from './components/LoopPicker.vue'
 import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
@@ -355,6 +356,8 @@ function onViewportResize() {
   }
 }
 
+let stopLoopMidnightCheck: (() => void) | null = null
+
 onMounted(() => {
   store.ensureSystemTags()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
@@ -364,6 +367,10 @@ onMounted(() => {
   document.addEventListener('keyup', onGlobalKeyup)
   window.addEventListener('blur', onWindowBlur)
   window.addEventListener('resize', onWindowResizeForHints)
+  // Sends due loop todos to Focus now, then again every midnight while
+  // this tab stays open (no reload) — see useLoopSchedule.ts.
+  runLoopSchedule(store)
+  stopLoopMidnightCheck = scheduleLoopMidnightCheck(store)
 })
 
 onUnmounted(() => {
@@ -372,6 +379,7 @@ onUnmounted(() => {
   document.removeEventListener('keyup', onGlobalKeyup)
   window.removeEventListener('blur', onWindowBlur)
   window.removeEventListener('resize', onWindowResizeForHints)
+  stopLoopMidnightCheck?.()
 })
 
 const store = useTodosStore()
@@ -560,6 +568,9 @@ function addTodo() {
     loopInterval: newTodoTagIds.value.includes(LOOP_TAG_ID) ? newTodoLoopInterval.value : undefined,
   })
   if (route.path === '/focus') store.sendToToday(todo.id)
+  // A brand-new loop todo due today (e.g. start date = today, daily)
+  // shouldn't have to wait for the next reload/midnight check.
+  else if (todo.loopInterval) runLoopSchedule(store)
   resetTodoDraft()
   todoInputRef.value?.blur()
 }

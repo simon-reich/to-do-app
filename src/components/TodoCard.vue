@@ -292,6 +292,7 @@ import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_
 import { useThemeStore } from '../stores/theme'
 import { onQuickExpandEnter, onQuickExpandLeave } from '../composables/useQuickExpand'
 import { activeModal } from '../composables/useModalGuard'
+import { runLoopSchedule } from '../composables/useLoopSchedule'
 import LoopPicker from './LoopPicker.vue'
 
 const props = defineProps<{
@@ -335,11 +336,15 @@ const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
 watch(isLoop, (loop) => {
   if (loop && !props.todo.loopInterval) {
     store.updateTodo(props.todo.id, { loopInterval: { unit: 'day', count: 1, startDate: new Date().toISOString().slice(0, 10) } })
+    // Daily-from-today is due today — don't make the user wait for a
+    // reload/midnight to see it land on Focus.
+    runLoopSchedule(store)
   }
 })
 
 function updateLoopInterval(interval: LoopInterval) {
   store.updateTodo(props.todo.id, { loopInterval: interval })
+  runLoopSchedule(store)
 }
 
 // Tags off: the per-card tag menu still offers the priority + loop tags
