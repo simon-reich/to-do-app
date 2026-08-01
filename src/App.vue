@@ -54,11 +54,25 @@ let lastMainViewPath = viewOrder.includes(route.path) ? route.path : '/all'
 // never survive the switch — coming back later should never show something
 // still open or half-typed. Covers every way of navigating, not just Tab
 // (a plain nav-link click bypasses onGlobalKeydown entirely).
-watch(() => route.path, (path) => {
+watch(() => route.path, (path, oldPath) => {
   closeActiveCard()
   const idx = viewOrder.indexOf(path)
   if (idx !== -1) currentViewIdx = idx
   if (viewOrder.includes(path)) lastMainViewPath = path
+  // Same "never survive leaving" rule now applies to an in-progress
+  // add-todo draft — except a Settings round-trip, which reads as a quick
+  // detour (tweak a color, come right back) rather than actually being
+  // done with adding the todo. That means both legs of the trip are
+  // exempt: going *to* Settings (obviously) but also coming *back* — the
+  // draft was already spared once on the way in, wiping it the instant
+  // you return would undo that for no reason. See resetTodoDraft/
+  // onTodoBlur for the other cases that clear it (X button, deleting the
+  // title down to nothing, blurring an already-empty input).
+  if (path !== '/settings' && oldPath !== '/settings') {
+    if (todoBlurCloseTimer) { clearTimeout(todoBlurCloseTimer); todoBlurCloseTimer = null }
+    showTagModal.value = false
+    resetTodoDraft()
+  }
 })
 
 const DESKTOP_BREAKPOINT = 1024
@@ -527,6 +541,17 @@ watch(newTodoTagIds, (ids) => {
   }
 })
 
+// Deleting the title back down to nothing discards the rest of the draft
+// (tags, loop interval) immediately, same as the X button — typing it
+// back doesn't un-delete a todo, so there's nothing to preserve once the
+// title itself is gone.
+watch(todoInput, (val) => {
+  if (!val) {
+    newTodoTagIds.value = []
+    newTodoLoopInterval.value = undefined
+  }
+})
+
 function onTodoFocus() {
   if (addTagModalTags.value.length > 0) showTagModal.value = true
 }
@@ -544,7 +569,14 @@ let todoBlurCloseTimer: ReturnType<typeof setTimeout> | null = null
 function onTodoBlur() {
   todoBlurCloseTimer = setTimeout(() => {
     showTagModal.value = false
-    resetTodoDraft()
+    // A title's actually been typed — clicking away almost certainly means
+    // glancing at something else, not abandoning the todo, so the draft
+    // (title, tags, loop interval) stays staged for whenever the input is
+    // focused again. Still fully discarded by the X button, deleting the
+    // title back down to nothing (see the todoInput watch below), or
+    // switching views (see the route watch above) — Escape included, since
+    // that also just blurs the input and lands here.
+    if (!todoInput.value.trim()) resetTodoDraft()
   }, 200)
 }
 
@@ -556,11 +588,11 @@ function keepTodoModalOpen() {
   showTagModal.value = true
 }
 
-// Abandoning a not-yet-submitted todo (Escape, or clicking/tabbing away
-// without hitting Enter) should leave nothing behind — otherwise the
-// tags/loop interval you'd picked stay staged in memory and reappear
-// still checked next time the input is focused, even though nothing was
-// ever actually added.
+// Fully discards whatever's staged (title, tags, loop interval) — called
+// from the cases that actually mean "start over": blurring an empty
+// input, deleting the title back to nothing, the X button, and switching
+// views. A blur with a title still typed does *not* call this — see
+// onTodoBlur.
 function resetTodoDraft() {
   todoInput.value = ''
   newTodoTagIds.value = []
