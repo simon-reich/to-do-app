@@ -73,6 +73,8 @@ interface AppState {
 }
 ```
 
+> **Date-Feature.** Der System-Tag `date` (intern weiterhin die ID `__loop__`, nur das Label wurde von "loop" umbenannt) gibt einem Todo optional ein `loopInterval`-Objekt mit `mode: 'once' | 'loop'`. `'once'` ist ein einmaliges Fälligkeitsdatum (`startDate`), `'loop'` die bestehende Wiederholung (`unit`/`count`/`startDate`). Ein fälliges Todo (once ab seinem Datum, loop nach der bisherigen Logik) wird automatisch nach Focus geschickt, genau wie bisher — `'once'` bleibt dabei fällig (taucht bei Rückgabe in den Pool wieder auf), bis es tatsächlich erledigt wird.
+
 > **Projekte wurden entfernt.** Das Datenmodell kennt keine `Project`-Entität mehr. Tags sind das einzige Kategorisierungs-Feature.
 
 ## Projektstruktur
@@ -154,9 +156,9 @@ Alle Shortcuts leben in **einem einzigen** globalen `keydown`-Listener in `App.v
 - **G** – Grid/List togglen. Nur Overview, sonst No-Op.
 - **N** – Fokus ins Add-Todo-Feld ("new"). Overview + Focus.
 - **T** – Fokus ins Tag-Input in der Sidebar. Nur Overview – Focus ist nicht filterbar, das gesamte Tag-/Filter-Menü ist dort ausgegraut und inert.
-- **A** – All-Filter (löscht jeden aktiven Tag-/Prio-/Loop-Filter auf einmal). Nur Overview.
+- **A** – All-Filter (löscht jeden aktiven Tag-/Prio-/Date-Filter auf einmal). Nur Overview.
 - **P** – Prio-Filter togglen. Nur Overview.
-- **L** – Loop-Filter durchzyklen (default → hide → only → default). Nur Overview.
+- **D** – Date-Filter durchzyklen (default → hide → only → default, startet auf "hide"). Nur Overview, kein Todo offen. Ist ein Todo offen, bedeutet **D** stattdessen Delete (Overview) bzw. Remove from Focus (Focus) – siehe TodoCard.vue's onCardKeydown. Kein echter Konflikt: genau wie bei Tab (View- vs. Karten-Cycling) sind beide Zustände gegenseitig ausschließend.
 - **X** – Settings togglen, kehrt zum vorher aktiven Haupt-View zurück (nicht hart auf Overview verdrahtet).
 - **Escape** – schließt/blurt immer das, was gerade offen/fokussiert ist (Add-Todo-Input, Tag-Input, offene Karte, Swipe-Delete-Bestätigung).
 

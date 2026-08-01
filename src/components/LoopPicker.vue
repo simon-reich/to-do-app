@@ -35,21 +35,41 @@ const presetRow2: { label: string; unit: LoopUnit; count: number }[] = [
 ]
 const presets = [...presetRow1, ...presetRow2]
 
+// Absent mode means legacy data (pre-dates this field, always had
+// unit+count set) — treat exactly as it already behaved: a loop.
+const mode = computed(() => props.modelValue?.mode ?? 'loop')
+
+function selectMode(m: 'once' | 'loop') {
+  if (m === 'once') {
+    emit('update:modelValue', { mode: 'once', startDate: startDate.value })
+    return
+  }
+  // Reuses a previous loop config if the user flips once→loop→once→loop
+  // rather than losing it; defaults to daily the first time, same as
+  // checking the Date tag itself used to before Once became the default.
+  emit('update:modelValue', {
+    mode: 'loop',
+    unit: props.modelValue?.unit ?? 'day',
+    count: props.modelValue?.count ?? 1,
+    startDate: startDate.value,
+  })
+}
+
 function sameUnitCount(a: LoopInterval | undefined, unit: LoopUnit, count: number): boolean {
   return !!a && a.unit === unit && a.count === count
 }
 
 // Anything that isn't an exact preset match (including nothing set yet)
 // counts as "Custom" — covers both a genuinely custom every-X-days value
-// and the not-yet-decided state right after the loop tag is first checked.
+// and the not-yet-decided state right after switching into loop mode.
 const isCustom = computed(() => !presets.some(p => sameUnitCount(props.modelValue, p.unit, p.count)))
 
 const MAX_CUSTOM_DAYS = 999
 
-const customCount = ref(props.modelValue?.unit === 'day' && isCustom.value ? props.modelValue.count : 2)
+const customCount = ref(props.modelValue?.unit === 'day' && isCustom.value ? (props.modelValue.count ?? 2) : 2)
 
 watch(() => props.modelValue, (v) => {
-  if (v?.unit === 'day' && isCustom.value) customCount.value = v.count
+  if (v?.unit === 'day' && isCustom.value) customCount.value = v.count ?? 2
 })
 
 // The date to count the recurrence from — kept as-is across preset/count
@@ -65,13 +85,13 @@ const startDateDisplay = computed(() => {
 })
 
 function select(unit: LoopUnit, count: number) {
-  emit('update:modelValue', { unit, count, startDate: startDate.value })
+  emit('update:modelValue', { mode: 'loop', unit, count, startDate: startDate.value })
 }
 
 function applyCustomCount() {
   const count = Math.min(MAX_CUSTOM_DAYS, Math.max(1, Math.round(customCount.value) || 1))
   customCount.value = count
-  emit('update:modelValue', { unit: 'day', count, startDate: startDate.value })
+  emit('update:modelValue', { mode: 'loop', unit: 'day', count, startDate: startDate.value })
 }
 
 // maxlength doesn't actually clamp type="number" inputs in most browsers
@@ -86,8 +106,8 @@ function onCustomCountInput(e: Event) {
 }
 
 function updateStartDate(date: string) {
-  const base = props.modelValue ?? { unit: 'day' as const, count: 1, startDate: date }
-  emit('update:modelValue', { unit: base.unit, count: base.count, startDate: date })
+  const base = props.modelValue ?? { mode: 'once' as const, startDate: date }
+  emit('update:modelValue', { ...base, startDate: date })
 }
 
 // The "from" date picker opens as a centered modal (same pattern as the
@@ -125,57 +145,80 @@ const dateAttributes = computed(() => [{
   <div class="loop-picker" :class="{ inverted }" @click.stop>
     <div class="loop-row">
       <button
-        v-for="preset in presetRow1"
-        :key="preset.label"
         type="button"
         class="loop-opt"
-        :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
+        :class="{ active: mode === 'once', dimmed: mode !== 'once' }"
         @mousedown.prevent
-        @click="select(preset.unit, preset.count)"
+        @click="selectMode('once')"
       >
-        {{ preset.label }}
+        once
       </button>
-    </div>
-
-    <div class="loop-row">
       <button
-        v-for="preset in presetRow2"
-        :key="preset.label"
         type="button"
         class="loop-opt"
-        :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
+        :class="{ active: mode === 'loop', dimmed: mode !== 'loop' }"
         @mousedown.prevent
-        @click="select(preset.unit, preset.count)"
+        @click="selectMode('loop')"
       >
-        {{ preset.label }}
+        loop
       </button>
     </div>
 
-    <div class="loop-row">
-      <div class="loop-custom" :class="{ dimmed: !isCustom }">
-        <span>every</span>
-        <input
-          type="number"
-          min="1"
-          :max="MAX_CUSTOM_DAYS"
-          maxlength="3"
-          class="loop-custom-input"
-          v-model.number="customCount"
-          @focus="!isCustom && applyCustomCount(); emit('focus-inside')"
-          @input="onCustomCountInput"
-          @change="applyCustomCount"
-        />
-        <span>days</span>
+    <template v-if="mode === 'loop'">
+      <div class="loop-row">
+        <button
+          v-for="preset in presetRow1"
+          :key="preset.label"
+          type="button"
+          class="loop-opt"
+          :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
+          @mousedown.prevent
+          @click="select(preset.unit, preset.count)"
+        >
+          {{ preset.label }}
+        </button>
       </div>
-    </div>
+
+      <div class="loop-row">
+        <button
+          v-for="preset in presetRow2"
+          :key="preset.label"
+          type="button"
+          class="loop-opt"
+          :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
+          @mousedown.prevent
+          @click="select(preset.unit, preset.count)"
+        >
+          {{ preset.label }}
+        </button>
+      </div>
+
+      <div class="loop-row">
+        <div class="loop-custom" :class="{ dimmed: !isCustom }">
+          <span>every</span>
+          <input
+            type="number"
+            min="1"
+            :max="MAX_CUSTOM_DAYS"
+            maxlength="3"
+            class="loop-custom-input"
+            v-model.number="customCount"
+            @focus="!isCustom && applyCustomCount(); emit('focus-inside')"
+            @input="onCustomCountInput"
+            @change="applyCustomCount"
+          />
+          <span>days</span>
+        </div>
+      </div>
+    </template>
 
     <div class="loop-row">
       <div class="loop-from">
-        <span>starts</span>
+        <span>{{ mode === 'once' ? 'due' : 'starts' }}</span>
         <button
           type="button"
           class="loop-date-btn"
-          title="Change start date"
+          title="Change date"
           @mousedown.prevent
           @click="showDateModal = true"
         >

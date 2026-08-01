@@ -20,10 +20,14 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((a.getTime() - b.getTime()) / 86400000)
 }
 
-// Whether `today` is a due day for this recurrence, counting from
-// startDate in steps of count units. Month/year matching clamps to the
-// last day of a shorter month (e.g. a 31st-of-the-month loop lands on
-// the 28th/29th/30th in months that don't have a 31st).
+// Whether `today` is a due day. In 'once' mode that's simply "on or after
+// the chosen date" — no recurrence math, and it stays due (keeps
+// resurfacing) until actually completed, same as an unfinished loop todo
+// would. In 'loop' mode (or legacy data predating the `mode` field, which
+// always had unit+count set), counts from startDate in steps of count
+// units. Month/year matching clamps to the last day of a shorter month
+// (e.g. a 31st-of-the-month loop lands on the 28th/29th/30th in months
+// that don't have a 31st).
 export function isLoopDueToday(interval: LoopInterval, today: Date = new Date(), fallbackStart?: string): boolean {
   // Pre-dates the startDate field (loopInterval existed before it was
   // added) — fall back to whatever the caller supplies (createdAt, see
@@ -33,7 +37,9 @@ export function isLoopDueToday(interval: LoopInterval, today: Date = new Date(),
   const t = localMidnight(today)
   if (t < start) return false
 
-  const count = Math.max(1, interval.count)
+  if ((interval.mode ?? 'loop') === 'once') return true
+
+  const count = Math.max(1, interval.count ?? 1)
 
   if (interval.unit === 'day') {
     return daysBetween(t, start) % count === 0

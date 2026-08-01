@@ -20,9 +20,14 @@ export interface Tag {
 export type LoopUnit = 'day' | 'week' | 'month' | 'year'
 
 export interface LoopInterval {
-  unit: LoopUnit
-  count: number
-  /** ISO date (YYYY-MM-DD) the recurrence counts from. */
+  /** 'once' is a plain one-time due date, no recurrence — unit/count are
+   *  unused. Absent/undefined means legacy data from before this field
+   *  existed, which always had unit+count set: treat as 'loop'. */
+  mode?: 'once' | 'loop'
+  unit?: LoopUnit
+  count?: number
+  /** ISO date (YYYY-MM-DD) — the recurrence's start date in loop mode, or
+   *  the due date itself in once mode. */
   startDate: string
 }
 
@@ -139,7 +144,13 @@ export const useTodosStore = defineStore('todos', () => {
     const existingLoop = tags.value.find(t => t.id === LOOP_TAG_ID)
     if (!existingLoop) {
       const prioIdx = tags.value.findIndex(t => t.id === PRIORITY_TAG_ID)
-      tags.value.splice(prioIdx + 1, 0, { id: LOOP_TAG_ID, label: 'loop' })
+      tags.value.splice(prioIdx + 1, 0, { id: LOOP_TAG_ID, label: 'date' })
+    } else if (existingLoop.label !== 'date') {
+      // Same label-migration idea as 'prio' above — the Loop feature grew
+      // into the broader Date feature (once-off due dates, not just
+      // recurrence), same tag id, just a new label for already-persisted
+      // installs.
+      existingLoop.label = 'date'
     }
   }
 

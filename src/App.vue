@@ -180,9 +180,13 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
-  // L — cycle the loop filter (default → hide → only → default), same
-  // three states as clicking the Loop button itself.
-  if (key === 'l') {
+  // D — cycle the date filter (default → hide → only → default, starts
+  // on "hide"), same three states as clicking the Date button itself.
+  // Reuses the letter an open card's own D (delete/remove, see
+  // TodoCard.vue's onCardKeydown) already uses — no conflict, since
+  // shortcutsBlocked() above already returns whenever a card is open,
+  // same mutual-exclusion pattern as Tab (view-cycling vs. card-cycling).
+  if (key === 'd') {
     if (route.path !== '/all') return
     e.preventDefault()
     cycleLoopFilter()
@@ -348,7 +352,7 @@ function computeShortcutHints() {
       ...[
         rightOf('A', getAllBtnRect()),
         rightOf('P', getPrioBtnRect()),
-        rightOf('L', getLoopBtnRect()),
+        rightOf('D', getLoopBtnRect()),
       ].filter((h): h is NonNullable<typeof h> => !!h)
     )
   }
@@ -461,12 +465,15 @@ function toggleTag(id: string) {
   else activeTagIds.value.splice(idx, 1)
 }
 
-// Loop gets its own three-state cycle instead of the plain multi-select
-// toggle every other filter uses: default (loop todos shown like
-// everything else) → hide (filter loop todos out entirely) → only (show
-// just loop todos) → back to default — see AllTodos.vue/Focus.vue for
-// where this actually filters the list.
-const loopFilterMode = ref<'default' | 'only' | 'hide'>('default')
+// Date gets its own three-state cycle instead of the plain multi-select
+// toggle every other filter uses: default (date-tagged todos shown like
+// everything else) → hide (filter them out entirely) → only (show just
+// date-tagged todos) → back to default — see AllTodos.vue for where this
+// actually filters the list. Starts on "hide": a date/loop todo not due
+// yet is mostly just clutter in Overview, so it's out of the way until
+// you deliberately go looking for it (via "only") or turn filtering off
+// entirely (cycling to "default").
+const loopFilterMode = ref<'default' | 'only' | 'hide'>('hide')
 
 function cycleLoopFilter() {
   loopFilterMode.value =
@@ -514,11 +521,12 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
 
-// Loop checked for the first time in this add-session: default to Daily
-// instead of leaving the picker in its ambiguous "nothing selected" state.
+// Date checked for the first time in this add-session: default to a
+// one-time due date today (Once mode) instead of leaving the picker in
+// its ambiguous "nothing selected" state.
 watch(newTodoTagIds, (ids) => {
   if (ids.includes(LOOP_TAG_ID) && !newTodoLoopInterval.value) {
-    newTodoLoopInterval.value = { unit: 'day', count: 1, startDate: todayStr() }
+    newTodoLoopInterval.value = { mode: 'once', startDate: todayStr() }
   }
 })
 
@@ -728,7 +736,7 @@ watch(() => route.path, () => {
           :class="{ 'loop-filter-default': loopFilterMode === 'default', active: loopFilterMode === 'only', dimmed: loopFilterMode === 'hide' }"
           @click="cycleLoopFilter"
         >
-          loop
+          date
         </button>
       </div>
     </div>
@@ -860,7 +868,7 @@ watch(() => route.path, () => {
           :class="{ 'loop-filter-default': loopFilterMode === 'default', active: loopFilterMode === 'only', dimmed: loopFilterMode === 'hide' }"
           @click="cycleLoopFilter"
         >
-          loop
+          date
         </button>
 
         <div
@@ -928,7 +936,7 @@ watch(() => route.path, () => {
             :class="{ 'loop-filter-default': loopFilterMode === 'default', active: loopFilterMode === 'only', dimmed: loopFilterMode === 'hide' }"
             @click="cycleLoopFilter"
           >
-            loop
+            date
           </button>
         </div>
 

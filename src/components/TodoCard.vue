@@ -331,16 +331,16 @@ const themeStore = useThemeStore()
 const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
 const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
 
-// Loop checked for the first time: default to Daily instead of leaving
-// the picker in its ambiguous "nothing selected" state. Daily-from-today
-// is due today, but sending it to Focus right here — before the user has
-// even seen the picker — used to yank the card out of the tag menu (and
-// off the All list, which filters inToday out) mid-edit. That's deferred
-// to the tag menu actually closing instead, see the showTagMenu watch
-// below.
+// Date checked for the first time: default to a one-time due date today
+// (Once mode) instead of leaving the picker in its ambiguous "nothing
+// selected" state. Due-today is immediately due, but sending it to Focus
+// right here — before the user has even seen the picker — used to yank
+// the card out of the tag menu (and off the All list, which filters
+// inToday out) mid-edit. That's deferred to the tag menu actually
+// closing instead, see the showTagMenu watch below.
 watch(isLoop, (loop) => {
   if (loop && !props.todo.loopInterval) {
-    store.updateTodo(props.todo.id, { loopInterval: { unit: 'day', count: 1, startDate: new Date().toISOString().slice(0, 10) } })
+    store.updateTodo(props.todo.id, { loopInterval: { mode: 'once', startDate: new Date().toISOString().slice(0, 10) } })
   }
 })
 
