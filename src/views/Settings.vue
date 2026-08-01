@@ -5,6 +5,7 @@ import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
 import { applyTheme } from '../composables/useTheme'
+import { activeModal } from '../composables/useModalGuard'
 import ColorPicker from '../components/ColorPicker.vue'
 
 const { exportData, importData, exportThemes, importThemes } = useStorage()
@@ -43,6 +44,10 @@ function confirmDeleteTheme() {
   if (deleteThemeConfirm.value) themeStore.deleteTheme(deleteThemeConfirm.value.id)
   deleteThemeConfirm.value = null
 }
+
+watch(deleteThemeConfirm, (open) => {
+  activeModal.value = open ? { onCancel: () => { deleteThemeConfirm.value = null }, onConfirm: confirmDeleteTheme } : null
+})
 </script>
 
 <template>
