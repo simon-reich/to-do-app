@@ -332,19 +332,20 @@ const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
 const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
 
 // Loop checked for the first time: default to Daily instead of leaving
-// the picker in its ambiguous "nothing selected" state.
+// the picker in its ambiguous "nothing selected" state. Daily-from-today
+// is due today, but sending it to Focus right here — before the user has
+// even seen the picker — used to yank the card out of the tag menu (and
+// off the All list, which filters inToday out) mid-edit. That's deferred
+// to the tag menu actually closing instead, see the showTagMenu watch
+// below.
 watch(isLoop, (loop) => {
   if (loop && !props.todo.loopInterval) {
     store.updateTodo(props.todo.id, { loopInterval: { unit: 'day', count: 1, startDate: new Date().toISOString().slice(0, 10) } })
-    // Daily-from-today is due today — don't make the user wait for a
-    // reload/midnight to see it land on Focus.
-    runLoopSchedule(store)
   }
 })
 
 function updateLoopInterval(interval: LoopInterval) {
   store.updateTodo(props.todo.id, { loopInterval: interval })
-  runLoopSchedule(store)
 }
 
 // Tags off: the per-card tag menu still offers the priority + loop tags
@@ -400,12 +401,16 @@ function closeOnOutside(e: MouseEvent) {
 }
 
 // Picks up the edit intent left by a sibling's cycleOpenCard() once this
-// card actually becomes the open one.
-watch(showTagMenu, (isOpen) => {
+// card actually becomes the open one. Closing is also when a due loop
+// todo (freshly tagged Loop, or given a due interval, while this menu was
+// open) actually gets sent to Focus — see the isLoop/updateLoopInterval
+// comments above for why that's deferred to here instead of instantly.
+watch(showTagMenu, (isOpen, wasOpen) => {
   if (isOpen && editIntentId.value === props.todo.id) {
     editIntentId.value = null
     startEdit()
   }
+  if (wasOpen && !isOpen && isLoop.value) runLoopSchedule(store)
 })
 
 // Escape closes the card when it's open but not being edited; Enter instead
@@ -1055,6 +1060,18 @@ onUnmounted(() => {
   if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
   if (activeCardApi.value?.todoId === props.todo.id) activeCardApi.value = null
   if (titleClickTimer) clearTimeout(titleClickTimer)
+  // The showMenu/showTagMenu watch above is normally what removes these —
+  // but that's a queued job, and this component can unmount in the very
+  // same flush that set showMenu/showTagMenu back to false (e.g. Done for
+  // today: openCheckMenuId is nulled synchronously, then the emit removes
+  // this todo from Focus's list, unmounting it). When the parent's removal
+  // job runs first, this component's own effect scope is stopped before
+  // its pending watcher job runs, and it's silently skipped — leaving
+  // these two document listeners (from a now-destroyed card, still
+  // closing over its stale todo/props) attached forever. Removing them
+  // here too is idempotent (harmless if the watcher already did it).
+  document.removeEventListener('click', closeOnOutside)
+  document.removeEventListener('keydown', onCardKeydown)
 })
 </script>
 
