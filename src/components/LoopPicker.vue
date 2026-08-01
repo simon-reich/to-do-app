@@ -164,6 +164,21 @@ const dateAttributes = computed(() => [{
       </button>
     </div>
 
+    <div class="loop-row">
+      <div class="loop-from">
+        <span>{{ mode === 'once' ? 'due' : 'starts' }}</span>
+        <button
+          type="button"
+          class="loop-date-btn"
+          title="Change date"
+          @mousedown.prevent
+          @click="showDateModal = true"
+        >
+          {{ startDateDisplay }}
+        </button>
+      </div>
+    </div>
+
     <template v-if="mode === 'loop'">
       <div class="loop-row">
         <button
@@ -211,21 +226,6 @@ const dateAttributes = computed(() => [{
         </div>
       </div>
     </template>
-
-    <div class="loop-row">
-      <div class="loop-from">
-        <span>{{ mode === 'once' ? 'due' : 'starts' }}</span>
-        <button
-          type="button"
-          class="loop-date-btn"
-          title="Change date"
-          @mousedown.prevent
-          @click="showDateModal = true"
-        >
-          {{ startDateDisplay }}
-        </button>
-      </div>
-    </div>
 
     <Teleport to="body">
       <template v-if="showDateModal">
