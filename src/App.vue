@@ -298,7 +298,7 @@ const enterFollowupParts = computed<HintPart[]>(() => {
   const arrow = (text: string): HintPart => ({ text, kind: 'arrow' })
   const label = (text: string): HintPart => ({ text, kind: 'label' })
   if (route.path === '/all') {
-    return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('Enter'), label('(focus)'), box('Space'), label('(edit)'), box('D'), label('(delete)')]
+    return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('Space'), label('(edit)'), box('F'), label('(focus)'), box('D'), label('(delete)')]
   }
   return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('←→'), label('(select)'), box('Enter'), label('(confirm)'), box('D'), label('(remove)')]
 })

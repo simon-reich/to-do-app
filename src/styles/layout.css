@@ -821,10 +821,11 @@
 }
 
 .shortcut-hint-arrow {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 400;
   color: var(--ink);
   line-height: 1;
+  margin: 0 7px;
 }
 
 .shortcut-hint-label {

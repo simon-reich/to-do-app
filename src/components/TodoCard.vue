@@ -430,12 +430,12 @@ watch(showTagMenu, (isOpen, wasOpen) => {
 // opened it in the first place, and shortcutsBlocked() there defers to
 // this listener for everything from here on.
 //
-// Escape closes the card when it's open but not being edited. Enter, for
-// the tag-menu (Overview) case, sends the todo to Focus — the same move
-// as clicking its own "+" — instead of opening straight into edit; Space
-// does that instead (below). For the check-menu (Focus) case Enter still
-// confirms whichever option is focused. The textarea has its own
-// Escape/Enter handlers for the editing case itself (cancelEdit/
+// Escape closes the card when it's open but not being edited, and so
+// does Enter for the tag-menu (Overview) case — Enter reads as "I'm done
+// here" (e.g. after just picking tags), not "send to Focus", so that's
+// F instead (below), and Space starts editing. For the check-menu
+// (Focus) case Enter still confirms whichever option is focused. The
+// textarea has its own Escape/Enter handlers for the editing case itself (cancelEdit/
 // acceptEdit), and ignoring them here (isEditing guard up top) keeps the
 // two from double-handling the same key. Left/Right toggle check-menu
 // focus between the two options — the pair sits side by side (see
@@ -465,14 +465,20 @@ function onCardKeydown(e: KeyboardEvent) {
     else if (showMenu.value) emit('remove-from-today', props.todo.id)
     return
   }
+  // F — sends to Focus (Overview only), same move as its own "+" button.
+  // Split off from Enter: Enter is what people intuitively reach for
+  // after just picking tags to "save and close", not to also send the
+  // todo off to Focus as a side effect.
+  if (e.key.toLowerCase() === 'f' && showTagMenu.value && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault()
+    emit('send-to-today', props.todo.id)
+    return
+  }
   if (e.key !== 'Escape' && e.key !== 'Enter') return
   e.preventDefault()
-  if (e.key === 'Enter') {
-    if (showTagMenu.value) { emit('send-to-today', props.todo.id); return }
-    if (showMenu.value) {
-      if (focusedCheckOption.value === 'today') handleDoneForToday(props.todo.id)
-      else handleComplete(props.todo.id)
-    }
+  if (e.key === 'Enter' && showMenu.value) {
+    if (focusedCheckOption.value === 'today') handleDoneForToday(props.todo.id)
+    else handleComplete(props.todo.id)
     return
   }
   if (showMenu.value) openCheckMenuId.value = null
