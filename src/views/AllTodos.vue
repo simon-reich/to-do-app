@@ -5,6 +5,7 @@ import { useTodosStore, LOOP_TAG_ID } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
+import { spawnSentToFocusToast } from '../composables/useToast'
 
 const store = useTodosStore()
 // Already unions loop in when loopFilterMode is "only" — see App.vue,
@@ -45,6 +46,17 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
 
 useListFlip(() => siblingIds.value, '.todo-wrap')
+
+// A card leaving Overview for Focus (Enter a second time on an already-
+// open card, or a swipe) otherwise just vanishes from this list with no
+// explanation — reads like the card closed rather than moved. The toast
+// rises from the card's own position, so it's clear where it went
+// instead. Not shown for a direct "+" button click (`obvious`) — that one
+// already makes the move plain on its own.
+function sendToFocus(id: string, obvious?: boolean) {
+  if (!obvious) spawnSentToFocusToast(id)
+  store.sendToToday(id)
+}
 </script>
 
 <template>
@@ -60,7 +72,7 @@ useListFlip(() => siblingIds.value, '.todo-wrap')
         :index="index"
         :grid-mode="true"
         mode="all"
-        @send-to-today="store.sendToToday($event)"
+        @send-to-today="sendToFocus"
         @remove-from-today="store.removeFromToday($event)"
         @delete="store.deleteTodo($event)"
       />

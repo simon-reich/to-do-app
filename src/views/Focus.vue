@@ -4,6 +4,7 @@ import { useTodosStore, PRIORITY_TAG_ID } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
+import { spawnRemovedFromFocusToast } from '../composables/useToast'
 
 const store = useTodosStore()
 
@@ -33,6 +34,14 @@ const fontMap = computed(() => assignFonts(filteredTodos.value.map(t => t.id)))
 const siblingIds = computed(() => filteredTodos.value.map(t => t.id))
 
 useListFlip(() => siblingIds.value, '.todo-wrap')
+
+// Mirrors AllTodos.vue's sendToFocus, `obvious` included — a card leaving
+// this list otherwise just vanishes with no explanation. Toast rises from
+// the card's own position, skipped for a direct CircleMinus click.
+function removeFromFocus(id: string, obvious?: boolean) {
+  if (!obvious) spawnRemovedFromFocusToast(id)
+  store.removeFromToday(id)
+}
 </script>
 
 <template>
@@ -47,7 +56,7 @@ useListFlip(() => siblingIds.value, '.todo-wrap')
         :sibling-ids="siblingIds"
         :index="index"
         mode="today"
-        @remove-from-today="store.removeFromToday($event)"
+        @remove-from-today="removeFromFocus"
         @complete="store.completeTodo($event)"
         @done-for-today="store.doneForToday($event)"
       />

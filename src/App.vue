@@ -8,6 +8,7 @@ import { useScrollTracking } from './composables/useScrollTracking'
 import { onQuickExpandEnter, onQuickExpandLeave } from './composables/useQuickExpand'
 import { activeModal } from './composables/useModalGuard'
 import { runLoopSchedule, scheduleLoopMidnightCheck, isLoopDueToday } from './composables/useLoopSchedule'
+import { toasts, spawnToast, spawnSentToFocusToast } from './composables/useToast'
 import ScrollDivider from './components/ScrollDivider.vue'
 import LoopPicker from './components/LoopPicker.vue'
 import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
@@ -402,26 +403,6 @@ onUnmounted(() => {
 
 const store = useTodosStore()
 
-// ── Toast bubbles ──
-let toastIdCounter = 0
-const toasts = ref<{ id: number; label: string; left: string; top: string; dupTag?: boolean }[]>([])
-
-// left/top are viewport-fixed CSS values (px or %) — the toast's own
-// translateX(-50%) keyframe (see toast-float) centers it horizontally
-// around whatever `left` is given, so callers just pass an anchor point.
-// dupTag: the duplicate-tag toast anchors to the desktop sidebar's tag
-// input, which doesn't exist on mobile — mobile.css force-centers just
-// that one via this flag, without touching the "sent to Focus" toast's
-// anchor (that one stays valid on mobile too, it just points at a card).
-function spawnToast(label: string, left: string, top: string, dupTag = false) {
-  const id = ++toastIdCounter
-  toasts.value.push({ id, label, left, top, dupTag })
-  setTimeout(() => {
-    const idx = toasts.value.findIndex(t => t.id === id)
-    if (idx !== -1) toasts.value.splice(idx, 1)
-  }, 1400)
-}
-
 // ── Tag sidebar ──
 const tagInput = ref('')
 const tagInputRef = ref<HTMLInputElement | null>(null)
@@ -619,17 +600,8 @@ function addTodo() {
   // its own "+" button would, with a toast explaining where it went.
   else if (todo.loopInterval && isLoopDueToday(todo.loopInterval, new Date(), todo.createdAt.slice(0, 10))) {
     setTimeout(() => {
-      // Grabbed just before the move so the toast rises from wherever the
-      // card actually was in Overview — a spatial link between the two
-      // views instead of a generic center-screen bubble.
-      const cardEl = document.querySelector<HTMLElement>(`[data-todo-id="${todo.id}"]`)
-      const rect = cardEl?.getBoundingClientRect()
+      spawnSentToFocusToast(todo.id)
       store.sendToToday(todo.id)
-      spawnToast(
-        'sent to Focus',
-        rect ? `${rect.left + rect.width / 2}px` : '50%',
-        rect ? `${rect.top}px` : '20vh',
-      )
     }, 600)
   }
   resetTodoDraft()

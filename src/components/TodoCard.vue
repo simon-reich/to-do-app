@@ -354,9 +354,14 @@ function updateLoopInterval(interval: LoopInterval) {
 const tagMenuTags = computed(() => themeStore.tagsEnabled ? store.tags : store.tags.filter(t => t.id === PRIORITY_TAG_ID || t.id === LOOP_TAG_ID))
 
 
+// The `obvious` flag on the Focus move events tells the parent (see
+// AllTodos.vue/Focus.vue) whether to skip the "sent to/removed from
+// Focus" toast — a direct click on the card's own +/− button already
+// shows exactly what happened, so it stays silent; the same move
+// triggered less visibly (D/Enter shortcut, swipe) gets the toast.
 const emit = defineEmits<{
-  'send-to-today': [id: string]
-  'remove-from-today': [id: string]
+  'send-to-today': [id: string, obvious?: boolean]
+  'remove-from-today': [id: string, obvious?: boolean]
   'complete': [id: string]
   'done-for-today': [id: string]
   'delete': [id: string]
@@ -413,16 +418,25 @@ watch(showTagMenu, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen && isLoop.value) runLoopSchedule(store)
 })
 
-// Escape closes the card when it's open but not being edited; Enter instead
-// opens straight into text-edit mode for the tag-menu case (the textarea
-// has its own Escape/Enter handlers for the editing case itself, and
-// ignoring them here keeps the two from double-handling the same key), or
-// confirms whichever check-row option is focused for the check-menu case.
-// Left/Right toggle that focus between the two — the pair sits side by
-// side (see .check-row's grid), so left/right reads naturally rather than
-// up/down. Tab isn't handled here — App.vue's single document-level
-// handler drives card-to-card cycling via cycleOpenCard() instead, using
-// the activeCardApi registered below.
+// This listener only exists once the card is already open (see the watch
+// above), so showTagMenu/showMenu are always true for whichever mode
+// applies here — App.vue's global Enter (see its onGlobalKeydown) is what
+// opened it in the first place, and shortcutsBlocked() there defers to
+// this listener for everything from here on.
+//
+// Escape closes the card when it's open but not being edited. Enter, for
+// the tag-menu (Overview) case, sends the todo to Focus — the same move
+// as clicking its own "+" — instead of opening straight into edit; Space
+// does that instead (below). For the check-menu (Focus) case Enter still
+// confirms whichever option is focused. The textarea has its own
+// Escape/Enter handlers for the editing case itself (cancelEdit/
+// acceptEdit), and ignoring them here (isEditing guard up top) keeps the
+// two from double-handling the same key. Left/Right toggle check-menu
+// focus between the two options — the pair sits side by side (see
+// .check-row's grid), so left/right reads naturally rather than up/down.
+// Tab isn't handled here — App.vue's single document-level handler drives
+// card-to-card cycling via cycleOpenCard() instead, using the
+// activeCardApi registered below.
 function onCardKeydown(e: KeyboardEvent) {
   if (isEditing.value) return
   if (showMenu.value && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
@@ -430,10 +444,25 @@ function onCardKeydown(e: KeyboardEvent) {
     focusedCheckOption.value = focusedCheckOption.value === 'today' ? 'done' : 'today'
     return
   }
+  if (e.key === ' ' && showTagMenu.value) {
+    e.preventDefault()
+    startEdit()
+    return
+  }
+  // D — delete in Overview (opens the same confirm modal the Trash icon/
+  // swipe-left do, not an instant delete), remove-from-Focus in Focus
+  // (mirrors the CircleMinus button/swipe-left there — no confirmation,
+  // since it's just moving the todo back to Overview, not discarding it).
+  if (e.key.toLowerCase() === 'd' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault()
+    if (showTagMenu.value) pendingDelete.value = true
+    else if (showMenu.value) emit('remove-from-today', props.todo.id)
+    return
+  }
   if (e.key !== 'Escape' && e.key !== 'Enter') return
   e.preventDefault()
   if (e.key === 'Enter') {
-    if (showTagMenu.value) { startEdit(); return }
+    if (showTagMenu.value) { emit('send-to-today', props.todo.id); return }
     if (showMenu.value) {
       if (focusedCheckOption.value === 'today') handleDoneForToday(props.todo.id)
       else handleComplete(props.todo.id)
@@ -641,14 +670,17 @@ function saveEdit() {
   isEditing.value = false
 }
 
+// Both land back on the open (tag-menu-visible) card rather than closing
+// it outright — editing is one layer *inside* "open", not a replacement
+// for it, so finishing (or bailing on) an edit should only pop that one
+// layer. A second Escape (now hitting onCardKeydown's own Escape branch
+// instead, since isEditing is false again) closes the card itself.
 function acceptEdit() {
   saveEdit()
-  openTagMenuId.value = null
 }
 
 function cancelEdit() {
   isEditing.value = false
-  openTagMenuId.value = null
 }
 
 function handleComplete(id: string) {
@@ -1148,8 +1180,8 @@ onUnmounted(() => {
             class="title-input"
             rows="1"
             :style="font ? { fontFamily: font } : {}"
-            @keydown.enter.prevent="acceptEdit"
-            @keydown.escape="cancelEdit"
+            @keydown.enter.prevent.stop="acceptEdit"
+            @keydown.escape.stop="cancelEdit"
             @blur="saveEdit"
             @input="autoGrow"
             @click.stop
@@ -1178,12 +1210,12 @@ onUnmounted(() => {
             </button>
           </template>
 
-          <!-- Saves + closes the card once editing is active. mousedown.prevent
+          <!-- Saves and drops back to the open (non-editing) card. mousedown.prevent
                keeps the textarea focused through the click — otherwise its
                own blur (from focus moving to this button) runs saveEdit and
                flips isEditing to false *before* the click fires, swapping
                this button out for the Edit one mid-click so the click lands
-               on nothing/the wrong button and the card never closes. -->
+               on nothing/the wrong button instead of accepting the edit. -->
           <template v-else-if="showTagMenu && mode === 'all' && isEditing">
             <button class="card-btn card-btn--circle" title="Accept" @mousedown.prevent @click.stop="acceptEdit">
               <Check :size="11" />
@@ -1197,7 +1229,7 @@ onUnmounted(() => {
               v-if="!todo.inToday"
               class="card-btn"
               title="Add to focus"
-              @click.stop="emit('send-to-today', todo.id)"
+              @click.stop="emit('send-to-today', todo.id, true)"
             >
               <CirclePlus :size="18" />
             </button>
@@ -1205,7 +1237,7 @@ onUnmounted(() => {
               v-else
               class="card-btn"
               title="Remove from focus"
-              @click.stop="emit('remove-from-today', todo.id)"
+              @click.stop="emit('remove-from-today', todo.id, true)"
             >
               <CircleMinus :size="18" />
             </button>
@@ -1227,7 +1259,7 @@ onUnmounted(() => {
             <button
               class="card-btn"
               title="Move back to overview"
-              @click.stop="emit('remove-from-today', todo.id)"
+              @click.stop="emit('remove-from-today', todo.id, true)"
             >
               <CircleMinus :size="18" />
             </button>
