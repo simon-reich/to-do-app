@@ -785,9 +785,51 @@
   z-index: 10001;
 }
 
-/* A/P/L: anchors the label's own left-center to (x, y) instead — each
+/* A/P/D: anchors the label's own left-center to (x, y) instead — each
    sits to the right of its own button, vertically centered on it,
    rather than bottom-aligned above a shared line. */
 .shortcut-hint--right {
   transform: translate(0, -50%);
+}
+
+/* Enter's own row (see enterHintPos/enterFollowupParts in App.vue) — a
+   sequence of individually boxed keys (same look as .shortcut-hint
+   itself) and plain arrow/parenthetical labels between them, laid out by
+   flex instead of computing each piece's position in JS. The row itself
+   carries no box of its own, just the shared bottom-center anchor every
+   other hint uses. */
+.shortcut-hint-row {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10001;
+}
+
+.shortcut-hint-key {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 2px 7px;
+}
+
+.shortcut-hint-arrow {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.shortcut-hint-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink);
+  opacity: 0.7;
 }

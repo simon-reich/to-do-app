@@ -272,7 +272,7 @@ const topNavRef = ref<HTMLElement | null>(null)
 const sortListBtnRef = ref<HTMLElement | null>(null)
 const sortOrderBtnRef = ref<HTMLElement | null>(null)
 const settingsBtnRef = ref<HTMLElement | null>(null)
-// A/P/L's targets: whichever All/Prio/Loop trio is actually on screen —
+// A/P/D's targets: whichever All/Prio/Date trio is actually on screen —
 // the sidebar list's own buttons with tags on, the standalone
 // desktop-all-priority-row's with tags off.
 const allBtnSidebarRef = ref<HTMLElement | null>(null)
@@ -284,6 +284,33 @@ const loopBtnRowRef = ref<HTMLElement | null>(null)
 
 interface ShortcutHint { key: string; x: number; y: number; anchor?: 'above' | 'right' }
 const shortcutHints = ref<ShortcutHint[]>([])
+
+// Enter gets its own row instead of the generic single-key pill every
+// other hint uses — it needs to show the follow-up keys that apply once
+// the card it opens is actually open (Tab/Enter/Space in Overview,
+// Tab/←→/Enter in Focus), as a plain arrow + more boxed keys alongside
+// it rather than crammed into one pill. Positioned the same way Enter's
+// pill used to be (bottom-center anchored above the first card).
+interface HintPart { text: string; kind: 'key' | 'arrow' | 'label' }
+const enterHintPos = ref<{ x: number; y: number } | null>(null)
+const enterFollowupParts = computed<HintPart[]>(() => {
+  const box = (text: string): HintPart => ({ text, kind: 'key' })
+  const arrow = (text: string): HintPart => ({ text, kind: 'arrow' })
+  const label = (text: string): HintPart => ({ text, kind: 'label' })
+  if (route.path === '/all') {
+    return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('Enter'), label('(focus)'), box('Space'), label('(edit)'), box('D'), label('(delete)')]
+  }
+  return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('←→'), label('(select)'), box('Enter'), label('(confirm)'), box('D'), label('(remove)')]
+})
+
+// Calendar's own arrow-key navigation (see Calendar.vue's onKeydown) isn't
+// a single letter like the rest of these, so it gets the same boxed-row
+// treatment as Enter's follow-ups instead of a plain .shortcut-hint pill.
+const calendarHintPos = ref<{ x: number; y: number } | null>(null)
+const calendarHintParts: HintPart[] = [
+  { text: '←→', kind: 'key' }, { text: '(day)', kind: 'label' },
+  { text: '↑↓', kind: 'key' }, { text: '(week)', kind: 'label' },
+]
 
 function getAllBtnRect(): DOMRect | null {
   return (themeStore.tagsEnabled ? allBtnSidebarRef.value : allBtnRowRef.value)?.getBoundingClientRect() ?? null
@@ -302,7 +329,7 @@ function computeShortcutHints() {
     { key: 'Tab', el: topNavRef.value },
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
     { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
-    { key: 'N', el: todoInputRef.value },
+    { key: 'N', el: (route.path === '/all' || route.path === '/focus') ? todoInputRef.value : null },
     { key: 'T', el: route.path === '/all' && themeStore.tagsEnabled ? tagInputRef.value : null },
     { key: 'X', el: settingsBtnRef.value },
   ]
@@ -320,7 +347,9 @@ function computeShortcutHints() {
   }
 
   // Enter only applies on Overview/Focus (same restriction as the
-  // shortcut itself), floated above the first card.
+  // shortcut itself), floated above the first card — see enterHintPos/
+  // enterFollowupParts above for its own row instead of a plain pill.
+  enterHintPos.value = null
   if (route.path === '/all' || route.path === '/focus') {
     const listRect = contentInnerRef.value?.getBoundingClientRect()
     if (listRect) {
@@ -335,11 +364,19 @@ function computeShortcutHints() {
       const firstCardTop = document.querySelector('.content-inner .todo-card-main')?.getBoundingClientRect().top
       const emptyTop = document.querySelector('.content-inner .empty')?.getBoundingClientRect().top
       const enterY = (firstCardTop ?? emptyTop ?? listRect.top) - 13
-      hints.push({ key: 'Enter', x: listRect.left + listRect.width / 2, y: enterY })
+      enterHintPos.value = { x: listRect.left + listRect.width / 2, y: enterY }
     }
   }
 
-  // A/P/L are Overview-only (Focus can't be filtered at all) and each
+  // Calendar's arrow-key navigation — see calendarHintPos/calendarHintParts
+  // above — floated above the calendar grid itself.
+  calendarHintPos.value = null
+  if (route.path === '/calendar') {
+    const calRect = document.querySelector('.calendar-view .cal')?.getBoundingClientRect()
+    if (calRect) calendarHintPos.value = { x: calRect.left + calRect.width / 2, y: calRect.top - 13 }
+  }
+
+  // A/P/D are Overview-only (Focus can't be filtered at all) and each
   // float to the right of their own button, vertically centered —
   // they used to share one line above the whole All/Prio pair, but with
   // three of them now individually labeling separate buttons reads
@@ -1028,6 +1065,35 @@ watch(() => route.path, () => {
       :class="{ 'shortcut-hint--right': hint.anchor === 'right' }"
       :style="{ left: hint.x + 'px', top: hint.y + 'px' }"
     >{{ hint.key }}</div>
+
+    <!-- Enter's own row (see enterHintPos/enterFollowupParts) — the key
+         itself plus its follow-up keys once a card is open, boxed keys
+         with a plain arrow/parenthetical label between them instead of
+         one crowded pill. -->
+    <div
+      v-if="enterHintPos"
+      class="shortcut-hint-row"
+      :style="{ left: enterHintPos.x + 'px', top: enterHintPos.y + 'px' }"
+    >
+      <span
+        v-for="(part, i) in enterFollowupParts"
+        :key="i"
+        :class="`shortcut-hint-${part.kind}`"
+      >{{ part.text }}</span>
+    </div>
+
+    <!-- Calendar's arrow-key navigation (see calendarHintPos/calendarHintParts). -->
+    <div
+      v-if="calendarHintPos"
+      class="shortcut-hint-row"
+      :style="{ left: calendarHintPos.x + 'px', top: calendarHintPos.y + 'px' }"
+    >
+      <span
+        v-for="(part, i) in calendarHintParts"
+        :key="i"
+        :class="`shortcut-hint-${part.kind}`"
+      >{{ part.text }}</span>
+    </div>
   </template>
 
   <!-- Toast bubbles -->
