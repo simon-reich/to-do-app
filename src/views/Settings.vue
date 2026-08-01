@@ -17,8 +17,22 @@ async function handleImport() {
   await importData()
 }
 
-const pickerBg = ref(themeStore.activeBg)
-const pickerGray = ref(themeStore.activeGray)
+// Seeded from the actually-applied CSS custom properties, not
+// themeStore.activeBg/activeGray — those only update on an explicit
+// save (see the watch below: "does NOT persist to store"), so an
+// unsaved live preview stays visible everywhere else on navigating away
+// (--bg/--ink live on the root element, unaffected by this view
+// unmounting) but themeStore's own values are still the last saved
+// theme. Re-entering Settings and seeding from themeStore instead would
+// silently snap the pickers back to that stale saved color, even though
+// the rest of the app still shows the unsaved live one.
+function currentCssColor(varName: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+  return value || fallback
+}
+
+const pickerBg = ref(currentCssColor('--bg', themeStore.activeBg))
+const pickerGray = ref(currentCssColor('--ink', themeStore.activeGray))
 const themeName = ref('')
 const nameInputRef = ref<HTMLInputElement | null>(null)
 
