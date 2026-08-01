@@ -4,7 +4,6 @@ import { motion } from 'motion-v'
 import { X } from '@lucide/vue'
 import { useStorage } from '../composables/useStorage'
 import { useThemeStore } from '../stores/theme'
-import { applyTheme } from '../composables/useTheme'
 import { activeModal } from '../composables/useModalGuard'
 import ColorPicker from '../components/ColorPicker.vue'
 
@@ -17,28 +16,21 @@ async function handleImport() {
   await importData()
 }
 
-// Seeded from the actually-applied CSS custom properties, not
-// themeStore.activeBg/activeGray — those only update on an explicit
-// save (see the watch below: "does NOT persist to store"), so an
-// unsaved live preview stays visible everywhere else on navigating away
-// (--bg/--ink live on the root element, unaffected by this view
-// unmounting) but themeStore's own values are still the last saved
-// theme. Re-entering Settings and seeding from themeStore instead would
-// silently snap the pickers back to that stale saved color, even though
-// the rest of the app still shows the unsaved live one.
-function currentCssColor(varName: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
-  return value || fallback
-}
-
-const pickerBg = ref(currentCssColor('--bg', themeStore.activeBg))
-const pickerGray = ref(currentCssColor('--ink', themeStore.activeGray))
+const pickerBg = ref(themeStore.activeBg)
+const pickerGray = ref(themeStore.activeGray)
 const themeName = ref('')
 const nameInputRef = ref<HTMLInputElement | null>(null)
 
-// Live preview only – does NOT persist to store
+// Applies live as you drag, same as picking a saved theme does — not just
+// a CSS-only preview that reverted to the last *saved* theme on reload or
+// on leaving/re-entering Settings. themeStore.apply persists activeBg/
+// activeGray (the pinia store is persisted whole), so the color survives
+// both. It's still not a *saved* theme, though: it never touches
+// savedThemes, so it won't show up in the theme list below or in a
+// themes export — "saving" one now only really means giving it a name
+// and keeping it around as a preset to come back to.
 watch([pickerBg, pickerGray], ([bg, gray]) => {
-  applyTheme(bg, gray, themeStore.rounded, themeStore.priorityShadow)
+  themeStore.apply(bg, gray)
 })
 
 function saveTheme() {
