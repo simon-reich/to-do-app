@@ -428,9 +428,13 @@ onMounted(() => {
   window.addEventListener('blur', onWindowBlur)
   window.addEventListener('resize', onWindowResizeForHints)
   // Sends due loop todos to Focus now, then again every midnight while
-  // this tab stays open (no reload) — see useLoopSchedule.ts.
+  // this tab stays open (no reload) — see useLoopSchedule.ts. The daily
+  // theme rotation (see stores/theme.ts) piggybacks on the same "once
+  // now, once every midnight after" timing, just via the second
+  // scheduleLoopMidnightCheck argument instead of its own timer.
   runLoopSchedule(store)
-  stopLoopMidnightCheck = scheduleLoopMidnightCheck(store)
+  themeStore.runDailyThemeRotation()
+  stopLoopMidnightCheck = scheduleLoopMidnightCheck(store, () => themeStore.runDailyThemeRotation())
 })
 
 onUnmounted(() => {

@@ -24,6 +24,17 @@ const listView = inject<Ref<boolean>>('listView')!
 const renderGen = ref(0)
 watch([listView, sortKey], () => { renderGen.value++ })
 
+// A–Z sort should order by actual letters/numbers only — punctuation
+// (quotes, dashes, ...) at the start of a title was outranking every
+// letter and digit under plain localeCompare, since symbols collate
+// before alphanumerics. Stripping everything but letters/digits first
+// means a title's sort position is driven by its first real character;
+// `numeric: true` then sorts number runs by value (2 before 10) instead
+// of lexically (10 before 2).
+function alphaSortKey(title: string): string {
+  return title.replace(/[^\p{L}\p{N}]+/gu, '')
+}
+
 const filteredTodos = computed(() => {
   let result = store.activeTodos.filter(t => !t.inToday)
   if (effectiveFilterTagIds.value.length > 0) {
@@ -37,7 +48,7 @@ const filteredTodos = computed(() => {
   }
   return [...result].sort((a, b) =>
     sortKey.value === 'title'
-      ? a.title.localeCompare(b.title, 'de')
+      ? alphaSortKey(a.title).localeCompare(alphaSortKey(b.title), 'de', { numeric: true })
       : b.createdAt.localeCompare(a.createdAt)
   )
 })

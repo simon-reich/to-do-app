@@ -95,8 +95,12 @@ export function runLoopSchedule(store: LoopScheduleStore) {
 
 // Schedules runLoopSchedule to fire right after the next local midnight,
 // then reschedules itself for the one after that — covers a tab left
-// open for days without a reload, not just the on-load check.
-export function scheduleLoopMidnightCheck(store: LoopScheduleStore): () => void {
+// open for days without a reload, not just the on-load check. `onMidnight`
+// is an optional extra callback for anything else that's also "once a
+// day" (currently just the theme store's runDailyThemeRotation) — reuses
+// this same timer instead of running a second, near-identical
+// wait-for-midnight chain alongside it.
+export function scheduleLoopMidnightCheck(store: LoopScheduleStore, onMidnight?: () => void): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null
 
   function scheduleNext() {
@@ -104,6 +108,7 @@ export function scheduleLoopMidnightCheck(store: LoopScheduleStore): () => void 
     const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5)
     timer = setTimeout(() => {
       runLoopSchedule(store)
+      onMidnight?.()
       scheduleNext()
     }, nextMidnight.getTime() - now.getTime())
   }

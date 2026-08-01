@@ -108,6 +108,21 @@ watch(deleteThemeConfirm, (open) => {
           </span>
         </button>
       </div>
+
+      <!-- Daily random theme, picked from the saved themes above. -->
+      <div class="daily-shuffle-row">
+        <span class="color-label daily-shuffle-label">daily shuffle</span>
+        <button
+          type="button"
+          class="switch"
+          role="switch"
+          :aria-checked="themeStore.dailyThemeRotationEnabled"
+          :class="{ on: themeStore.dailyThemeRotationEnabled }"
+          @click="themeStore.toggleDailyThemeRotation()"
+        >
+          <span class="switch-knob" />
+        </button>
+      </div>
     </section>
 
     <!-- Corner style + Drop shadow -->
@@ -271,6 +286,69 @@ watch(deleteThemeConfirm, (open) => {
   margin-top: 18px;
   margin-bottom: 18px;
   justify-content: center;
+}
+
+.daily-shuffle-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Tablet + Mobile: centered instead of right-aligned — matches how the
+   rest of this section (pickers, themes list) is already centered at
+   these widths, right-aligning just this row read as misplaced. */
+@media (max-width: 1024px) {
+  .daily-shuffle-row {
+    justify-content: center;
+  }
+}
+
+.daily-shuffle-label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.switch:hover {
+  border-color: var(--ink-dark);
+}
+
+.switch.on {
+  background: var(--ink);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: max(0px, calc(var(--radius) - 2px));
+  background: var(--ink);
+  opacity: 0.35;
+  transition: transform 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.switch.on .switch-knob {
+  background: var(--bg);
+  opacity: 1;
+  transform: translateX(18px);
 }
 
 /* Shared outlined-pill look for every plain button in Settings (corners,

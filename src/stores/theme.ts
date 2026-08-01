@@ -25,6 +25,11 @@ export const useThemeStore = defineStore('theme', () => {
   const celebrationsEnabled = ref(true)
   const tagsEnabled = ref(true)
   const savedThemes = ref<ColorTheme[]>([])
+  const dailyThemeRotationEnabled = ref(false)
+  // Last date (YYYY-MM-DD) a rotation actually happened — guards against
+  // re-rolling every reload on the same day, same idea as loop todos'
+  // focusAddedAt (see useLoopSchedule.ts's processedToday).
+  const lastThemeRotationDate = ref<string | null>(null)
 
   function apply(bg: string, gray: string) {
     activeBg.value = bg
@@ -67,5 +72,32 @@ export const useThemeStore = defineStore('theme', () => {
     apply(theme.bg, theme.gray)
   }
 
-  return { activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, savedThemes, apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, saveTheme, deleteTheme, loadTheme }
+  function toggleDailyThemeRotation() {
+    dailyThemeRotationEnabled.value = !dailyThemeRotationEnabled.value
+  }
+
+  // Picks a random saved theme once a day and applies it — called on app
+  // load and again every midnight while the tab stays open (see App.vue,
+  // same pattern as runLoopSchedule/scheduleLoopMidnightCheck). "Clever"
+  // just means it won't reroll today's already-applied theme back to
+  // itself when there's more than one to choose from, so two days in a
+  // row never look the same by pure chance.
+  function runDailyThemeRotation() {
+    if (!dailyThemeRotationEnabled.value || savedThemes.value.length === 0) return
+    const today = new Date().toISOString().slice(0, 10)
+    if (lastThemeRotationDate.value === today) return
+    const candidates = savedThemes.value.length > 1
+      ? savedThemes.value.filter(t => !(t.bg === activeBg.value && t.gray === activeGray.value))
+      : savedThemes.value
+    const pick = candidates[Math.floor(Math.random() * candidates.length)]
+    apply(pick.bg, pick.gray)
+    lastThemeRotationDate.value = today
+  }
+
+  return {
+    activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, savedThemes,
+    dailyThemeRotationEnabled, lastThemeRotationDate,
+    apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, saveTheme, deleteTheme, loadTheme,
+    toggleDailyThemeRotation, runDailyThemeRotation,
+  }
 }, { persist: true })
