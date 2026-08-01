@@ -286,7 +286,7 @@ export function closeActiveCard() {
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
-import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check, Flag } from '@lucide/vue'
+import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check, Flag, RefreshCw } from '@lucide/vue'
 import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
 import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
@@ -330,6 +330,12 @@ const themeStore = useThemeStore()
 
 const isPriority = computed(() => props.todo.tags.includes(PRIORITY_TAG_ID))
 const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
+// Both once and loop share the same Date tag (isLoop) — this narrows to
+// just the recurring case, for the small corner badge that's the only
+// visual difference between the two otherwise. Legacy data (no `mode`
+// field, always had unit+count) counts as recurring, same as everywhere
+// else `mode ?? 'loop'` is treated.
+const isRecurring = computed(() => isLoop.value && (props.todo.loopInterval?.mode ?? 'loop') === 'loop')
 
 // Date checked for the first time: default to a one-time due date today
 // (Once mode) instead of leaving the picker in its ambiguous "nothing
@@ -1309,6 +1315,30 @@ onUnmounted(() => {
           </div>
         </Transition>
       </motion.div>
+
+      <!-- Sibling to .todo-card, not a child of it — .todo-card has its
+           own overflow:hidden (for the check-row/tag-row corners, see
+           comment near .swipe-container.loop::before) which would clip
+           this if it lived inside and hung half off the edge. Bound to
+           the exact same x/y/rotate/opacity motion values as .todo-card's
+           own :style, so it rides along with every drag/fly-out in
+           lockstep without any of the double-transform math a
+           parent-child version would need — two independent elements
+           moving by the same amount reads identically to one element
+           carrying the other. The centering-on-the-corner offset itself
+           (translate(-50%,-50%)) has to live on the *inner* .loop-badge
+           span instead of this motion.div — motion-v owns this element's
+           own `transform` via x/y/rotate, and a plain CSS transform here
+           would just get overwritten by that inline style. -->
+      <motion.div
+        v-if="isRecurring"
+        class="loop-badge-motion"
+        :style="{ x, y, rotate, opacity: cardOpacity }"
+      >
+        <span class="loop-badge">
+          <RefreshCw :size="12" />
+        </span>
+      </motion.div>
     </div>
     </motion.div>
   </div>
@@ -1469,6 +1499,40 @@ onUnmounted(() => {
 
 .priority .card-btn {
   color: var(--bg);
+}
+
+/* Small recurring-loop marker — the only visual difference between a
+   once (single due date) and loop (recurring) Date todo, both of which
+   otherwise look identical. Sits centered right on the card's top-left
+   corner tip as its own layer on top, deliberately hanging half outside
+   the card rather than sitting inset inside it (and not affecting the
+   card's own size at all, being fully position:absolute). See the
+   template comment above for why this is two nested elements instead of
+   one. `.loop-badge-motion` just anchors to .swipe-container's own
+   (0,0) — matching .todo-card's own corner exactly, since swipe-container
+   has no padding/border of its own around it — and carries the drag
+   transform; `.loop-badge` does the actual static corner-centering. */
+.loop-badge-motion {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Always ink, priority included — unlike .card-btn etc. this badge sits
+   half outside the card itself (over the page's own --bg), so swapping
+   to --bg on a priority card would make that outside half disappear
+   against it. Kept a single consistent color instead. */
+.loop-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
 }
 
 /* Scoped to real hover devices — on touch, :hover applies right after a
