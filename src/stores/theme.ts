@@ -84,7 +84,12 @@ export const useThemeStore = defineStore('theme', () => {
   // row never look the same by pure chance.
   function runDailyThemeRotation() {
     if (!dailyThemeRotationEnabled.value || savedThemes.value.length === 0) return
-    const today = new Date().toISOString().slice(0, 10)
+    // Local date, not toISOString's UTC date — scheduleLoopMidnightCheck fires
+    // at local midnight, so the guard has to speak the same calendar day or
+    // the UTC rollover a few hours later (re)triggers a second reshuffle on
+    // the next reload.
+    const now = new Date()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
     if (lastThemeRotationDate.value === today) return
     const candidates = savedThemes.value.length > 1
       ? savedThemes.value.filter(t => !(t.bg === activeBg.value && t.gray === activeGray.value))
