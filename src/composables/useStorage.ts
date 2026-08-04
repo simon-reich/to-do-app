@@ -23,7 +23,6 @@ export function useStorage() {
       exportedAt: new Date().toISOString(),
       todos: store.todos,
       tags: store.tags,
-      history: store.history,
     }
     const json = JSON.stringify(payload, null, 2)
     const blob = new Blob([json], { type: 'application/json' })

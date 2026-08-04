@@ -43,67 +43,83 @@ export interface Todo {
   completedAt?: string
   workLog: string[]
   loopInterval?: LoopInterval
-}
-
-// Append-only log of Done / Done-for-today events, entirely separate from
-// the Todo it came from — the calendar reads from here instead of from
-// todos[].completedAt/workLog directly, so deleting a todo later (it turned
-// out to be a one-off, or a recurring one that's no longer needed) can never
-// retroactively erase what the calendar already showed for past days. Title
-// is snapshotted at the time of the event on purpose: a later rename
-// shouldn't rewrite history either.
-export interface HistoryEntry {
-  todoId: string
-  title: string
-  /** YYYY-MM-DD, the calendar day the event happened on. */
-  date: string
-  type: 'done' | 'worklog'
+  /** Set instead of actually removing the todo when it's deleted while it
+   *  still has calendar-relevant history (a completedAt or a non-empty
+   *  workLog) — see deleteTodo below. Filtered out of every active list
+   *  (activeTodos/todayTodos) same as completedAt, but the calendar still
+   *  reads completedAt/workLog directly off it, so deleting a todo can
+   *  never retroactively erase days it already showed on past calendars.
+   *  A todo that was deleted with no history at all (never completed, no
+   *  workLog) has nothing worth keeping and is just removed outright. */
+  deletedAt?: string
 }
 
 export const useTodosStore = defineStore('todos', () => {
   const todos = ref<Todo[]>([])
   const tags = ref<Tag[]>([])
-  const history = ref<HistoryEntry[]>([])
 
-  // One-time migration for installs from before `history` existed: seeds it
-  // from whatever completedAt/workLog already sit on todos, so upgrading
-  // doesn't blank out the calendar for anything done before this shipped.
-  // Guarded on history still being empty, not on a version flag — once any
-  // real event has been logged there's nothing left to backfill anyway.
-  if (history.value.length === 0) {
-    const backfilled: HistoryEntry[] = []
-    for (const t of todos.value) {
-      if (t.completedAt) backfilled.push({ todoId: t.id, title: t.title, date: t.completedAt.slice(0, 10), type: 'done' })
-      for (const ts of t.workLog) backfilled.push({ todoId: t.id, title: t.title, date: ts.slice(0, 10), type: 'worklog' })
+  // One-time migration for the brief window this app had a separate
+  // append-only `history` log (one row per Done/Done-for-today event,
+  // never touched by deleteTodo) instead of the deletedAt approach below.
+  // Any todo it logged that's since been hard-deleted and is gone from
+  // `todos` now would otherwise vanish from the calendar for good — so
+  // reconstruct a deletedAt stub for exactly those (todos that are still
+  // alive already carry their own completedAt/workLog, nothing to do).
+  // Safe to run every load: once a todoId exists in `todos` (stub or
+  // otherwise), it's skipped.
+  try {
+    const raw = localStorage.getItem('todos')
+    const oldHistory = raw ? JSON.parse(raw)?.history : null
+    if (Array.isArray(oldHistory) && oldHistory.length) {
+      const byTodo = new Map<string, { title: string; done?: string; workLog: string[] }>()
+      for (const h of oldHistory as { todoId: string; title: string; date: string; type: 'done' | 'worklog' }[]) {
+        const entry = byTodo.get(h.todoId) ?? { title: h.title, workLog: [] }
+        if (h.type === 'done') entry.done = h.date
+        else entry.workLog.push(`${h.date}T00:00:00.000Z`)
+        byTodo.set(h.todoId, entry)
+      }
+      const existingIds = new Set(todos.value.map(t => t.id))
+      for (const [todoId, entry] of byTodo) {
+        if (existingIds.has(todoId)) continue
+        todos.value.push({
+          id: todoId,
+          title: entry.title,
+          tags: [],
+          createdAt: entry.workLog[0] ?? (entry.done ? `${entry.done}T00:00:00.000Z` : new Date().toISOString()),
+          inToday: false,
+          workLog: entry.workLog,
+          completedAt: entry.done ? `${entry.done}T00:00:00.000Z` : undefined,
+          deletedAt: new Date().toISOString(),
+        })
+      }
     }
-    if (backfilled.length) history.value = backfilled
+  } catch {
+    // Malformed/missing localStorage entry — nothing to migrate.
   }
 
   // ── Getters ──
   const activeTodos = computed(() =>
-    todos.value.filter(t => !t.completedAt)
+    todos.value.filter(t => !t.completedAt && !t.deletedAt)
   )
 
   const todayTodos = computed(() =>
-    todos.value.filter(t => t.inToday && !t.completedAt)
+    todos.value.filter(t => t.inToday && !t.completedAt && !t.deletedAt)
   )
 
-  // Completed / worked-on history entries for a given calendar day
-  // (YYYY-MM-DD), used by Calendar.vue's day-detail list. Reads from
-  // `history`, not from the todos themselves — see HistoryEntry above.
+  // Completed / worked-on todos for a given calendar day (YYYY-MM-DD), used
+  // by Calendar.vue's day-detail list. Reads completedAt/workLog straight
+  // off the todos — including deletedAt ones, which is exactly why deleted
+  // todos with real history are kept around as stubs instead of removed
+  // (see deleteTodo below) rather than purged outright.
   function completedOn(dateStr: string) {
-    return history.value.filter(h => h.type === 'done' && h.date === dateStr)
+    return todos.value.filter(t => t.completedAt?.slice(0, 10) === dateStr)
   }
 
   function workedOn(dateStr: string) {
-    const doneIds = new Set(completedOn(dateStr).map(h => h.todoId))
-    const seen = new Set<string>()
-    return history.value.filter(h => {
-      if (h.type !== 'worklog' || h.date !== dateStr) return false
-      if (doneIds.has(h.todoId) || seen.has(h.todoId)) return false
-      seen.add(h.todoId)
-      return true
-    })
+    const doneIds = new Set(completedOn(dateStr).map(t => t.id))
+    return todos.value.filter(t =>
+      !doneIds.has(t.id) && t.workLog.some(ts => ts.slice(0, 10) === dateStr)
+    )
   }
 
   // ── Todo Actions ──
@@ -129,8 +145,19 @@ export const useTodosStore = defineStore('todos', () => {
     if ('loopInterval' in patch) todo.loopInterval = patch.loopInterval
   }
 
+  // Hard-removes a todo that never had any calendar-relevant history (never
+  // completed, no workLog) — nothing worth keeping. One that does have
+  // history is soft-deleted instead (deletedAt set, stays in `todos`) so the
+  // calendar keeps showing what it already showed for past days; see the
+  // deletedAt field's own comment on Todo above.
   function deleteTodo(id: string) {
-    todos.value = todos.value.filter(t => t.id !== id)
+    const todo = todos.value.find(t => t.id === id)
+    if (!todo) return
+    if (todo.completedAt || todo.workLog.length > 0) {
+      todo.deletedAt = new Date().toISOString()
+    } else {
+      todos.value = todos.value.filter(t => t.id !== id)
+    }
   }
 
   function sendToToday(id: string) {
@@ -149,20 +176,16 @@ export const useTodosStore = defineStore('todos', () => {
   function completeTodo(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (todo) {
-      const now = new Date().toISOString()
-      todo.completedAt = now
+      todo.completedAt = new Date().toISOString()
       todo.inToday = false
-      history.value.push({ todoId: todo.id, title: todo.title, date: now.slice(0, 10), type: 'done' })
     }
   }
 
   function doneForToday(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (todo) {
-      const now = new Date().toISOString()
-      todo.workLog.push(now)
+      todo.workLog.push(new Date().toISOString())
       todo.inToday = false
-      history.value.push({ todoId: todo.id, title: todo.title, date: now.slice(0, 10), type: 'worklog' })
     }
   }
 
@@ -209,26 +232,41 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   // ── Import ──
-  function importData(data: { todos: Todo[]; tags: Tag[]; history?: HistoryEntry[] }) {
+  // `history` is an optional leftover from export files made during this
+  // app's brief append-only-log design — same idea as the localStorage
+  // migration above: reconstruct a deletedAt stub for any todoId it
+  // mentions that isn't in the imported todos themselves.
+  function importData(data: { todos: Todo[]; tags: Tag[]; history?: { todoId: string; title: string; date: string; type: 'done' | 'worklog' }[] }) {
     todos.value = data.todos
     tags.value = data.tags
-    // Older export files predate `history` — fall back to backfilling it
-    // from the incoming todos themselves rather than losing calendar data.
-    if (data.history) {
-      history.value = data.history
-    } else {
-      const backfilled: HistoryEntry[] = []
-      for (const t of data.todos) {
-        if (t.completedAt) backfilled.push({ todoId: t.id, title: t.title, date: t.completedAt.slice(0, 10), type: 'done' })
-        for (const ts of t.workLog) backfilled.push({ todoId: t.id, title: t.title, date: ts.slice(0, 10), type: 'worklog' })
+    if (data.history?.length) {
+      const byTodo = new Map<string, { title: string; done?: string; workLog: string[] }>()
+      for (const h of data.history) {
+        const entry = byTodo.get(h.todoId) ?? { title: h.title, workLog: [] }
+        if (h.type === 'done') entry.done = h.date
+        else entry.workLog.push(`${h.date}T00:00:00.000Z`)
+        byTodo.set(h.todoId, entry)
       }
-      history.value = backfilled
+      const existingIds = new Set(todos.value.map(t => t.id))
+      for (const [todoId, entry] of byTodo) {
+        if (existingIds.has(todoId)) continue
+        todos.value.push({
+          id: todoId,
+          title: entry.title,
+          tags: [],
+          createdAt: entry.workLog[0] ?? (entry.done ? `${entry.done}T00:00:00.000Z` : new Date().toISOString()),
+          inToday: false,
+          workLog: entry.workLog,
+          completedAt: entry.done ? `${entry.done}T00:00:00.000Z` : undefined,
+          deletedAt: new Date().toISOString(),
+        })
+      }
     }
   }
 
   return {
     // state
-    todos, tags, history,
+    todos, tags,
     // getters
     activeTodos, todayTodos, userTags,
     completedOn, workedOn,

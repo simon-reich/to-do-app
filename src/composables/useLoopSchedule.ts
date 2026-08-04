@@ -80,7 +80,7 @@ export interface LoopScheduleStore {
 // scheduleLoopMidnightCheck below).
 export function runLoopSchedule(store: LoopScheduleStore) {
   for (const todo of store.todos) {
-    if (!todo.loopInterval || !todo.tags.includes(LOOP_TAG_ID) || todo.completedAt) continue
+    if (!todo.loopInterval || !todo.tags.includes(LOOP_TAG_ID) || todo.completedAt || todo.deletedAt) continue
     if (processedToday(todo)) continue
     // One malformed todo (unexpected data shape) should never stop the
     // rest of the list from being checked, or bubble up into App.vue's

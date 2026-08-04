@@ -456,7 +456,7 @@ const tagInputRef = ref<HTMLInputElement | null>(null)
 const deleteConfirm = ref<{ id: string; label: string } | null>(null)
 
 function handleDeleteTag(id: string, label: string) {
-  const inUse = store.todos.some(t => t.tags.includes(id))
+  const inUse = store.todos.some(t => !t.deletedAt && t.tags.includes(id))
   if (inUse) { deleteConfirm.value = { id, label }; return }
   store.deleteTag(id)
   deactivateTag(id)
