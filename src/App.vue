@@ -522,14 +522,17 @@ function cycleLoopFilter() {
     loopFilterMode.value === 'hide' ? 'only' : 'default'
 }
 
-// "All" means all — clearing just activeTagIds left loopFilterMode's
-// only/hide still narrowing the list behind the scenes, so clicking All
-// while loop was "only" looked like nothing happened. Loop's own state
-// only resets here, on this explicit clear-everything action — never as
-// a side effect of toggling some other tag.
+// "All" resets loop filtering back to its own starting point, "hide" —
+// not "default" (unfiltered) — for the same reason "hide" is the initial
+// state to begin with: a not-yet-due date todo sends itself to Focus once
+// it's actually due, so seeing it in Overview beforehand is just clutter,
+// even after an explicit "clear everything" reset. Still reachable via D
+// if you want it. Loop's own state only resets here, on this explicit
+// clear-everything action — never as a side effect of toggling some other
+// tag.
 function clearAllFilters() {
   activeTagIds.value = []
-  loopFilterMode.value = 'default'
+  loopFilterMode.value = 'hide'
 }
 
 // The filtering is additive/OR (activeTagIds already works that way: any
