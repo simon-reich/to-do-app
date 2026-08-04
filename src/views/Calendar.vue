@@ -54,11 +54,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 const activeDates = computed(() => {
-  const days = new Set<string>()
-  store.todos.forEach(t => {
-    if (t.completedAt) days.add(t.completedAt.slice(0, 10))
-    t.workLog.forEach(ts => days.add(ts.slice(0, 10)))
-  })
+  const days = new Set(store.history.map(h => h.date))
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
@@ -157,12 +153,12 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
             <p class="day-label">{{ selectedDateLabel }}</p>
 
             <div v-if="hasActivity" class="day-items">
-              <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
-                <span class="icon icon--done">✓✓</span>{{ todo.title }}
+              <div v-for="entry in doneOnDay" :key="`${entry.todoId}-${entry.date}-done`" class="day-item">
+                <span class="icon icon--done">✓✓</span>{{ entry.title }}
               </div>
               <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
-              <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
-                <span class="icon icon--worked">✓</span>{{ todo.title }}
+              <div v-for="entry in workedOnDay" :key="`${entry.todoId}-${entry.date}-worklog`" class="day-item">
+                <span class="icon icon--worked">✓</span>{{ entry.title }}
               </div>
             </div>
 

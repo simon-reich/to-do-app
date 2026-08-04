@@ -337,21 +337,52 @@ const isLoop = computed(() => props.todo.tags.includes(LOOP_TAG_ID))
 // else `mode ?? 'loop'` is treated.
 const isRecurring = computed(() => isLoop.value && (props.todo.loopInterval?.mode ?? 'loop') === 'loop')
 
+// Overview's tag-row (mode 'all') stages every tag/date pick locally instead
+// of writing straight to the store — picking Date used to tag the todo the
+// instant the checkbox was clicked, and since the Date filter defaults to
+// "hide", that yanked the card out of the (now re-filtered) list before the
+// user ever got to actually pick a date in the picker that was supposed to
+// appear. Now nothing reaches the store until the tag menu actually closes
+// (see the showTagMenu watch below), except when it closes via Escape,
+// which discards the draft instead — see onCardKeydown.
+const draftTags = ref<string[]>([...props.todo.tags])
+const draftLoopInterval = ref<LoopInterval | undefined>(props.todo.loopInterval)
+const draftIsLoop = computed(() => draftTags.value.includes(LOOP_TAG_ID))
+const draftIsPriority = computed(() => draftTags.value.includes(PRIORITY_TAG_ID))
+
+// Card coloring previews the staged pick live — while the tag menu is open,
+// checking Priority/Date fills the card in ahead of the actual commit, so
+// it's not just an inert checkbox list. Once the menu is closed there's no
+// draft to preview, so this just falls back to the committed state.
+const previewIsPriority = computed(() => showTagMenu.value ? draftIsPriority.value : isPriority.value)
+const previewIsLoop = computed(() => showTagMenu.value ? draftIsLoop.value : isLoop.value)
+
 // Date checked for the first time: default to a one-time due date today
 // (Once mode) instead of leaving the picker in its ambiguous "nothing
-// selected" state. Due-today is immediately due, but sending it to Focus
-// right here — before the user has even seen the picker — used to yank
-// the card out of the tag menu (and off the All list, which filters
-// inToday out) mid-edit. That's deferred to the tag menu actually
-// closing instead, see the showTagMenu watch below.
-watch(isLoop, (loop) => {
-  if (loop && !props.todo.loopInterval) {
-    store.updateTodo(props.todo.id, { loopInterval: { mode: 'once', startDate: new Date().toISOString().slice(0, 10) } })
+// selected" state.
+watch(draftIsLoop, (loop) => {
+  if (loop && !draftLoopInterval.value) {
+    draftLoopInterval.value = { mode: 'once', startDate: new Date().toISOString().slice(0, 10) }
   }
 })
 
-function updateLoopInterval(interval: LoopInterval) {
-  store.updateTodo(props.todo.id, { loopInterval: interval })
+function updateDraftLoopInterval(interval: LoopInterval) {
+  draftLoopInterval.value = interval
+}
+
+function updateDraftTags(tags: string[]) {
+  draftTags.value = tags
+}
+
+// Writes the staged tag-row edits to the store — called once the tag menu
+// actually confirms-closes (see the showTagMenu watch below), never while
+// it's still open.
+function commitDraftTags() {
+  const tags = draftTags.value
+  store.updateTodo(props.todo.id, {
+    tags,
+    loopInterval: tags.includes(LOOP_TAG_ID) ? draftLoopInterval.value : undefined,
+  })
 }
 
 // Tags off: the per-card tag menu still offers the priority + loop tags
@@ -412,16 +443,32 @@ function closeOnOutside(e: MouseEvent) {
 }
 
 // Picks up the edit intent left by a sibling's cycleOpenCard() once this
-// card actually becomes the open one. Closing is also when a due loop
-// todo (freshly tagged Loop, or given a due interval, while this menu was
-// open) actually gets sent to Focus — see the isLoop/updateLoopInterval
-// comments above for why that's deferred to here instead of instantly.
+// card actually becomes the open one. Closing is also where the staged tag
+// edits (see draftTags above) actually land — every way of closing the tag
+// menu commits them (click elsewhere, Tab to the next card, Enter, a view
+// switch) except Escape, which sets discardDraftTagsOnClose first so the
+// draft is thrown away instead. Sending a freshly due loop todo to Focus is
+// deferred to right after that same commit, for the same reason the commit
+// itself is deferred — doing it the instant Loop got checked used to yank
+// the card out of the list before the user could even see the picker.
+let discardDraftTagsOnClose = false
 watch(showTagMenu, (isOpen, wasOpen) => {
+  if (isOpen) {
+    draftTags.value = [...props.todo.tags]
+    draftLoopInterval.value = props.todo.loopInterval
+  }
   if (isOpen && editIntentId.value === props.todo.id) {
     editIntentId.value = null
     startEdit()
   }
-  if (wasOpen && !isOpen && isLoop.value) runLoopSchedule(store)
+  if (wasOpen && !isOpen) {
+    if (discardDraftTagsOnClose) {
+      discardDraftTagsOnClose = false
+    } else {
+      commitDraftTags()
+      if (isLoop.value) runLoopSchedule(store)
+    }
+  }
 })
 
 // This listener only exists once the card is already open (see the watch
@@ -471,6 +518,7 @@ function onCardKeydown(e: KeyboardEvent) {
   // todo off to Focus as a side effect.
   if (e.key.toLowerCase() === 'f' && showTagMenu.value && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault()
+    commitDraftTags()
     emit('send-to-today', props.todo.id)
     return
   }
@@ -482,7 +530,13 @@ function onCardKeydown(e: KeyboardEvent) {
     return
   }
   if (showMenu.value) openCheckMenuId.value = null
-  else if (showTagMenu.value) openTagMenuId.value = null
+  else if (showTagMenu.value) {
+    // Escape discards the staged tag-row edits instead of committing them —
+    // everything else that closes the menu (Enter, clicking elsewhere, Tab)
+    // saves, so Escape is the one deliberate "never mind" out.
+    if (e.key === 'Escape') discardDraftTagsOnClose = true
+    openTagMenuId.value = null
+  }
 }
 
 watch([showMenu, showTagMenu], ([m, t]) => {
@@ -1141,7 +1195,7 @@ onUnmounted(() => {
     <div
       ref="swipeContainerRef"
       class="swipe-container"
-      :class="{ open: showMenu || showTagMenu, loop: isLoop }"
+      :class="{ open: showMenu || showTagMenu, loop: previewIsLoop }"
     >
       <Teleport to="body">
         <Transition name="swipe-indicator">
@@ -1172,7 +1226,7 @@ onUnmounted(() => {
       <motion.div
         class="todo-card"
         :data-todo-id="todo.id"
-        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: isPriority, loop: isLoop }"
+        :class="{ 'has-tags': todo.tags.length, 'is-open': showMenu, priority: previewIsPriority, loop: previewIsLoop }"
         :style="{ x, y, rotate, opacity: cardOpacity }"
         :drag="canDrag ? 'x' : false"
         :drag-momentum="false"
@@ -1300,8 +1354,8 @@ onUnmounted(() => {
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
           <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
             <Transition :css="false" @enter="onQuickExpandEnter" @leave="onQuickExpandLeave">
-              <div v-if="isLoop" class="add-loop-row" @click.stop>
-                <LoopPicker :model-value="todo.loopInterval" :inverted="isPriority" @update:model-value="updateLoopInterval" />
+              <div v-if="draftIsLoop" class="add-loop-row" @click.stop>
+                <LoopPicker :model-value="draftLoopInterval" :inverted="draftIsPriority" @update:model-value="updateDraftLoopInterval" />
               </div>
             </Transition>
 
@@ -1310,10 +1364,10 @@ onUnmounted(() => {
                 v-for="tag in tagMenuTags"
                 :key="tag.id"
                 class="tag-row-opt"
-                :class="{ checked: todo.tags.includes(tag.id), dimmed: todo.tags.length > 0 && !todo.tags.includes(tag.id) }"
+                :class="{ checked: draftTags.includes(tag.id), dimmed: draftTags.length > 0 && !draftTags.includes(tag.id) }"
                 @click.stop
               >
-                <input type="checkbox" :checked="todo.tags.includes(tag.id)" @change="updateTags(todo.tags.includes(tag.id) ? todo.tags.filter(i => i !== tag.id) : [...todo.tags, tag.id])" />
+                <input type="checkbox" :checked="draftTags.includes(tag.id)" @change="updateDraftTags(draftTags.includes(tag.id) ? draftTags.filter(i => i !== tag.id) : [...draftTags, tag.id])" />
                 <span>{{ tag.label }}</span>
               </label>
             </template>
