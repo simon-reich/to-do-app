@@ -1349,13 +1349,27 @@ onUnmounted(() => {
             <!-- No separate "active" tint here: the whole card already goes
                  ink-colored once priority is on (see .priority above), so
                  layering ink-dark on top of that would just read as low
-                 contrast rather than a clearer state. -->
+                 contrast rather than a clearer state. Swaps to Edit once
+                 expanded instead of adding a third icon — priority is
+                 still reachable from inside the editor's tag-row, so this
+                 slot doesn't need to carry both at once. Reuses
+                 openEditFromToday, same as double-clicking the title:
+                 closes the check-menu and jumps straight into the editor. -->
             <button
+              v-if="!showMenu"
               class="card-btn card-btn--circle"
               :title="isPriority ? 'Remove priority' : 'Set priority'"
               @click.stop="togglePriority"
             >
               <Flag :size="10" :fill="isPriority ? 'currentColor' : 'none'" />
+            </button>
+            <button
+              v-else
+              class="card-btn card-btn--circle"
+              title="Edit"
+              @click.stop="openEditFromToday"
+            >
+              <Pencil :size="10" />
             </button>
             <button
               class="card-btn"
