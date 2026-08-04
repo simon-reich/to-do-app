@@ -258,7 +258,10 @@ const activeCardApi = vueRef<ActiveCardApi | null>(null)
 // tabbing through individual tag checkboxes — carries the current editing
 // state along: tabbing away from an actively-edited title lands in the next
 // card's edit mode too, tabbing away from a merely-open card just opens the
-// next one the same way.
+// next one the same way. A Focus card whose tag/date editor is open (see
+// openEditFromToday) counts as "open the editor" too, not "open the
+// check-menu" — otherwise tabbing out of a Focus edit landed back on the
+// check-menu's Done/Done-for-today row instead of carrying the edit along.
 export function cycleOpenCard(direction: 1 | -1) {
   const api = activeCardApi.value
   if (!api) return
@@ -268,9 +271,10 @@ export function cycleOpenCard(direction: 1 | -1) {
   if (idx === -1) return
   const nextId = ids[(idx + direction + ids.length) % ids.length]
   const wasEditing = api.isEditing()
+  const wasTagMenuOpen = openTagMenuId.value === api.todoId
   if (wasEditing) api.saveEdit()
   if (wasEditing) editIntentId.value = nextId
-  if (api.mode === 'today') openCheckMenuId.value = nextId
+  if (api.mode === 'today' && !wasTagMenuOpen) openCheckMenuId.value = nextId
   else openTagMenuId.value = nextId
 }
 
@@ -376,13 +380,19 @@ function updateDraftTags(tags: string[]) {
 
 // Writes the staged tag-row edits to the store — called once the tag menu
 // actually confirms-closes (see the showTagMenu watch below), never while
-// it's still open.
+// it's still open. Skips the write entirely if nothing actually changed
+// (just opened and closed again, e.g. Tab-cycling past a card without
+// touching anything) — writing the same tags back still mutates the array
+// reference, which in Focus re-triggers filteredTodos' sort and, with it,
+// useListFlip's position-shift animation on every other card for no reason
+// (a real edit's shift is expected to animate; a no-op reopen's isn't).
 function commitDraftTags() {
   const tags = draftTags.value
-  store.updateTodo(props.todo.id, {
-    tags,
-    loopInterval: tags.includes(LOOP_TAG_ID) ? draftLoopInterval.value : undefined,
-  })
+  const loopInterval = tags.includes(LOOP_TAG_ID) ? draftLoopInterval.value : undefined
+  const tagsUnchanged = tags.length === props.todo.tags.length && tags.every(id => props.todo.tags.includes(id))
+  const loopUnchanged = JSON.stringify(loopInterval) === JSON.stringify(props.todo.loopInterval)
+  if (tagsUnchanged && loopUnchanged) return
+  store.updateTodo(props.todo.id, { tags, loopInterval })
 }
 
 // Tags off: the per-card tag menu still offers the priority + loop tags
@@ -429,6 +439,12 @@ let justDragged = false
 function toggleCheckMenu() {
   if (justDragged) { justDragged = false; return }
   const willOpen = openCheckMenuId.value !== props.todo.id
+  // Opening a check-menu (this card's own, or by clicking a different
+  // Focus card entirely) would otherwise leave whichever card's tag/date
+  // editor is currently open (see openEditFromToday) open alongside it —
+  // close it first, same as opening a tag-menu already unconditionally
+  // closes any open check-menu below.
+  if (willOpen && openTagMenuId.value) openTagMenuId.value = null
   openCheckMenuId.value = willOpen ? props.todo.id : null
   if (willOpen) nextTick(scrollCardIntoView)
 }
@@ -638,6 +654,17 @@ function openForEdit() {
   startEdit()
 }
 
+// Focus's double-click equivalent: opens the same tag/date editor Overview
+// uses, on top of a 'today'-mode card — closes the Done/Done-for-today
+// check-menu first if that's what was open. Picking a new date here still
+// leaves the todo in Focus throughout: commitDraftTags (see draftTags
+// above) only ever writes tags/loopInterval, never inToday.
+function openEditFromToday() {
+  openCheckMenuId.value = null
+  openTagMenuId.value = props.todo.id
+  startEdit()
+}
+
 // Manual single/double click detection on the title, instead of the native
 // dblclick event — that fires two real `click`s first (which would toggle
 // the card open then shut again before the dblclick lands), and mobile
@@ -652,6 +679,7 @@ function handleTitleClick() {
     clearTimeout(titleClickTimer)
     titleClickTimer = null
     if (props.mode === 'all') openForEdit()
+    else openEditFromToday()
     return
   }
   titleClickTimer = setTimeout(() => {
@@ -1259,11 +1287,13 @@ onUnmounted(() => {
             @click.stop="handleTitleClick"
           >{{ todo.title }}</span>
 
-          <!-- When card is open (all mode): pencil starts editing; once
+          <!-- When card is open (either mode): pencil starts editing; once
                editing, it swaps to the accept/check button. Delete now
                only lives here — not on the closed card — so it isn't a
-               single stray click away during normal browsing. -->
-          <template v-if="showTagMenu && mode === 'all' && !isEditing">
+               single stray click away during normal browsing. Applies in
+               Focus too since double-clicking a Focus card's title opens
+               this same editor (see openEditFromToday). -->
+          <template v-if="showTagMenu && !isEditing">
             <button
               class="card-btn card-btn--delete"
               title="Delete"
@@ -1282,7 +1312,7 @@ onUnmounted(() => {
                flips isEditing to false *before* the click fires, swapping
                this button out for the Edit one mid-click so the click lands
                on nothing/the wrong button instead of accepting the edit. -->
-          <template v-else-if="showTagMenu && mode === 'all' && isEditing">
+          <template v-else-if="showTagMenu && isEditing">
             <button class="card-btn card-btn--circle" title="Accept" @mousedown.prevent @click.stop="acceptEdit">
               <Check :size="11" />
             </button>
@@ -1352,7 +1382,7 @@ onUnmounted(() => {
         </Transition>
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
-          <div v-if="showTagMenu && mode === 'all'" class="tag-row" @click.stop="handleTagRowClick">
+          <div v-if="showTagMenu" class="tag-row" @click.stop="handleTagRowClick">
             <Transition :css="false" @enter="onQuickExpandEnter" @leave="onQuickExpandLeave">
               <div v-if="draftIsLoop" class="add-loop-row" @click.stop>
                 <LoopPicker :model-value="draftLoopInterval" :inverted="draftIsPriority" @update:model-value="updateDraftLoopInterval" />

@@ -59,6 +59,7 @@ function removeFromFocus(id: string, obvious?: boolean) {
         @remove-from-today="removeFromFocus"
         @complete="store.completeTodo($event)"
         @done-for-today="store.doneForToday($event)"
+        @delete="store.deleteTodo($event)"
       />
     </div>
     <p v-else class="empty">Nothing in focus right now.</p>
