@@ -1145,6 +1145,11 @@ async function onDragEnd(_event: PointerEvent, _info: PanInfo) {
       if (!props.todo.inToday) emit('send-to-today', props.todo.id)
       else emit('remove-from-today', props.todo.id)
     } else {
+      // Same as toggleCheckMenu: opening a check-menu (here via swipe)
+      // has to close any other card's open tag/date editor too, or a
+      // swipe on a different Focus card while one was mid-edit left both
+      // open at once.
+      if (openTagMenuId.value) openTagMenuId.value = null
       openCheckMenuId.value = props.todo.id
       springBackToCenter()
     }
