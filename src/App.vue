@@ -62,6 +62,13 @@ watch(() => route.path, (path, oldPath) => {
   const idx = viewOrder.indexOf(path)
   if (idx !== -1) currentViewIdx = idx
   if (viewOrder.includes(path)) lastMainViewPath = path
+  // Arriving at Overview resets its own filters (tags/prio/date) — unless
+  // it's a Settings round-trip, which reads as a quick detour rather than
+  // actually leaving Overview (same exemption as the add-todo draft below).
+  // Coming back from Focus or Calendar, though, should always land on a
+  // clean, unfiltered Overview rather than whatever was left dialed in
+  // from before.
+  if (path === '/all' && oldPath !== '/settings') clearAllFilters()
   // Same "never survive leaving" rule now applies to an in-progress
   // add-todo draft — except a Settings round-trip, which reads as a quick
   // detour (tweak a color, come right back) rather than actually being
@@ -673,14 +680,21 @@ function addTodo() {
     tags: [...newTodoTagIds.value],
     loopInterval: newTodoTagIds.value.includes(LOOP_TAG_ID) ? newTodoLoopInterval.value : undefined,
   })
-  if (route.path === '/focus') store.sendToToday(todo.id)
+  // A Date todo (once or loop) not actually due yet shouldn't land on
+  // Focus just because it was typed there — same rule as any other Date
+  // todo, which only ever auto-joins Focus once it's due (see
+  // runLoopSchedule). It's created and stays in the pool instead.
+  const dateTodoNotYetDue = !!todo.loopInterval && !isLoopDueToday(todo.loopInterval, new Date(), todo.createdAt.slice(0, 10))
+  if (route.path === '/focus') {
+    if (!dateTodoNotYetDue) store.sendToToday(todo.id)
+  }
   // A brand-new loop todo due today (e.g. start date = today, daily)
   // shouldn't have to wait for the next reload/midnight check — but
   // sending it instantly made it look like the add itself had failed
   // (the todo never showed up in All, since All filters out inToday).
   // Let it appear in the list first, then move it the same way clicking
   // its own "+" button would, with a toast explaining where it went.
-  else if (todo.loopInterval && isLoopDueToday(todo.loopInterval, new Date(), todo.createdAt.slice(0, 10))) {
+  else if (todo.loopInterval && !dateTodoNotYetDue) {
     setTimeout(() => {
       spawnSentToFocusToast(todo.id)
       store.sendToToday(todo.id)
