@@ -151,7 +151,8 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 
 Alle Shortcuts leben in **einem einzigen** globalen `keydown`-Listener in `App.vue` (bewusst, siehe unten). Unterhalb der Desktop-Breite ist der komplette Handler deaktiviert – kein Tab-Cycling, keine Einzeltasten-Shortcuts.
 
-- **Tab / Shift+Tab** – kein Todo offen: schaltet zwischen All/Focus/Calendar durch. Ein Todo offen: schaltet stattdessen zwischen Karten durch (`cycleOpenCard`), trägt eine laufende Bearbeitung auf die nächste Karte weiter.
+- **Tab / Shift+Tab** – kein Todo offen: togglet zwischen All und Focus (Calendar ist nicht Teil dieses Cycles, siehe **K**). Ein Todo offen: schaltet stattdessen zwischen Karten durch (`cycleOpenCard`), trägt eine laufende Bearbeitung auf die nächste Karte weiter.
+- **K** – Calendar togglen, kehrt zum vorher aktiven Haupt-View (All/Focus) zurück (nicht hart auf Overview verdrahtet) – gleiches Muster wie **X**/Settings.
 - **S** – Sort togglen (Datum ↔ A–Z). Nur Overview, sonst No-Op.
 - **G** – Grid/List togglen. Nur Overview, sonst No-Op.
 - **N** – Fokus ins Add-Todo-Feld ("new"). Overview + Focus.

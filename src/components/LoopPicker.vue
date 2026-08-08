@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { activeModal } from '../composables/useModalGuard'
+import { nextLoopOccurrence } from '../composables/useLoopSchedule'
 import type { LoopInterval, LoopUnit } from '../stores/todos'
 
 const props = defineProps<{
@@ -131,6 +132,28 @@ watch(showDateModal, (open) => {
   activeModal.value = open ? { onCancel: () => { showDateModal.value = false }, onConfirm: () => { showDateModal.value = false } } : null
 })
 
+// Next due date given the currently selected values — recomputed on every
+// unit/count/startDate change so a stale interval (startDate far in the
+// past, large custom day count) stays legible instead of leaving the user
+// to do the recurrence math themselves.
+const nextOccurrence = computed(() => props.modelValue ? nextLoopOccurrence(props.modelValue) : null)
+
+// 'once' can point at a past date and stays due until actually completed
+// (see isLoopDueToday) — negative days reads as "overdue" rather than the
+// nonsensical "in -3 days".
+const nextOccurrenceRelative = computed(() => {
+  const next = nextOccurrence.value
+  if (!next) return ''
+  const today = new Date()
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const days = Math.round((next.getTime() - t.getTime()) / 86400000)
+  if (days === 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  if (days === -1) return 'yesterday'
+  if (days < 0) return `${-days} days overdue`
+  return `in ${days} days`
+})
+
 const dateAttributes = computed(() => [{
   key: 'selected',
   highlight: {
@@ -224,6 +247,10 @@ const dateAttributes = computed(() => [{
           />
           <span>days</span>
         </div>
+      </div>
+
+      <div class="loop-row">
+        <span class="loop-next">{{ nextOccurrenceRelative }}</span>
       </div>
     </template>
 
@@ -334,6 +361,18 @@ const dateAttributes = computed(() => [{
 .loop-custom-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.loop-next {
+  padding-left: 4px;
+  color: var(--ink);
+  opacity: 0.6;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+}
+
+.inverted .loop-next {
+  color: var(--bg);
 }
 
 .loop-from {

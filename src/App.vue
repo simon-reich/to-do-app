@@ -16,7 +16,7 @@ import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from '
 const router = useRouter()
 const route = useRoute()
 
-// Tab/Shift+Tab cycle between the three main views — but only when no todo
+// Tab/Shift+Tab toggle between Overview and Focus — but only when no todo
 // card is open (in which case cards are cycled instead) and focus isn't in
 // a text field (where Tab should behave normally). This is the single
 // place Tab is handled at all: previously each open card also attached its
@@ -26,8 +26,10 @@ const route = useRoute()
 // once any card opened (even a stray single-click most people wouldn't
 // notice), Tab silently drove card-cycling forever instead of switching
 // views, with no way to tell from outside TodoCard.vue. Now there's exactly
-// one handler, and it decides which behavior applies.
-const viewOrder = ['/all', '/focus', '/calendar']
+// one handler, and it decides which behavior applies. Calendar isn't part
+// of this cycle — it's reached via K instead (see toggleCalendar), same
+// "toggle back to whichever main view you came from" pattern as Settings/X.
+const viewOrder = ['/all', '/focus']
 
 function isTypingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null
@@ -238,6 +240,14 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
+  // K — toggle Calendar, returning to whichever main view you came from.
+  // Same pattern as X/Settings — Calendar isn't part of the Tab cycle.
+  if (key === 'k') {
+    e.preventDefault()
+    toggleCalendar()
+    return
+  }
+
   // Y — hold to reveal which key does what, as a label floating above each
   // shortcut's own control, all on one shared line (see computeShortcutHints
   // below). No preventDefault: this isn't an action, just a transient
@@ -268,7 +278,12 @@ function onWindowBlur() {
 // horizontal line "for free" — and it needs to keep working unchanged
 // whenever the window is resized (main-head-inner's own max-width
 // re-centers its contents, etc.).
-const topNavRef = ref<HTMLElement | null>(null)
+// RouterLink instances, not plain elements — component template refs give
+// the component instance, so every read below goes through .$el for the
+// actual anchor tag.
+const allNavRef = ref<{ $el: HTMLElement } | null>(null)
+const focusNavRef = ref<{ $el: HTMLElement } | null>(null)
+const calendarNavRef = ref<{ $el: HTMLElement } | null>(null)
 const sortListBtnRef = ref<HTMLElement | null>(null)
 const sortOrderBtnRef = ref<HTMLElement | null>(null)
 const settingsBtnRef = ref<HTMLElement | null>(null)
@@ -326,7 +341,7 @@ function getLoopBtnRect(): DOMRect | null {
 
 function computeShortcutHints() {
   const targets: { key: string; el: HTMLElement | null }[] = [
-    { key: 'Tab', el: topNavRef.value },
+    { key: 'K', el: calendarNavRef.value?.$el ?? null },
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
     { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
     { key: 'N', el: (route.path === '/all' || route.path === '/focus') ? todoInputRef.value : null },
@@ -336,6 +351,21 @@ function computeShortcutHints() {
   const measured = targets
     .filter((t): t is { key: string; el: HTMLElement } => !!t.el)
     .map(t => ({ key: t.key, rect: t.el.getBoundingClientRect() }))
+
+  // Tab spans both All and Focus icons now (it only toggles between the
+  // two) rather than pointing at a single button like the rest — a
+  // synthetic rect covering just those two instead of the old topNavRef
+  // that used to span all three (back when Tab cycled through Calendar
+  // too). Only `.top`/`.left`/`.width` are read below, so a plain object
+  // stands in fine for the real DOMRect the others use.
+  if (allNavRef.value && focusNavRef.value) {
+    const a = allNavRef.value.$el.getBoundingClientRect()
+    const f = focusNavRef.value.$el.getBoundingClientRect()
+    measured.push({
+      key: 'Tab',
+      rect: { top: Math.min(a.top, f.top), left: a.left, width: (f.right - a.left) } as DOMRect,
+    })
+  }
 
   const hints: ShortcutHint[] = []
   if (measured.length) {
@@ -680,6 +710,16 @@ function toggleSettings() {
   else router.push('/settings')
 }
 
+// ── Calendar toggle ──
+// Same pattern as toggleSettings above: Calendar sits outside the Tab
+// cycle (viewOrder is just Overview/Focus now), so the K shortcut toggles
+// it on/off, returning to whichever of the two you came from.
+function toggleCalendar() {
+  showMobileTags.value = false
+  if (route.path === '/calendar') router.push(lastMainViewPath)
+  else router.push('/calendar')
+}
+
 // ── Mobile tag panel ──
 const showMobileTags = ref(false)
 
@@ -851,14 +891,14 @@ watch(() => route.path, () => {
         </div>
 
         <!-- Desktop nav icons -->
-        <nav ref="topNavRef" class="top-nav desktop-only">
-          <RouterLink to="/all" class="nav-icon" title="All todos">
+        <nav class="top-nav desktop-only">
+          <RouterLink ref="allNavRef" to="/all" class="nav-icon" title="All todos">
             <Globe :size="27" />
           </RouterLink>
-          <RouterLink to="/focus" class="nav-icon" title="Focus">
+          <RouterLink ref="focusNavRef" to="/focus" class="nav-icon" title="Focus">
             <Sun :size="27" />
           </RouterLink>
-          <RouterLink to="/calendar" class="nav-icon" title="Calendar">
+          <RouterLink ref="calendarNavRef" to="/calendar" class="nav-icon" title="Calendar">
             <CalendarDays :size="27" />
           </RouterLink>
         </nav>

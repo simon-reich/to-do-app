@@ -60,6 +60,67 @@ export function isLoopDueToday(interval: LoopInterval, today: Date = new Date(),
   return t.getMonth() === start.getMonth() && t.getDate() === Math.min(start.getDate(), daysInTargetMonth)
 }
 
+// Clamped month/year add matching isLoopDueToday's own date construction
+// (see comment there) — a 31st-of-the-month loop lands on the last day of
+// shorter months instead of overflowing into the next one.
+function addClampedMonths(start: Date, months: number): Date {
+  const target = new Date(start.getFullYear(), start.getMonth() + months, 1)
+  const daysInTargetMonth = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  return new Date(target.getFullYear(), target.getMonth(), Math.min(start.getDate(), daysInTargetMonth))
+}
+
+// The next date (today included) on which `interval` is due — analytical,
+// not a brute-force day-by-day scan, so an "every 999 days"/"every 999
+// years" loop resolves instantly instead of iterating hundreds of times.
+// This is what LoopPicker shows so a loop whose startDate lies far in the
+// past (an old daily/weekly grid, a long custom interval) stays legible —
+// otherwise the "next" run is easy to lose track of. Returns null only for
+// malformed/missing data (no startDate to count from).
+export function nextLoopOccurrence(interval: LoopInterval, today: Date = new Date()): Date | null {
+  const start = parseISODate(interval.startDate)
+  if (!start) return null
+  const t = localMidnight(today)
+
+  if ((interval.mode ?? 'loop') === 'once') return start
+
+  const count = Math.max(1, interval.count ?? 1)
+
+  if (t <= start) return start
+
+  if (interval.unit === 'day') {
+    const diff = daysBetween(t, start)
+    const rem = diff % count
+    return rem === 0 ? t : new Date(t.getFullYear(), t.getMonth(), t.getDate() + (count - rem))
+  }
+  if (interval.unit === 'week') {
+    const step = 7 * count
+    const diff = daysBetween(t, start)
+    const rem = diff % step
+    return rem === 0 ? t : new Date(t.getFullYear(), t.getMonth(), t.getDate() + (step - rem))
+  }
+  if (interval.unit === 'month') {
+    const diffMonths = (t.getFullYear() - start.getFullYear()) * 12 + (t.getMonth() - start.getMonth())
+    const rem = diffMonths % count
+    let candidateMonths = rem === 0 ? diffMonths : diffMonths + (count - rem)
+    let candidate = addClampedMonths(start, candidateMonths)
+    while (candidate < t) {
+      candidateMonths += count
+      candidate = addClampedMonths(start, candidateMonths)
+    }
+    return candidate
+  }
+  // 'year'
+  const diffYears = t.getFullYear() - start.getFullYear()
+  const rem = diffYears % count
+  let candidateYears = rem === 0 ? diffYears : diffYears + (count - rem)
+  let candidate = addClampedMonths(start, candidateYears * 12)
+  while (candidate < t) {
+    candidateYears += count
+    candidate = addClampedMonths(start, candidateYears * 12)
+  }
+  return candidate
+}
+
 // Already handled today (sent to Focus today, whether that stuck — via
 // "Done for today" it can be inToday:false again by now — or not) — set
 // on every sendToToday(), manual or automatic. Reusing it instead of a
