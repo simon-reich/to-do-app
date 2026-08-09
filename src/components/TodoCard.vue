@@ -240,28 +240,22 @@ const CAT_CYCLE_MS = 3640
 async function celebrateCat() {
   const catSvgRaw = await loadCatSvg()
   const overlay = document.createElement('div')
-  // Bottom-aligned, not centered — the cat's own artwork is cropped at
-  // its feet, so sitting it on the viewport's bottom edge reads as
-  // standing on it instead of floating with a gap underneath.
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;'
+  // overflow:hidden clips the oversized SVG below to the viewport edges
+  // instead of letting it push a scrollbar into existence.
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;'
   overlay.innerHTML = catSvgRaw
   const svg = overlay.querySelector('svg')
   if (svg) {
-    // Full viewport width, height follows from the SVG's own aspect
-    // ratio (viewBox) instead of being capped independently.
-    svg.style.cssText = 'display:block;width:100vw;height:auto;'
+    // Wider than the viewport on purpose — centered and cropped by the
+    // overlay's overflow:hidden, so it runs off both left and right
+    // edges rather than fitting inside them.
+    svg.style.cssText = 'display:block;width:190vw;height:auto;flex-shrink:0;'
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
   document.body.appendChild(overlay)
-  overlay.animate(
-    [
-      { opacity: 0 },
-      { opacity: 1, offset: 0.06 },
-      { opacity: 1, offset: 0.88 },
-      { opacity: 0 },
-    ],
-    { duration: CAT_CYCLE_MS, easing: 'ease-out', fill: 'forwards' },
-  ).onfinish = () => overlay.remove()
+  // No fade — the SVG's own visibility:hidden->visible frame swap is the
+  // entrance, and it just cuts out at the end of one loop.
+  setTimeout(() => overlay.remove(), CAT_CYCLE_MS)
 }
 
 // Full-viewport celebration for completing a todo (Done or Done for
