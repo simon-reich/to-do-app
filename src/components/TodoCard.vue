@@ -12,6 +12,10 @@
 // body's first child instead relies on plain DOM paint order: earlier
 // siblings paint first (further back), so this paints after body's
 // background but before #app, with no z-index needed at all.
+/* Old particle-based celebrations (hearts/confetti/balloons/fireworks) —
+kept here, not deleted, while the cat animation is being tried out as a
+replacement. See celebrateBackground below for the one-line swap back.
+
 function particle(cx: number, cy: number, content: string, css: string): HTMLElement {
   const el = document.createElement('span')
   el.textContent = content
@@ -210,18 +214,59 @@ function bgFireworks() {
   }
 }
 
+*/
+
+// Inlined (not <img>) so the fill can be overridden per path below — an
+// <img src="...svg"> is opaque to CSS/JS, the markup has to actually be
+// in the DOM. All 3079 paths share fill="#000000", so a single pass
+// swapping that to var(--ink) recolors every frame of the animation.
+import catSvgRaw from '../assets/animations/cat.svg?raw'
+
+// Matches the step-end keyframe loop baked into cat.svg itself (see
+// "3.64s" in its <style>) — one full play-through, not an arbitrary
+// duration guess.
+const CAT_CYCLE_MS = 3640
+
+function celebrateCat() {
+  const overlay = document.createElement('div')
+  // Bottom-aligned, not centered — the cat's own artwork is cropped at
+  // its feet, so sitting it on the viewport's bottom edge reads as
+  // standing on it instead of floating with a gap underneath.
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;'
+  overlay.innerHTML = catSvgRaw
+  const svg = overlay.querySelector('svg')
+  if (svg) {
+    // Full viewport width, height follows from the SVG's own aspect
+    // ratio (viewBox) instead of being capped independently.
+    svg.style.cssText = 'display:block;width:100vw;height:auto;'
+    svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
+  }
+  document.body.appendChild(overlay)
+  overlay.animate(
+    [
+      { opacity: 0 },
+      { opacity: 1, offset: 0.06 },
+      { opacity: 1, offset: 0.88 },
+      { opacity: 0 },
+    ],
+    { duration: CAT_CYCLE_MS, easing: 'ease-out', fill: 'forwards' },
+  ).onfinish = () => overlay.remove()
+}
+
 // Full-viewport celebration for completing a todo (Done or Done for
 // today — no hierarchy between the two, both get the same treatment).
-// Picks exactly one of four effects per completion, plain DOM elements +
-// the Web Animations API so it stays cheap regardless of how many
-// particles are on screen at once. Solid ink color throughout, no
-// per-particle transparency.
+//
+// Testing the cat animation as a full replacement for now — the old
+// shuffle-bag of four particle effects (hearts/confetti/balloons/
+// fireworks) is commented out below rather than deleted, so it's a
+// one-line swap to bring back if the cat doesn't stick.
 export function celebrateBackground() {
-  const effect = nextBgEffect()
-  if (effect === 'hearts') bgHearts()
-  else if (effect === 'confetti') bgConfetti()
-  else if (effect === 'balloons') bgBalloons()
-  else bgFireworks()
+  celebrateCat()
+  // const effect = nextBgEffect()
+  // if (effect === 'hearts') bgHearts()
+  // else if (effect === 'confetti') bgConfetti()
+  // else if (effect === 'balloons') bgBalloons()
+  // else bgFireworks()
 }
 
 import { ref as vueRef } from 'vue'
