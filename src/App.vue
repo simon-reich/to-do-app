@@ -455,6 +455,22 @@ function onViewportResize() {
 
 let stopLoopMidnightCheck: (() => void) | null = null
 
+// Backstop for scheduleLoopMidnightCheck's own long-lived setTimeout: that
+// timer doesn't survive the machine actually sleeping overnight (a closed
+// laptop lid, standby) — no JS runs at all while suspended, and depending
+// on the browser/OS the timer can come back late or not at all instead of
+// firing the moment the deadline's passed. Re-running both daily checks
+// whenever the tab becomes visible again catches exactly that case, right
+// when a human is actually looking at it again — no reload needed. Both
+// checks are cheap no-ops if nothing's actually due (processedToday /
+// lastThemeRotationDate), so re-running them on every tab-refocus, not
+// just after an overnight gap, is harmless.
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  runLoopSchedule(store)
+  themeStore.runDailyThemeRotation()
+}
+
 onMounted(() => {
   store.ensureSystemTags()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
@@ -464,6 +480,7 @@ onMounted(() => {
   document.addEventListener('keyup', onGlobalKeyup)
   window.addEventListener('blur', onWindowBlur)
   window.addEventListener('resize', onWindowResizeForHints)
+  document.addEventListener('visibilitychange', onVisibilityChange)
   // Sends due loop todos to Focus now, then again every midnight while
   // this tab stays open (no reload) — see useLoopSchedule.ts. The daily
   // theme rotation (see stores/theme.ts) piggybacks on the same "once
@@ -480,6 +497,7 @@ onUnmounted(() => {
   document.removeEventListener('keyup', onGlobalKeyup)
   window.removeEventListener('blur', onWindowBlur)
   window.removeEventListener('resize', onWindowResizeForHints)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
   stopLoopMidnightCheck?.()
 })
 
