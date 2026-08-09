@@ -88,6 +88,23 @@ export function nextLoopOccurrence(interval: LoopInterval, today: Date = new Dat
 
   const count = Math.max(1, interval.count ?? 1)
 
+  // weekdays is checked before the "start not reached yet" shortcut below
+  // — unlike every other unit, the start date itself isn't necessarily a
+  // due day (it's just an anchor/"count from here" point, same as the
+  // others), so the shortcut's "start is always the first occurrence"
+  // assumption doesn't hold here. Searches forward from whichever of
+  // start/today is later.
+  if (interval.unit === 'weekdays') {
+    const days = interval.weekdays ?? []
+    if (!days.length) return null
+    const from = t < start ? start : t
+    for (let i = 0; i < 7; i++) {
+      const candidate = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i)
+      if (days.includes(candidate.getDay())) return candidate
+    }
+    return null
+  }
+
   if (t <= start) return start
 
   if (interval.unit === 'day') {
@@ -111,15 +128,6 @@ export function nextLoopOccurrence(interval: LoopInterval, today: Date = new Dat
       candidate = addClampedMonths(start, candidateMonths)
     }
     return candidate
-  }
-  if (interval.unit === 'weekdays') {
-    const days = interval.weekdays ?? []
-    if (!days.length) return null
-    for (let i = 0; i < 7; i++) {
-      const candidate = new Date(t.getFullYear(), t.getMonth(), t.getDate() + i)
-      if (days.includes(candidate.getDay())) return candidate
-    }
-    return null
   }
   // 'year'
   const diffYears = t.getFullYear() - start.getFullYear()
