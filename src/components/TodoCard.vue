@@ -296,7 +296,7 @@ import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_
 import { useThemeStore } from '../stores/theme'
 import { onQuickExpandEnter, onQuickExpandLeave } from '../composables/useQuickExpand'
 import { activeModal } from '../composables/useModalGuard'
-import { runLoopSchedule } from '../composables/useLoopSchedule'
+import { runLoopSchedule, isLoopDueToday } from '../composables/useLoopSchedule'
 import LoopPicker from './LoopPicker.vue'
 
 const props = defineProps<{
@@ -467,6 +467,18 @@ function closeOnOutside(e: MouseEvent) {
 // deferred to right after that same commit, for the same reason the commit
 // itself is deferred — doing it the instant Loop got checked used to yank
 // the card out of the list before the user could even see the picker.
+//
+// runLoopSchedule alone isn't enough here: it skips any todo already
+// "processed today" (see its own processedToday check) — correct for the
+// automatic once-a-day check it's built for (don't undo an earlier "Done
+// for today"), but wrong here. Explicitly editing the schedule so it's due
+// right now is a deliberate action, not the daily sweep, and should win
+// even if this same todo happened to touch Focus earlier today (sent, then
+// removed; done for today; whatever left a stale focusAddedAt behind) —
+// otherwise the todo silently stays parked in the pool with no sign
+// anything's wrong, since the picker itself has no way to know about that
+// history. Skipped entirely if it's already in Focus (mode 'today' edits,
+// via openEditFromToday) — nothing to send.
 let discardDraftTagsOnClose = false
 watch(showTagMenu, (isOpen, wasOpen) => {
   if (isOpen) {
@@ -482,7 +494,13 @@ watch(showTagMenu, (isOpen, wasOpen) => {
       discardDraftTagsOnClose = false
     } else {
       commitDraftTags()
-      if (isLoop.value) runLoopSchedule(store)
+      if (isLoop.value) {
+        runLoopSchedule(store)
+        const interval = props.todo.loopInterval
+        if (interval && !props.todo.inToday && isLoopDueToday(interval, new Date(), props.todo.createdAt.slice(0, 10))) {
+          emit('send-to-today', props.todo.id)
+        }
+      }
     }
   }
 })
