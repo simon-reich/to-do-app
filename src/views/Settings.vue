@@ -7,13 +7,19 @@ import { useThemeStore } from '../stores/theme'
 import { activeModal } from '../composables/useModalGuard'
 import ColorPicker from '../components/ColorPicker.vue'
 
-const { exportData, importData, exportThemes, importThemes } = useStorage()
+const { exportData, importData, exportThemes, importThemes, exportEverything, importEverything } = useStorage()
 const themeStore = useThemeStore()
 
 async function handleImport() {
   const confirmed = window.confirm('Import will replace all current data. Continue?')
   if (!confirmed) return
   await importData()
+}
+
+async function handleImportEverything() {
+  const confirmed = window.confirm('Import will replace all current data, including themes. Continue?')
+  if (!confirmed) return
+  await importEverything()
 }
 
 const pickerBg = ref(themeStore.activeBg)
@@ -173,6 +179,10 @@ watch(deleteThemeConfirm, (open) => {
       <div class="btn-row">
         <button class="btn-outline" @click="exportThemes">export themes</button>
         <button class="btn-outline" @click="importThemes">import themes</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-outline" @click="exportEverything">export everything all at once</button>
+        <button class="btn-outline" @click="handleImportEverything">import everything all at once</button>
       </div>
     </section>
 

@@ -15,73 +15,98 @@ function readFileViaInput(): Promise<string> {
   })
 }
 
+// Shared by every export* function below — writes the JSON payload to disk
+// via the File System Access API where available, falling back to a plain
+// `a[download]` click (e.g. Firefox, or Safari without the API).
+async function writeJsonFile(payload: unknown, filename: string) {
+  const json = JSON.stringify(payload, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      })
+      const writable = await handle.createWritable()
+      await writable.write(blob)
+      await writable.close()
+      return
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return
+      // non-abort error → fall through to download fallback
+    }
+  }
+
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// Shared by every import* function below — opens a file via the File
+// System Access API where available, falling back to a plain
+// `input[type=file]` click.
+async function readJsonFile(): Promise<string | null> {
+  if ('showOpenFilePicker' in window) {
+    try {
+      const [handle] = await (window as any).showOpenFilePicker({
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      })
+      const file = await handle.getFile()
+      return await file.text()
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return null
+      return await readFileViaInput()
+    }
+  }
+  return await readFileViaInput()
+}
+
+// Every export payload below carries a `kind` tag identifying which of the
+// three file types it is — lets each import* function reject a
+// wrong-but-still-valid-JSON file up front (e.g. picking a themes export
+// for "import everything") instead of silently importing a garbled subset
+// of it.
+type ExportKind = 'todos' | 'themes' | 'everything'
+
+function checkKind(data: any, expected: ExportKind): string | null {
+  if (data.kind === undefined) return null // pre-kind export, let it through
+  if (data.kind !== expected) return `Expected a "${expected}" export, got "${data.kind}".`
+  return null
+}
+
 export function useStorage() {
   async function exportData() {
     const store = useTodosStore()
     const payload = {
       version: 1,
+      kind: 'todos' as ExportKind,
       exportedAt: new Date().toISOString(),
       todos: store.todos,
       tags: store.tags,
     }
-    const json = JSON.stringify(payload, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const filename = `todos-${new Date().toISOString().slice(0, 10)}.json`
-
-    if ('showSaveFilePicker' in window) {
-      try {
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName: filename,
-          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-        })
-        const writable = await handle.createWritable()
-        await writable.write(blob)
-        await writable.close()
-        return
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') return
-        // non-abort error → fall through to download fallback
-      }
-    }
-
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
+    await writeJsonFile(payload, `todos-${new Date().toISOString().slice(0, 10)}.json`)
   }
 
   async function importData() {
     const store = useTodosStore()
-
-    let text: string
     try {
-      if ('showOpenFilePicker' in window) {
-        try {
-          const [handle] = await (window as any).showOpenFilePicker({
-            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-          })
-          const file = await handle.getFile()
-          text = await file.text()
-        } catch (e) {
-          if ((e as Error).name === 'AbortError') return
-          text = await readFileViaInput()
-        }
-      } else {
-        text = await readFileViaInput()
-      }
+      const text = await readJsonFile()
+      if (text === null) return
 
       const data = JSON.parse(text)
+      const kindError = checkKind(data, 'todos')
+      if (kindError) { alert(`Import failed: ${kindError}`); return }
       store.importData({
         todos: Array.isArray(data.todos) ? data.todos : [],
         tags: Array.isArray(data.tags) ? data.tags : [],
         history: Array.isArray(data.history) ? data.history : undefined,
       })
-    } catch (e) {
-      if ((e as Error).message !== 'No file selected') {
-        alert('Import failed: invalid or corrupted JSON file.')
-      }
+    } catch {
+      alert('Import failed: invalid or corrupted JSON file.')
     }
   }
 
@@ -89,57 +114,22 @@ export function useStorage() {
     const themeStore = useThemeStore()
     const payload = {
       version: 1,
+      kind: 'themes' as ExportKind,
       exportedAt: new Date().toISOString(),
       themes: themeStore.savedThemes,
     }
-    const json = JSON.stringify(payload, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const filename = `themes-${new Date().toISOString().slice(0, 10)}.json`
-
-    if ('showSaveFilePicker' in window) {
-      try {
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName: filename,
-          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-        })
-        const writable = await handle.createWritable()
-        await writable.write(blob)
-        await writable.close()
-        return
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') return
-      }
-    }
-
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
+    await writeJsonFile(payload, `themes-${new Date().toISOString().slice(0, 10)}.json`)
   }
 
   async function importThemes() {
     const themeStore = useThemeStore()
-
-    let text: string
     try {
-      if ('showOpenFilePicker' in window) {
-        try {
-          const [handle] = await (window as any).showOpenFilePicker({
-            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-          })
-          const file = await handle.getFile()
-          text = await file.text()
-        } catch (e) {
-          if ((e as Error).name === 'AbortError') return
-          text = await readFileViaInput()
-        }
-      } else {
-        text = await readFileViaInput()
-      }
+      const text = await readJsonFile()
+      if (text === null) return
 
       const data = JSON.parse(text)
+      const kindError = checkKind(data, 'themes')
+      if (kindError) { alert(`Import failed: ${kindError}`); return }
       const incoming = Array.isArray(data.themes) ? data.themes : []
       const existingIds = new Set(themeStore.savedThemes.map(t => t.id))
       incoming.forEach((t: any) => {
@@ -147,12 +137,59 @@ export function useStorage() {
           themeStore.savedThemes.push(t)
         }
       })
-    } catch (e) {
-      if ((e as Error).message !== 'No file selected') {
-        alert('Import failed: invalid or corrupted JSON file.')
-      }
+    } catch {
+      alert('Import failed: invalid or corrupted JSON file.')
     }
   }
 
-  return { exportData, importData, exportThemes, importThemes }
+  // "everything all at once" — a single full-backup file (todos, tags,
+  // saved themes, and the currently active bg/gray) for moving to a new
+  // device or restoring after a wipe, as opposed to exportData/exportThemes
+  // above which stay deliberately narrow (e.g. grabbing just a theme
+  // someone shared, without touching the todo list at all).
+  async function exportEverything() {
+    const store = useTodosStore()
+    const themeStore = useThemeStore()
+    const payload = {
+      version: 1,
+      kind: 'everything' as ExportKind,
+      exportedAt: new Date().toISOString(),
+      todos: store.todos,
+      tags: store.tags,
+      themes: themeStore.savedThemes,
+      activeBg: themeStore.activeBg,
+      activeGray: themeStore.activeGray,
+    }
+    await writeJsonFile(payload, `everything-${new Date().toISOString().slice(0, 10)}.json`)
+  }
+
+  // Full restore, not a merge — mirrors importData's "replaces all current
+  // data" semantics (see Settings.vue's confirm dialog) rather than
+  // importThemes' additive dedupe-by-id, since this is meant to reproduce
+  // exactly what exportEverything captured, not layer onto whatever's
+  // already here.
+  async function importEverything() {
+    const store = useTodosStore()
+    const themeStore = useThemeStore()
+    try {
+      const text = await readJsonFile()
+      if (text === null) return
+
+      const data = JSON.parse(text)
+      const kindError = checkKind(data, 'everything')
+      if (kindError) { alert(`Import failed: ${kindError}`); return }
+      store.importData({
+        todos: Array.isArray(data.todos) ? data.todos : [],
+        tags: Array.isArray(data.tags) ? data.tags : [],
+      })
+      if (Array.isArray(data.themes)) themeStore.savedThemes = data.themes
+      if (typeof data.activeBg === 'string' && typeof data.activeGray === 'string') {
+        themeStore.apply(data.activeBg, data.activeGray)
+      }
+    } catch {
+      alert('Import failed: invalid or corrupted JSON file.')
+    }
+  }
+
+  return { exportData, importData, exportThemes, importThemes, exportEverything, importEverything }
 }
