@@ -53,6 +53,9 @@ export function isLoopDueToday(interval: LoopInterval, today: Date = new Date(),
     const daysInTargetMonth = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate()
     return t.getDate() === Math.min(start.getDate(), daysInTargetMonth)
   }
+  if (interval.unit === 'weekdays') {
+    return (interval.weekdays ?? []).includes(t.getDay())
+  }
   // 'year'
   const diffYears = t.getFullYear() - start.getFullYear()
   if (diffYears < 0 || diffYears % count !== 0) return false
@@ -108,6 +111,15 @@ export function nextLoopOccurrence(interval: LoopInterval, today: Date = new Dat
       candidate = addClampedMonths(start, candidateMonths)
     }
     return candidate
+  }
+  if (interval.unit === 'weekdays') {
+    const days = interval.weekdays ?? []
+    if (!days.length) return null
+    for (let i = 0; i < 7; i++) {
+      const candidate = new Date(t.getFullYear(), t.getMonth(), t.getDate() + i)
+      if (days.includes(candidate.getDay())) return candidate
+    }
+    return null
   }
   // 'year'
   const diffYears = t.getFullYear() - start.getFullYear()

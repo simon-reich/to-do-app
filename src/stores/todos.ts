@@ -17,7 +17,7 @@ export interface Tag {
   label: string
 }
 
-export type LoopUnit = 'day' | 'week' | 'month' | 'year'
+export type LoopUnit = 'day' | 'week' | 'month' | 'year' | 'weekdays'
 
 export interface LoopInterval {
   /** 'once' is a plain one-time due date, no recurrence — unit/count are
@@ -26,6 +26,10 @@ export interface LoopInterval {
   mode?: 'once' | 'loop'
   unit?: LoopUnit
   count?: number
+  /** Only used when unit === 'weekdays' — the selected days, as
+   *  JS Date.getDay() values (0 = Sunday .. 6 = Saturday). count is unused
+   *  in this unit; due-ness is purely "is today one of these days". */
+  weekdays?: number[]
   /** ISO date (YYYY-MM-DD) — the recurrence's start date in loop mode, or
    *  the due date itself in once mode. */
   startDate: string

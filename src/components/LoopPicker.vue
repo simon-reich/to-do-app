@@ -36,6 +36,16 @@ const presetRow2: { label: string; unit: LoopUnit; count: number }[] = [
 ]
 const presets = [...presetRow1, ...presetRow2]
 
+const weekdayOptions: { label: string; day: number }[] = [
+  { label: 'mo', day: 1 },
+  { label: 'tu', day: 2 },
+  { label: 'we', day: 3 },
+  { label: 'th', day: 4 },
+  { label: 'fr', day: 5 },
+  { label: 'sa', day: 6 },
+  { label: 'su', day: 0 },
+]
+
 // Absent mode means legacy data (pre-dates this field, always had
 // unit+count set) — treat exactly as it already behaved: a loop.
 const mode = computed(() => props.modelValue?.mode ?? 'loop')
@@ -63,7 +73,27 @@ function sameUnitCount(a: LoopInterval | undefined, unit: LoopUnit, count: numbe
 // Anything that isn't an exact preset match (including nothing set yet)
 // counts as "Custom" — covers both a genuinely custom every-X-days value
 // and the not-yet-decided state right after switching into loop mode.
-const isCustom = computed(() => !presets.some(p => sameUnitCount(props.modelValue, p.unit, p.count)))
+// weekdays is its own thing entirely (see isWeekdaysMode/weekday buttons
+// below), never "a custom day count".
+const isCustom = computed(() => props.modelValue?.unit !== 'weekdays' && !presets.some(p => sameUnitCount(props.modelValue, p.unit, p.count)))
+
+const isWeekdaysMode = computed(() => props.modelValue?.unit === 'weekdays')
+const selectedWeekdays = computed(() => isWeekdaysMode.value ? (props.modelValue!.weekdays ?? []) : [])
+
+// First time in: defaults to Mon–Fri, the most common "workday routine"
+// pick. Flipping to another unit and back reuses whatever was selected
+// rather than losing it, same idea as selectMode's once↔loop handling.
+function selectWeekdaysMode() {
+  const weekdays = isWeekdaysMode.value && props.modelValue!.weekdays?.length ? props.modelValue!.weekdays! : [1, 2, 3, 4, 5]
+  emit('update:modelValue', { mode: 'loop', unit: 'weekdays', weekdays, startDate: startDate.value })
+}
+
+function toggleWeekday(day: number) {
+  const next = selectedWeekdays.value.includes(day)
+    ? selectedWeekdays.value.filter(d => d !== day)
+    : [...selectedWeekdays.value, day].sort((a, b) => a - b)
+  emit('update:modelValue', { mode: 'loop', unit: 'weekdays', weekdays: next, startDate: startDate.value })
+}
 
 const MAX_CUSTOM_DAYS = 999
 
@@ -154,6 +184,14 @@ const nextOccurrenceRelative = computed(() => {
   return `in ${days} days`
 })
 
+// Nothing selected yet in weekdays mode is the one dead end
+// nextLoopOccurrence can't resolve (returns null) — steer the user there
+// instead of just showing a blank line.
+const loopNextText = computed(() => {
+  if (isWeekdaysMode.value && !selectedWeekdays.value.length) return 'select at least one day'
+  return nextOccurrenceRelative.value
+})
+
 const dateAttributes = computed(() => [{
   key: 'selected',
   highlight: {
@@ -205,7 +243,7 @@ const dateAttributes = computed(() => [{
     <template v-if="mode === 'loop'">
       <div class="loop-row">
         <button
-          v-for="preset in presetRow1"
+          v-for="preset in presets"
           :key="preset.label"
           type="button"
           class="loop-opt"
@@ -219,16 +257,27 @@ const dateAttributes = computed(() => [{
 
       <div class="loop-row">
         <button
-          v-for="preset in presetRow2"
-          :key="preset.label"
           type="button"
           class="loop-opt"
-          :class="{ active: sameUnitCount(modelValue, preset.unit, preset.count), dimmed: !sameUnitCount(modelValue, preset.unit, preset.count) }"
+          :class="{ active: isWeekdaysMode, dimmed: !isWeekdaysMode }"
           @mousedown.prevent
-          @click="select(preset.unit, preset.count)"
+          @click="selectWeekdaysMode"
         >
-          {{ preset.label }}
+          weekdays
         </button>
+        <template v-if="isWeekdaysMode">
+          <button
+            v-for="d in weekdayOptions"
+            :key="d.day"
+            type="button"
+            class="loop-opt loop-opt--day"
+            :class="{ active: selectedWeekdays.includes(d.day), dimmed: !selectedWeekdays.includes(d.day) }"
+            @mousedown.prevent
+            @click="toggleWeekday(d.day)"
+          >
+            {{ d.label }}
+          </button>
+        </template>
       </div>
 
       <div class="loop-row">
@@ -250,7 +299,7 @@ const dateAttributes = computed(() => [{
       </div>
 
       <div class="loop-row">
-        <span class="loop-next">{{ nextOccurrenceRelative }}</span>
+        <span class="loop-next">{{ loopNextText }}</span>
       </div>
     </template>
 
@@ -304,6 +353,11 @@ const dateAttributes = computed(() => [{
 
 .loop-opt.dimmed {
   opacity: 0.35;
+}
+
+.loop-opt--day {
+  width: 34px;
+  padding: 4px 0;
 }
 
 .inverted .loop-opt {
