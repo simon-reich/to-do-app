@@ -386,13 +386,18 @@ function updateDraftTags(tags: string[]) {
 // reference, which in Focus re-triggers filteredTodos' sort and, with it,
 // useListFlip's position-shift animation on every other card for no reason
 // (a real edit's shift is expected to animate; a no-op reopen's isn't).
-function commitDraftTags() {
+// Returns whether the loopInterval itself actually changed — the caller
+// uses that to decide whether overriding processedToday is warranted (see
+// the showTagMenu watch below): just Tab-cycling past an untouched loop
+// card shouldn't re-send it to Focus every time.
+function commitDraftTags(): boolean {
   const tags = draftTags.value
   const loopInterval = tags.includes(LOOP_TAG_ID) ? draftLoopInterval.value : undefined
   const tagsUnchanged = tags.length === props.todo.tags.length && tags.every(id => props.todo.tags.includes(id))
   const loopUnchanged = JSON.stringify(loopInterval) === JSON.stringify(props.todo.loopInterval)
-  if (tagsUnchanged && loopUnchanged) return
+  if (tagsUnchanged && loopUnchanged) return false
   store.updateTodo(props.todo.id, { tags, loopInterval })
+  return !loopUnchanged
 }
 
 // Tags off: the per-card tag menu still offers the priority + loop tags
@@ -471,14 +476,19 @@ function closeOnOutside(e: MouseEvent) {
 // runLoopSchedule alone isn't enough here: it skips any todo already
 // "processed today" (see its own processedToday check) — correct for the
 // automatic once-a-day check it's built for (don't undo an earlier "Done
-// for today"), but wrong here. Explicitly editing the schedule so it's due
-// right now is a deliberate action, not the daily sweep, and should win
-// even if this same todo happened to touch Focus earlier today (sent, then
-// removed; done for today; whatever left a stale focusAddedAt behind) —
-// otherwise the todo silently stays parked in the pool with no sign
-// anything's wrong, since the picker itself has no way to know about that
-// history. Skipped entirely if it's already in Focus (mode 'today' edits,
-// via openEditFromToday) — nothing to send.
+// for today"), but wrong for a genuine schedule edit. Explicitly changing
+// the schedule so it's due right now is a deliberate action, not the daily
+// sweep, and should win even if this same todo happened to touch Focus
+// earlier today (sent, then removed; done for today; whatever left a stale
+// focusAddedAt behind) — otherwise the todo silently stays parked in the
+// pool with no sign anything's wrong, since the picker itself has no way
+// to know about that history. Gated on commitDraftTags() actually having
+// changed the loopInterval, though — just Tab-cycling past an open loop
+// card without touching anything still closes the menu on every card it
+// passes through, and that alone shouldn't repeatedly override
+// processedToday and re-send an already-handled-today todo. Also skipped
+// if it's already in Focus (mode 'today' edits, via openEditFromToday) —
+// nothing to send.
 let discardDraftTagsOnClose = false
 watch(showTagMenu, (isOpen, wasOpen) => {
   if (isOpen) {
@@ -493,11 +503,11 @@ watch(showTagMenu, (isOpen, wasOpen) => {
     if (discardDraftTagsOnClose) {
       discardDraftTagsOnClose = false
     } else {
-      commitDraftTags()
+      const loopChanged = commitDraftTags()
       if (isLoop.value) {
         runLoopSchedule(store)
         const interval = props.todo.loopInterval
-        if (interval && !props.todo.inToday && isLoopDueToday(interval, new Date(), props.todo.createdAt.slice(0, 10))) {
+        if (loopChanged && interval && !props.todo.inToday && isLoopDueToday(interval, new Date(), props.todo.createdAt.slice(0, 10))) {
           emit('send-to-today', props.todo.id)
         }
       }
