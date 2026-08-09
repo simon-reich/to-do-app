@@ -218,16 +218,27 @@ function bgFireworks() {
 
 // Inlined (not <img>) so the fill can be overridden per path below — an
 // <img src="...svg"> is opaque to CSS/JS, the markup has to actually be
-// in the DOM. All 3079 paths share fill="#000000", so a single pass
-// swapping that to var(--ink) recolors every frame of the animation.
-import catSvgRaw from '../assets/animations/cat.svg?raw'
+// in the DOM. All paths render with the default SVG fill (black), so a
+// single pass setting fill on each recolors every frame of the animation.
+//
+// Loaded via dynamic import rather than a static one: even after svgo
+// (2.9 MB -> ~1.1 MB), this text is way too big to bake into the main
+// bundle that loads before anyone has completed a single todo. Rolldown
+// splits it into its own chunk, fetched once on the first completion and
+// cached here for every one after.
+let catSvgPromise: Promise<string> | null = null
+function loadCatSvg(): Promise<string> {
+  catSvgPromise ??= import('../assets/animations/cat.svg?raw').then((m) => m.default)
+  return catSvgPromise
+}
 
 // Matches the step-end keyframe loop baked into cat.svg itself (see
 // "3.64s" in its <style>) — one full play-through, not an arbitrary
 // duration guess.
 const CAT_CYCLE_MS = 3640
 
-function celebrateCat() {
+async function celebrateCat() {
+  const catSvgRaw = await loadCatSvg()
   const overlay = document.createElement('div')
   // Bottom-aligned, not centered — the cat's own artwork is cropped at
   // its feet, so sitting it on the viewport's bottom edge reads as
