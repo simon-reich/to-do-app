@@ -15,6 +15,9 @@ dist-ssr
 # Local test exports/imports (JSON data)
 json_exports/
 
+# logo scatches
+logos/
+
 # Local-only planning docs (not part of the project itself)
 SPEC-flutter-port.md
 
