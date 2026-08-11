@@ -221,23 +221,31 @@ function bgFireworks() {
 // in the DOM. All paths render with the default SVG fill (black), so a
 // single pass setting fill on each recolors every frame of the animation.
 //
-// Loaded via dynamic import rather than a static one: even after svgo
-// (2.9 MB -> ~1.1 MB), this text is way too big to bake into the main
-// bundle that loads before anyone has completed a single todo. Rolldown
-// splits it into its own chunk, fetched once on the first completion and
-// cached here for every one after.
-let catSvgPromise: Promise<string> | null = null
-function loadCatSvg(): Promise<string> {
-  catSvgPromise ??= import('../assets/animations/cat.svg?raw').then((m) => m.default)
-  return catSvgPromise
+// Loaded via dynamic import rather than a static one: even after svgo,
+// this text is way too big to bake into the main bundle that loads before
+// anyone has completed a single todo. Rolldown splits each into its own
+// chunk, fetched once on its first play and cached here for every one
+// after — one promise cache per animation, keyed by loader function.
+const frameSvgCache = new WeakMap<() => Promise<{ default: string }>, Promise<string>>()
+function loadFrameSvg(importer: () => Promise<{ default: string }>): Promise<string> {
+  let promise = frameSvgCache.get(importer)
+  if (!promise) {
+    promise = importer().then((m) => m.default)
+    frameSvgCache.set(importer, promise)
+  }
+  return promise
 }
 
-// Fallback only (see below) — matches the step-end keyframe loop baked
-// into cat.svg itself (see "3.64s" in its <style>), one full play-through.
-const CAT_CYCLE_MS = 3640
-
-async function celebrateCat() {
-  const catSvgRaw = await loadCatSvg()
+// Plays one of the step-end/visibility-toggling frame animations from
+// src/assets/animations/ (see the "Celebration-Animationen" section in
+// CLAUDE.md for how new ones are added) as a full-viewport background
+// overlay, then removes it once the animation completes.
+async function playFrameCelebration(
+  importer: () => Promise<{ default: string }>,
+  widthVw: number,
+  fallbackCycleMs: number,
+) {
+  const svgRaw = await loadFrameSvg(importer)
   const overlay = document.createElement('div')
   // overflow:hidden clips the oversized SVG below to the viewport edges
   // instead of letting it push a scrollbar into existence.
@@ -251,24 +259,24 @@ async function celebrateCat() {
   // after body's background but before #app — behind every card, menu,
   // and panel, without needing any z-index at all.
   overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;'
-  overlay.innerHTML = catSvgRaw
+  overlay.innerHTML = svgRaw
   const svg = overlay.querySelector('svg')
   if (svg) {
     // Wider than the viewport on purpose — centered and cropped by the
     // overlay's overflow:hidden, so it runs off both left and right
     // edges rather than fitting inside them.
-    svg.style.cssText = 'display:block;width:160vw;height:auto;flex-shrink:0;'
+    svg.style.cssText = `display:block;width:${widthVw}vw;height:auto;flex-shrink:0;`
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
   document.body.prepend(overlay)
   // No fade — the SVG's own visibility:hidden->visible frame swap is the
   // entrance, and it just cuts out at the end of one loop.
   //
-  // Removal used to be a plain setTimeout(CAT_CYCLE_MS) racing against the
-  // step-end keyframes, which are baked into the SVG as `infinite` (they
-  // loop forever on their own). If that timer ever fired even slightly
-  // late — main thread busy for a tick — the animation had already looped
-  // back to its 0% keyframe and painted frame one again before the timeout
+  // Removal used to be a plain setTimeout racing against the step-end
+  // keyframes, which are baked into these SVGs as `infinite` (they loop
+  // forever on their own). If that timer ever fired even slightly late —
+  // main thread busy for a tick — the animation had already looped back
+  // to its 0% keyframe and painted frame one again before the timeout
   // caught up, flashing the start of the animation right at the end.
   // Capping every animation at exactly 1 iteration via the Web Animations
   // API and awaiting the browser's own `finished` promise removes the race
@@ -280,20 +288,58 @@ async function celebrateCat() {
     animations.forEach((a) => a.effect?.updateTiming({ iterations: 1 }))
     await Promise.allSettled(animations.map((a) => a.finished))
   } else {
-    await new Promise((resolve) => setTimeout(resolve, CAT_CYCLE_MS))
+    await new Promise((resolve) => setTimeout(resolve, fallbackCycleMs))
   }
   overlay.remove()
+}
+
+function celebrateCat() {
+  // Fallback timeout only, matches the "3.64s" cycle baked into cat.svg's
+  // own <style> — used only if getAnimations() isn't available.
+  return playFrameCelebration(() => import('../assets/animations/cat.svg?raw'), 160, 3640)
+}
+
+function celebrateWhale() {
+  // Fallback timeout only, matches the "1.2s" cycle baked into
+  // wale-05.svg's own <style> — used only if getAnimations() isn't
+  // available.
+  return playFrameCelebration(() => import('../assets/animations/wale-05.svg?raw'), 100, 1200)
+}
+
+// Every available frame-animation celebration, keyed by name — see the
+// "Celebration-Animationen" section in CLAUDE.md before adding another.
+const ALL_CELEBRATIONS = { cat: celebrateCat, whale: celebrateWhale }
+
+// Shuffle-bag over the *active* subset — guarantees every pooled one turns
+// up once per full cycle instead of the same one occasionally repeating
+// several times in a row, same trick as the old particle-effect bag above.
+//
+// Only whale is active right now while it's being tuned in isolation (per
+// request) — add ALL_CELEBRATIONS.cat back in once it's ready to mix in
+// again: [ALL_CELEBRATIONS.cat, ALL_CELEBRATIONS.whale]
+const CELEBRATION_POOL: (() => Promise<void>)[] = [ALL_CELEBRATIONS.whale]
+let celebrationBag: (() => Promise<void>)[] = []
+
+function nextCelebration(): () => Promise<void> {
+  if (celebrationBag.length === 0) {
+    const bag = [...CELEBRATION_POOL]
+    for (let i = bag.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [bag[i], bag[j]] = [bag[j], bag[i]]
+    }
+    celebrationBag = bag
+  }
+  return celebrationBag.pop()!
 }
 
 // Full-viewport celebration for completing a todo (Done or Done for
 // today — no hierarchy between the two, both get the same treatment).
 //
-// Testing the cat animation as a full replacement for now — the old
-// shuffle-bag of four particle effects (hearts/confetti/balloons/
+// The old shuffle-bag of four particle effects (hearts/confetti/balloons/
 // fireworks) is commented out below rather than deleted, so it's a
-// one-line swap to bring back if the cat doesn't stick.
+// one-line swap to bring back if the frame animations don't stick.
 export function celebrateBackground() {
-  celebrateCat()
+  nextCelebration()()
   // const effect = nextBgEffect()
   // if (effect === 'hearts') bgHearts()
   // else if (effect === 'confetti') bgConfetti()

@@ -134,6 +134,22 @@ Jedes Todo-Item bekommt beim Rendern eine Schriftart aus einem Pool von 17 Famil
 - **17 Schriftfamilien** (alle selbst gehostet in `src/styles/fonts/`): Aleo, Amarante, Bodoni Moda, Cardo, EB Garamond, Faustina, Karla, Lora, Manrope, Merienda, Merriweather, Montserrat, Patrick Hand, Roboto, Roboto Condensed, Roboto Slab, Sorts Mill Goudy.
 - Dateibenennung: `FontName-Style.ttf` (z.B. `BodoniModa-Italic.ttf`). `@font-face`-Deklarationen in `src/styles/fonts.css`.
 
+## Celebration-Animationen
+
+Beim Abhaken eines Todos (Done oder Done for today, keine Unterscheidung) spielt eine kurze Full-Viewport-Hintergrund-Animation. Die Logik dafür liegt komplett im `<script>`-Block (nicht `<script setup>`) von `src/components/TodoCard.vue`.
+
+**Assets:** Jede Animation liegt als Frame-basierte SVG (+ optional GIF-Referenz fürs Original) in `src/assets/animations/`, z.B. `cat.svg`/`cat.gif`, `wale-05.svg`/`wale-05.gif`. Aufbau: eine `<g class="f fN">` pro Frame, alle mit `visibility:hidden`, plus `@keyframes fN`/`animation: fN <dauer>s step-end infinite`, die die Frames nacheinander sichtbar schalten — ein klassischer "Sprite-Sheet-als-SVG"-Export (z.B. aus ezgif). Pfade haben Default-Fill `#000000`.
+
+**Eine neue Animation hinzufügen:**
+1. SVG-Datei nach `src/assets/animations/<name>.svg` legen.
+2. Mit svgo verkleinern, dabei **`removeHiddenElems` deaktivieren** — sonst löscht svgo alle Frame-Gruppen, weil sie per Default `visibility:hidden` sind und erst per Keyframe sichtbar werden (Config-Beispiel siehe `celebrateCat`/`celebrateWhale`-Historie in der Git-Historie, Commit "svgo-Optimierung"). Faustregel: 40–50 % Ersparnis realistisch.
+3. In `TodoCard.vue` eine `celebrate<Name>()`-Funktion analog zu `celebrateCat`/`celebrateWhale` anlegen: ruft `playFrameCelebration(() => import('../assets/animations/<name>.svg?raw'), widthVw, fallbackCycleMs)` — `widthVw` ist die gewünschte Breite in vw (Cat: 160, Whale: 100, bewusst > 100 bei Cat, damit sie links/rechts überläuft statt reinzupassen), `fallbackCycleMs` die volle Zyklusdauer aus der `animation:`-Zeile im SVG selbst (z.B. `1.2s` → 1200).
+4. In `ALL_CELEBRATIONS` eintragen und bei Bedarf in `CELEBRATION_POOL` aufnehmen (Shuffle-Bag, verhindert Wiederholungen in Folge). Während eine Animation einzeln getestet/abgestimmt wird, kann der Pool auf genau diese eine reduziert werden.
+
+**Warum kein `setTimeout` zum Entfernen:** Die Keyframes sind `infinite` (sie loopen selbständig weiter). `playFrameCelebration` begrenzt sie stattdessen per Web Animations API (`effect.updateTiming({ iterations: 1 })`) auf einen Durchlauf und wartet auf `animation.finished`, bevor das Overlay entfernt wird — ein reiner Timer würde bei geringer Verzögerung (Main-Thread-Jank) gegen den Loop-Restart racen und kurz das erste Frame nochmal aufblitzen lassen.
+
+**Bundle-Größe:** Jede SVG wird per dynamischem `import(...?raw)` geladen (nicht statisch) — Rolldown packt sie dadurch in einen eigenen Chunk, der erst beim ersten Abspielen dieser Animation geladen und danach gecacht wird, statt das Hauptbundle aufzublähen.
+
 ## Entschiedene Design-Fragen
 
 - **Kein Tagesreset mehr:** Die Focus-Liste (`inToday`) wird nicht mehr automatisch geleert und bleibt bestehen, bis sie manuell leergeräumt wird.
