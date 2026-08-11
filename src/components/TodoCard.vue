@@ -242,17 +242,26 @@ async function celebrateCat() {
   const overlay = document.createElement('div')
   // overflow:hidden clips the oversized SVG below to the viewport edges
   // instead of letting it push a scrollbar into existence.
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;'
+  //
+  // No z-index — same trick as the old particle() helper above: #app is
+  // a plain, non-positioned box and body isn't its own stacking context
+  // either, so a fixed element's z-index would stack against the *root*
+  // context and end up invisible everywhere, not just behind the cards.
+  // Prepending as body's first child instead relies on plain DOM paint
+  // order: earlier siblings paint first (further back), so this paints
+  // after body's background but before #app — behind every card, menu,
+  // and panel, without needing any z-index at all.
+  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;'
   overlay.innerHTML = catSvgRaw
   const svg = overlay.querySelector('svg')
   if (svg) {
     // Wider than the viewport on purpose — centered and cropped by the
     // overlay's overflow:hidden, so it runs off both left and right
     // edges rather than fitting inside them.
-    svg.style.cssText = 'display:block;width:190vw;height:auto;flex-shrink:0;'
+    svg.style.cssText = 'display:block;width:160vw;height:auto;flex-shrink:0;'
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
-  document.body.appendChild(overlay)
+  document.body.prepend(overlay)
   // No fade — the SVG's own visibility:hidden->visible frame swap is the
   // entrance, and it just cuts out at the end of one loop.
   setTimeout(() => overlay.remove(), CAT_CYCLE_MS)
