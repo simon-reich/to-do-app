@@ -232,9 +232,8 @@ function loadCatSvg(): Promise<string> {
   return catSvgPromise
 }
 
-// Matches the step-end keyframe loop baked into cat.svg itself (see
-// "3.64s" in its <style>) — one full play-through, not an arbitrary
-// duration guess.
+// Fallback only (see below) — matches the step-end keyframe loop baked
+// into cat.svg itself (see "3.64s" in its <style>), one full play-through.
 const CAT_CYCLE_MS = 3640
 
 async function celebrateCat() {
@@ -264,7 +263,26 @@ async function celebrateCat() {
   document.body.prepend(overlay)
   // No fade — the SVG's own visibility:hidden->visible frame swap is the
   // entrance, and it just cuts out at the end of one loop.
-  setTimeout(() => overlay.remove(), CAT_CYCLE_MS)
+  //
+  // Removal used to be a plain setTimeout(CAT_CYCLE_MS) racing against the
+  // step-end keyframes, which are baked into the SVG as `infinite` (they
+  // loop forever on their own). If that timer ever fired even slightly
+  // late — main thread busy for a tick — the animation had already looped
+  // back to its 0% keyframe and painted frame one again before the timeout
+  // caught up, flashing the start of the animation right at the end.
+  // Capping every animation at exactly 1 iteration via the Web Animations
+  // API and awaiting the browser's own `finished` promise removes the race
+  // entirely: there's no second iteration left to loop into, and removal
+  // happens exactly when the animation itself reports done, not whenever a
+  // JS timer happens to wake up.
+  const animations = overlay.getAnimations?.({ subtree: true }) ?? []
+  if (animations.length) {
+    animations.forEach((a) => a.effect?.updateTiming({ iterations: 1 }))
+    await Promise.allSettled(animations.map((a) => a.finished))
+  } else {
+    await new Promise((resolve) => setTimeout(resolve, CAT_CYCLE_MS))
+  }
+  overlay.remove()
 }
 
 // Full-viewport celebration for completing a todo (Done or Done for
