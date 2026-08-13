@@ -626,6 +626,19 @@ watch(showTagMenu, (isOpen, wasOpen) => {
     startEdit()
   }
   if (wasOpen && !isOpen) {
+    // A still-focused input inside the card (e.g. LoopPicker's custom
+    // every-X-days field) only commits its typed value on blur — that's
+    // when the native 'change' event fires, which is what actually calls
+    // LoopPicker's applyCustomCount() and emits the update up to
+    // draftLoopInterval. Closing via Enter/Escape/Tab never blurs it (only
+    // a click outside the card does, as an incidental side effect of the
+    // click itself), so without this, commitDraftTags() below read the
+    // stale pre-edit value — the freshly typed number only "stuck" the
+    // *next* time the menu was closed after some other blur had already
+    // flushed it. Forcing the blur here, right before reading the draft,
+    // makes every close path commit the value that's actually on screen.
+    const active = document.activeElement as HTMLElement | null
+    if (active && wrapRef.value?.contains(active)) active.blur()
     if (discardDraftTagsOnClose) {
       discardDraftTagsOnClose = false
     } else {
