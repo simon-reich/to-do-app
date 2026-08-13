@@ -242,7 +242,7 @@ function loadFrameSvg(importer: () => Promise<{ default: string }>): Promise<str
 // overlay, then removes it once the animation completes.
 async function playFrameCelebration(
   importer: () => Promise<{ default: string }>,
-  widthVw: number,
+  size: { width: number } | { height: number },
   fallbackCycleMs: number,
 ) {
   const svgRaw = await loadFrameSvg(importer)
@@ -262,10 +262,13 @@ async function playFrameCelebration(
   overlay.innerHTML = svgRaw
   const svg = overlay.querySelector('svg')
   if (svg) {
-    // Wider than the viewport on purpose — centered and cropped by the
-    // overlay's overflow:hidden, so it runs off both left and right
-    // edges rather than fitting inside them.
-    svg.style.cssText = `display:block;width:${widthVw}vw;height:auto;flex-shrink:0;`
+    // Either pinned to a viewport width (wider than 100vw on purpose for
+    // some — centered and cropped by the overlay's overflow:hidden, so it
+    // runs off both left and right edges rather than fitting inside them)
+    // or pinned to a viewport height, with the other axis left to `auto`
+    // so the SVG's own aspect ratio drives it.
+    const sizeCss = 'width' in size ? `width:${size.width}vw;height:auto;` : `height:${size.height}vh;width:auto;`
+    svg.style.cssText = `display:block;${sizeCss}flex-shrink:0;`
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
   document.body.prepend(overlay)
@@ -296,14 +299,14 @@ async function playFrameCelebration(
 function celebrateCat() {
   // Fallback timeout only, matches the "3.64s" cycle baked into cat.svg's
   // own <style> — used only if getAnimations() isn't available.
-  return playFrameCelebration(() => import('../assets/animations/cat.svg?raw'), 160, 3640)
+  return playFrameCelebration(() => import('../assets/animations/cat.svg?raw'), { width: 160 }, 3640)
 }
 
 function celebrateWhale() {
   // Fallback timeout only, matches the "1.2s" cycle baked into
   // wale-05.svg's own <style> — used only if getAnimations() isn't
   // available.
-  return playFrameCelebration(() => import('../assets/animations/wale-05.svg?raw'), 100, 1200)
+  return playFrameCelebration(() => import('../assets/animations/wale-05.svg?raw'), { height: 100 }, 1200)
 }
 
 // Every available frame-animation celebration, keyed by name — see the
