@@ -87,7 +87,7 @@ interface AppState {
 > }
 > interface Check {
 >   id: string
->   title: string           // max. CHECK_TITLE_MAX_LENGTH (30) Zeichen
+>   title: string           // max. CHECK_TITLE_MAX_LENGTH (60) Zeichen
 >   schedule: CheckSchedule
 >   createdAt: string
 >   completedDates: string[]  // ISO-Daten (YYYY-MM-DD), ein Eintrag pro abgehaktem Fälligkeitstag
@@ -96,7 +96,7 @@ interface AppState {
 > ```
 > Fälligkeit wird nicht wie bei Loop-Todos in einer `inToday`-Flag festgehalten, sondern rein aus `schedule` live berechnet (`todayChecks` im Store) — ein Check hat kein "aus Focus entfernen", das rückgängig gemacht werden könnte, also keine `focusAddedAt`/`processedToday`-Buchführung nötig. Der Store hält dafür einen reaktiven `today`-Anker (`refreshToday()`), den App.vue an denselben drei Stellen wie `runLoopSchedule` aufruft (Mount, Mitternacht, Tab-Refokus) — ein `computed`, das nur `new Date()` liest, würde beim Tageswechsel sonst nie neu laufen. "Verpasst" (fällig laut `schedule`, aber nicht in `completedDates`) wird nirgends extra gespeichert, sondern von dem, der es braucht (Kalender-Tagesdetail, künftiges Analyse-Feature), aus `schedule` + `completedDates` abgeleitet.
 >
-> **UI:** `Focus.vue` zeigt die fälligen Checks (`todayChecks`) unterhalb der Todo-Liste — kein Trenner, nur Abstand (`.checks-section`), Grid mit `repeat(auto-fill, minmax(150px, 1fr))` (mind. 2, meist mehr Spalten). Jede Zeile: kleine eckige Checkbox + reiner Text (kein Rahmen, anders als Tags/Todos), abgehakt bleibt sichtbar (gedimmt + durchgestrichen). Klick auf den Text öffnet `CheckModal.vue` (Add/Edit, wiederverwendet `LoopPicker` mit `:allow-once="false"`) zum Umbenennen/Neu-Kalibrieren/Löschen. Settings-Toggle `checksEnabled` (Theme-Store) blendet das gesamte Feature inkl. Kalender-Dot/-Sektion aus. `Calendar.vue` zeigt abgehakte Checks als eigenen (gedimmten) Dot-Typ und eigene Sektion am Ende der Tages-Detail-Liste.
+> **UI:** `Focus.vue` zeigt die fälligen Checks (`todayChecks`) unterhalb der Todo-Liste — kein Trenner, nur Abstand (`.checks-section`, 66px). Einspaltig untereinander (bewusst nicht mehrspaltig — dafür ist `CHECK_TITLE_MAX_LENGTH` auch nicht mehr auf "zwei nebeneinander" gedeckelt, siehe oben). Jede Zeile: kleine eckige Checkbox (Radius an Rounded/Square gekoppelt, aber auf 3px gedeckelt statt voll `var(--radius)` — sonst wird die kleine Box im Rounded-Modus komplett rund; dazu ein dezenter Drop-Shadow wie bei den Todo-Cards) + reiner Text ohne Rahmen (anders als Tags/Todos), Font `var(--font-mono)`. Der ganze Pill ist blass (`opacity: 0.55`, abgehakt `0.3`, Hover `0.9`) statt durchgestrichen. Klick auf den Text öffnet `CheckModal.vue` (Add/Edit, wiederverwendet `LoopPicker` mit `:allow-once="false"`; auf Phones oberes Drittel statt zentriert, auf Desktop/Tablet 460px breit für die einzeilige Presets-/Weekdays-Zeile) zum Umbenennen/Neu-Kalibrieren/Löschen. Settings-Toggle `checksEnabled` (Theme-Store) blendet das gesamte Feature inkl. Kalender-Dot/-Sektion aus. `Calendar.vue` zeigt abgehakte Checks als eigenen (gedimmten) Dot-Typ und eigene Sektion am Ende der Tages-Detail-Liste.
 
 ## Projektstruktur
 

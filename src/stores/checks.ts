@@ -15,11 +15,11 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-// Short reminder phrases only — long enough for a real task name ("Water
-// plants", "Stretch 5 min"), short enough that at least two Checks always
-// fit side by side in Focus's row (see the check-row layout once that's
-// built).
-export const CHECK_TITLE_MAX_LENGTH = 30
+// Short reminder phrases only, not full todo-length titles — Focus's
+// check-row now stacks them one per line (see Focus.vue) instead of side
+// by side, so this only needs to stay a single readable line rather than
+// fit two columns.
+export const CHECK_TITLE_MAX_LENGTH = 60
 
 // Deliberately its own, narrower type rather than reusing Todo's
 // LoopInterval directly: a Check is always recurring (no 'once' — see
