@@ -56,6 +56,58 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+// A small "knall" right at the checkbox itself when a Check gets ticked —
+// checking one is otherwise a completely flat, silent state flip, unlike
+// completing a Todo (see TodoCard.vue's celebrateBackground). Deliberately
+// tiny and anchored to the checkbox, not a full-viewport effect — Checks
+// are the app's lower-weight, background-reminder feature, so their own
+// celebration should read the same way. Reuses celebrationsEnabled (same
+// toggle the big Todo celebration respects) rather than adding a second,
+// near-identical setting for what's conceptually the same feature.
+function burstCheckbox(el: HTMLElement) {
+  el.animate(
+    [
+      { transform: 'scale(1)' },
+      { transform: 'scale(1.5)', offset: 0.4 },
+      { transform: 'scale(1)' },
+    ],
+    { duration: 260, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
+  )
+
+  // A handful of tiny sparks radiating out from the checkbox's center — a
+  // miniature version of the old bgFireworks particle burst (see the
+  // commented-out particle effects up top), scaled way down and anchored
+  // to this one checkbox instead of the whole viewport.
+  const rect = el.getBoundingClientRect()
+  const cx = rect.left + rect.width / 2
+  const cy = rect.top + rect.height / 2
+  const sparkCount = 6
+  for (let i = 0; i < sparkCount; i++) {
+    const angle = (360 / sparkCount) * i + (Math.random() - 0.5) * 20
+    const dist = 14 + Math.random() * 8
+    const dx = Math.cos((angle * Math.PI) / 180) * dist
+    const dy = Math.sin((angle * Math.PI) / 180) * dist
+    const spark = document.createElement('span')
+    spark.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:4px;height:4px;background:var(--ink);border-radius:50%;pointer-events:none;user-select:none;transform:translate(-50%,-50%);z-index:9999;`
+    document.body.appendChild(spark)
+    spark.animate(
+      [
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.4)`, opacity: 0 },
+      ],
+      { duration: 320, easing: 'ease-out' },
+    ).onfinish = () => spark.remove()
+  }
+}
+
+function onToggleCheck(check: CheckItem, event: MouseEvent) {
+  const becomingChecked = !checksStore.isCompletedOn(check, todayStr())
+  checksStore.toggleCompletion(check.id)
+  if (becomingChecked && themeStore.celebrationsEnabled) {
+    burstCheckbox(event.currentTarget as HTMLElement)
+  }
+}
+
 const checkModalState = ref<'add' | CheckItem | null>(null)
 
 function openAddCheck() {
@@ -107,7 +159,7 @@ function closeCheckModal() {
           <span
             class="check-box"
             :class="{ checked: checksStore.isCompletedOn(check, todayStr()) }"
-            @click.stop="checksStore.toggleCompletion(check.id)"
+            @click.stop="onToggleCheck(check, $event)"
           >
             <Check v-if="checksStore.isCompletedOn(check, todayStr())" :size="8" />
           </span>
@@ -193,7 +245,10 @@ function closeCheckModal() {
 
 .check-pill {
   display: flex;
-  align-items: center;
+  /* flex-start, not center: a title long enough to wrap onto a second
+     line (see .check-label) would otherwise float the checkbox in the
+     vertical middle of both lines instead of level with the first one. */
+  align-items: flex-start;
   gap: 8px;
   min-width: 0;
   background: none;
@@ -238,10 +293,10 @@ function closeCheckModal() {
 }
 
 .check-label {
+  /* No truncation — Checks stack one per line now (no fixed column width
+     to fit), so the full CHECK_TITLE_MAX_LENGTH (60 chars) just gets to
+     wrap onto a second line instead of being cut off. */
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--ink);
   font-size: 14px;
   font-weight: 600;
