@@ -219,7 +219,12 @@ function closeCheckModal() {
   width: 13px;
   height: 13px;
   border: 2px solid var(--ink);
-  border-radius: var(--radius);
+  /* var(--radius) is 6px in rounded mode — on a box this small that's
+     effectively half its size, i.e. a circle, not a rounded corner. Capped
+     at 3px so it still follows the rounded/square setting (0px stays 0px)
+     without going further than a corner. */
+  border-radius: min(var(--radius), 3px);
+  box-shadow: 2px 2px 0 var(--priority-shadow);
   color: var(--bg);
   cursor: pointer;
 }
