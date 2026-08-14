@@ -28,7 +28,7 @@ const route = useRoute()
 // notice), Tab silently drove card-cycling forever instead of switching
 // views, with no way to tell from outside TodoCard.vue. Now there's exactly
 // one handler, and it decides which behavior applies. Calendar isn't part
-// of this cycle — it's reached via K instead (see toggleCalendar), same
+// of this cycle — it's reached via C instead (see toggleCalendar), same
 // "toggle back to whichever main view you came from" pattern as Settings/X.
 const viewOrder = ['/all', '/focus']
 
@@ -248,9 +248,9 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
-  // K — toggle Calendar, returning to whichever main view you came from.
+  // C — toggle Calendar, returning to whichever main view you came from.
   // Same pattern as X/Settings — Calendar isn't part of the Tab cycle.
-  if (key === 'k') {
+  if (key === 'c') {
     e.preventDefault()
     toggleCalendar()
     return
@@ -349,7 +349,7 @@ function getLoopBtnRect(): DOMRect | null {
 
 function computeShortcutHints() {
   const targets: { key: string; el: HTMLElement | null }[] = [
-    { key: 'K', el: calendarNavRef.value?.$el ?? null },
+    { key: 'C', el: calendarNavRef.value?.$el ?? null },
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
     { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
     { key: 'N', el: (route.path === '/all' || route.path === '/focus') ? todoInputRef.value : null },
@@ -752,7 +752,7 @@ function toggleSettings() {
 
 // ── Calendar toggle ──
 // Same pattern as toggleSettings above: Calendar sits outside the Tab
-// cycle (viewOrder is just Overview/Focus now), so the K shortcut toggles
+// cycle (viewOrder is just Overview/Focus now), so the C shortcut toggles
 // it on/off, returning to whichever of the two you came from.
 function toggleCalendar() {
   showMobileTags.value = false
