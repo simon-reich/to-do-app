@@ -19,7 +19,7 @@ function todayStr(): string {
 // check-row now stacks them one per line (see Focus.vue) instead of side
 // by side, so this only needs to stay a single readable line rather than
 // fit two columns.
-export const CHECK_TITLE_MAX_LENGTH = 60
+export const CHECK_TITLE_MAX_LENGTH = 50
 
 // Deliberately its own, narrower type rather than reusing Todo's
 // LoopInterval directly: a Check is always recurring (no 'once' — see

@@ -87,7 +87,7 @@ interface AppState {
 > }
 > interface Check {
 >   id: string
->   title: string           // max. CHECK_TITLE_MAX_LENGTH (60) Zeichen
+>   title: string           // max. CHECK_TITLE_MAX_LENGTH (50) Zeichen
 >   schedule: CheckSchedule
 >   createdAt: string
 >   completedDates: string[]  // ISO-Daten (YYYY-MM-DD), ein Eintrag pro abgehaktem Fälligkeitstag

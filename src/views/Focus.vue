@@ -145,7 +145,7 @@ function closeCheckModal() {
 
     <div v-if="themeStore.checksEnabled" class="checks-section">
       <button type="button" class="add-check-btn" @click="openAddCheck">
-        <Plus :size="12" /> add check
+        <Plus :size="14" /> add check
       </button>
       <div v-if="checksStore.todayChecks.length" class="check-row">
         <button
@@ -161,7 +161,7 @@ function closeCheckModal() {
             :class="{ checked: checksStore.isCompletedOn(check, todayStr()) }"
             @click.stop="onToggleCheck(check, $event)"
           >
-            <Check v-if="checksStore.isCompletedOn(check, todayStr())" :size="8" />
+            <Check v-if="checksStore.isCompletedOn(check, todayStr())" :size="10" />
           </span>
           <span class="check-label">{{ check.title }}</span>
         </button>
@@ -219,7 +219,7 @@ function closeCheckModal() {
   margin-bottom: 14px;
   color: var(--ink);
   opacity: 0.5;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.4px;
   font-family: var(--font-mono, monospace);
@@ -275,8 +275,8 @@ function closeCheckModal() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--ink);
   /* var(--radius) is 6px in rounded mode — on a box this small that's
      effectively half its size, i.e. a circle, not a rounded corner. Capped
@@ -298,7 +298,7 @@ function closeCheckModal() {
      wrap onto a second line instead of being cut off. */
   min-width: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   font-family: var(--font-mono, monospace);
 }
