@@ -24,6 +24,7 @@ export const useThemeStore = defineStore('theme', () => {
   const priorityShadow = ref<'mono' | 'dark'>('dark')
   const celebrationsEnabled = ref(true)
   const tagsEnabled = ref(true)
+  const checksEnabled = ref(true)
   const savedThemes = ref<ColorTheme[]>([])
   const dailyThemeRotationEnabled = ref(false)
   // Last date (YYYY-MM-DD) a rotation actually happened — guards against
@@ -53,6 +54,10 @@ export const useThemeStore = defineStore('theme', () => {
 
   function toggleTags() {
     tagsEnabled.value = !tagsEnabled.value
+  }
+
+  function toggleChecks() {
+    checksEnabled.value = !checksEnabled.value
   }
 
   function saveTheme(name: string) {
@@ -100,9 +105,9 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   return {
-    activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, savedThemes,
+    activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, checksEnabled, savedThemes,
     dailyThemeRotationEnabled, lastThemeRotationDate,
-    apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, saveTheme, deleteTheme, loadTheme,
+    apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, toggleChecks, saveTheme, deleteTheme, loadTheme,
     toggleDailyThemeRotation, runDailyThemeRotation,
   }
 }, { persist: true })

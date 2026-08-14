@@ -1,5 +1,6 @@
 import { useTodosStore } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
+import { useChecksStore } from '../stores/checks'
 
 function readFileViaInput(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -81,18 +82,21 @@ function checkKind(data: any, expected: ExportKind): string | null {
 export function useStorage() {
   async function exportData() {
     const store = useTodosStore()
+    const checksStore = useChecksStore()
     const payload = {
       version: 1,
       kind: 'todos' as ExportKind,
       exportedAt: new Date().toISOString(),
       todos: store.todos,
       tags: store.tags,
+      checks: checksStore.checks,
     }
     await writeJsonFile(payload, `todos-${new Date().toISOString().slice(0, 10)}.json`)
   }
 
   async function importData() {
     const store = useTodosStore()
+    const checksStore = useChecksStore()
     try {
       const text = await readJsonFile()
       if (text === null) return
@@ -105,6 +109,9 @@ export function useStorage() {
         tags: Array.isArray(data.tags) ? data.tags : [],
         history: Array.isArray(data.history) ? data.history : undefined,
       })
+      // Absent in files exported before Checks existed — leave whatever's
+      // already there instead of wiping it out.
+      if (Array.isArray(data.checks)) checksStore.importChecks(data.checks)
     } catch {
       alert('Import failed: invalid or corrupted JSON file.')
     }
@@ -150,12 +157,14 @@ export function useStorage() {
   async function exportEverything() {
     const store = useTodosStore()
     const themeStore = useThemeStore()
+    const checksStore = useChecksStore()
     const payload = {
       version: 1,
       kind: 'everything' as ExportKind,
       exportedAt: new Date().toISOString(),
       todos: store.todos,
       tags: store.tags,
+      checks: checksStore.checks,
       themes: themeStore.savedThemes,
       activeBg: themeStore.activeBg,
       activeGray: themeStore.activeGray,
@@ -171,6 +180,7 @@ export function useStorage() {
   async function importEverything() {
     const store = useTodosStore()
     const themeStore = useThemeStore()
+    const checksStore = useChecksStore()
     try {
       const text = await readJsonFile()
       if (text === null) return
@@ -182,6 +192,9 @@ export function useStorage() {
         todos: Array.isArray(data.todos) ? data.todos : [],
         tags: Array.isArray(data.tags) ? data.tags : [],
       })
+      // Absent in backups made before Checks existed — leave whatever's
+      // already there instead of wiping it out.
+      if (Array.isArray(data.checks)) checksStore.importChecks(data.checks)
       if (Array.isArray(data.themes)) themeStore.savedThemes = data.themes
       if (typeof data.activeBg === 'string' && typeof data.activeGray === 'string') {
         themeStore.apply(data.activeBg, data.activeGray)

@@ -4,13 +4,19 @@ import { activeModal } from '../composables/useModalGuard'
 import { nextLoopOccurrence } from '../composables/useLoopSchedule'
 import type { LoopInterval, LoopUnit } from '../stores/todos'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue?: LoopInterval
   /** Set when the todo is also tagged priority: that card fills solid
    *  ink, which would swallow this picker's own ink-colored border/text
    *  entirely — swap to bg-colored controls so they stay legible. */
   inverted?: boolean
-}>()
+  /** false hides the once/loop toggle row entirely, for callers whose
+   *  schedule is always recurring (Checks — see CLAUDE.md's Checks
+   *  section) and has no once/loop distinction to begin with. */
+  allowOnce?: boolean
+}>(), {
+  allowOnce: true,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: LoopInterval]
@@ -204,7 +210,7 @@ const dateAttributes = computed(() => [{
 
 <template>
   <div class="loop-picker" :class="{ inverted }" @click.stop>
-    <div class="loop-row">
+    <div v-if="allowOnce" class="loop-row">
       <button
         type="button"
         class="loop-opt"

@@ -77,6 +77,27 @@ interface AppState {
 
 > **Projekte wurden entfernt.** Das Datenmodell kennt keine `Project`-Entität mehr. Tags sind das einzige Kategorisierungs-Feature.
 
+> **Checks.** Eigene, bewusst kleinere Entität neben Todo — Hintergrund-Reminder statt vollwertiges Todo, kein Archiv, keine Tags, kein `once`. Store: `src/stores/checks.ts`.
+> ```typescript
+> interface CheckSchedule {
+>   unit: LoopUnit          // wie LoopInterval, aber immer gesetzt — kein 'once'-Modus
+>   count?: number
+>   weekdays?: number[]
+>   startDate: string       // ISO-Datum
+> }
+> interface Check {
+>   id: string
+>   title: string           // max. CHECK_TITLE_MAX_LENGTH (30) Zeichen
+>   schedule: CheckSchedule
+>   createdAt: string
+>   completedDates: string[]  // ISO-Daten (YYYY-MM-DD), ein Eintrag pro abgehaktem Fälligkeitstag
+>   deletedAt?: string        // Soft-Delete, gleiches Prinzip wie Todo.deletedAt
+> }
+> ```
+> Fälligkeit wird nicht wie bei Loop-Todos in einer `inToday`-Flag festgehalten, sondern rein aus `schedule` live berechnet (`todayChecks` im Store) — ein Check hat kein "aus Focus entfernen", das rückgängig gemacht werden könnte, also keine `focusAddedAt`/`processedToday`-Buchführung nötig. Der Store hält dafür einen reaktiven `today`-Anker (`refreshToday()`), den App.vue an denselben drei Stellen wie `runLoopSchedule` aufruft (Mount, Mitternacht, Tab-Refokus) — ein `computed`, das nur `new Date()` liest, würde beim Tageswechsel sonst nie neu laufen. "Verpasst" (fällig laut `schedule`, aber nicht in `completedDates`) wird nirgends extra gespeichert, sondern von dem, der es braucht (Kalender-Tagesdetail, künftiges Analyse-Feature), aus `schedule` + `completedDates` abgeleitet.
+>
+> **UI:** `Focus.vue` zeigt die fälligen Checks (`todayChecks`) unterhalb der Todo-Liste — kein Trenner, nur Abstand (`.checks-section`), Grid mit `repeat(auto-fill, minmax(150px, 1fr))` (mind. 2, meist mehr Spalten). Jede Zeile: kleine eckige Checkbox + reiner Text (kein Rahmen, anders als Tags/Todos), abgehakt bleibt sichtbar (gedimmt + durchgestrichen). Klick auf den Text öffnet `CheckModal.vue` (Add/Edit, wiederverwendet `LoopPicker` mit `:allow-once="false"`) zum Umbenennen/Neu-Kalibrieren/Löschen. Settings-Toggle `checksEnabled` (Theme-Store) blendet das gesamte Feature inkl. Kalender-Dot/-Sektion aus. `Calendar.vue` zeigt abgehakte Checks als eigenen (gedimmten) Dot-Typ und eigene Sektion am Ende der Tages-Detail-Liste.
+
 ## Projektstruktur
 
 ```
@@ -84,15 +105,18 @@ todo-app/
 ├── src/
 │   ├── components/
 │   │   ├── TodoCard.vue         // Karte mit Swipe-Gesten, Tag-Menü, Check-Menü (Focus)
+│   │   ├── LoopPicker.vue       // Recurrence-Picker (once/loop/weekdays/custom), von Todo + CheckModal genutzt
+│   │   ├── CheckModal.vue       // Add/Edit-Modal für Checks
 │   │   ├── ColorPicker.vue      // HSV-Farbwähler für Settings
 │   │   └── SettingsModal (entfernt – Settings ist eigene Route/View)
 │   ├── views/
 │   │   ├── AllTodos.vue         // Hauptliste (filtert: aktiv + nicht in Focus)
-│   │   ├── Focus.vue            // Focus-View (todayTodos, zwei Abhak-Modi)
-│   │   ├── Calendar.vue         // Kalender-View (v-calendar, workLog-Dots, Tages-Detail)
+│   │   ├── Focus.vue            // Focus-View (todayTodos, zwei Abhak-Modi, Checks-Zeile darunter)
+│   │   ├── Calendar.vue         // Kalender-View (v-calendar, workLog-Dots + Checks-Dots, Tages-Detail)
 │   │   └── Settings.vue         // Farb-Theme, Corner-Style, Import/Export
 │   ├── stores/
 │   │   ├── todos.ts             // Pinia Store: Todos, Tags
+│   │   ├── checks.ts            // Pinia Store: Checks (siehe Checks-Abschnitt oben)
 │   │   └── theme.ts             // Pinia Store: Farb-Theme + gespeicherte Themes
 │   ├── composables/
 │   │   ├── useStorage.ts        // Import/Export Logik (File API + Fallback)

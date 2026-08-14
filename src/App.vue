@@ -4,6 +4,7 @@ import { RouterView, useRouter, useRoute } from 'vue-router'
 import { Globe, Sun, CalendarDays, Settings, ArrowUpDown, Tag, Flag, CircleArrowDown, LayoutList, LayoutGrid, X } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID, LOOP_TAG_ID, type LoopInterval } from './stores/todos'
 import { useThemeStore } from './stores/theme'
+import { useChecksStore } from './stores/checks'
 import { useScrollTracking } from './composables/useScrollTracking'
 import { onQuickExpandEnter, onQuickExpandLeave } from './composables/useQuickExpand'
 import { activeModal } from './composables/useModalGuard'
@@ -469,6 +470,7 @@ function onVisibilityChange() {
   if (document.visibilityState !== 'visible') return
   runLoopSchedule(store)
   themeStore.runDailyThemeRotation()
+  checksStore.refreshToday()
 }
 
 onMounted(() => {
@@ -483,12 +485,17 @@ onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange)
   // Sends due loop todos to Focus now, then again every midnight while
   // this tab stays open (no reload) — see useLoopSchedule.ts. The daily
-  // theme rotation (see stores/theme.ts) piggybacks on the same "once
-  // now, once every midnight after" timing, just via the second
-  // scheduleLoopMidnightCheck argument instead of its own timer.
+  // theme rotation (see stores/theme.ts) and Checks' own due-today
+  // recompute (see stores/checks.ts's refreshToday) piggyback on the same
+  // "once now, once every midnight after" timing, just via the second
+  // scheduleLoopMidnightCheck argument instead of their own timers.
   runLoopSchedule(store)
   themeStore.runDailyThemeRotation()
-  stopLoopMidnightCheck = scheduleLoopMidnightCheck(store, () => themeStore.runDailyThemeRotation())
+  checksStore.refreshToday()
+  stopLoopMidnightCheck = scheduleLoopMidnightCheck(store, () => {
+    themeStore.runDailyThemeRotation()
+    checksStore.refreshToday()
+  })
 })
 
 onUnmounted(() => {
@@ -502,6 +509,7 @@ onUnmounted(() => {
 })
 
 const store = useTodosStore()
+const checksStore = useChecksStore()
 
 // ── Tag sidebar ──
 const tagInput = ref('')

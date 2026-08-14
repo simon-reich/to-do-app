@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { Plus, Check } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from '../stores/todos'
+import { useChecksStore, type Check as CheckItem } from '../stores/checks'
+import { useThemeStore } from '../stores/theme'
 import TodoCard from '../components/TodoCard.vue'
+import CheckModal from '../components/CheckModal.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
 import { spawnRemovedFromFocusToast } from '../composables/useToast'
 
 const store = useTodosStore()
+const checksStore = useChecksStore()
+const themeStore = useThemeStore()
 
 // Priority (with or without loop) floats to the top; everything else —
 // loop or plain — sorts by when it was actually sent to Focus (oldest
@@ -42,6 +48,27 @@ function removeFromFocus(id: string, obvious?: boolean) {
   if (!obvious) spawnRemovedFromFocusToast(id)
   store.removeFromToday(id)
 }
+
+// ── Checks ──
+// Below the todo list, no divider — see CLAUDE.md's Checks section for the
+// full design rationale (background reminders, lower weight than a Todo).
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+const checkModalState = ref<'add' | CheckItem | null>(null)
+
+function openAddCheck() {
+  checkModalState.value = 'add'
+}
+
+function openEditCheck(check: CheckItem) {
+  checkModalState.value = check
+}
+
+function closeCheckModal() {
+  checkModalState.value = null
+}
 </script>
 
 <template>
@@ -63,7 +90,42 @@ function removeFromFocus(id: string, obvious?: boolean) {
       />
     </div>
     <p v-else class="empty">Nothing in focus right now.</p>
+
+    <div v-if="themeStore.checksEnabled" class="checks-section">
+      <button type="button" class="add-check-btn" @click="openAddCheck">
+        <Plus :size="12" /> add check
+      </button>
+      <div v-if="checksStore.todayChecks.length" class="check-row">
+        <button
+          v-for="check in checksStore.todayChecks"
+          :key="check.id"
+          type="button"
+          class="check-pill"
+          :class="{ done: checksStore.isCompletedOn(check, todayStr()) }"
+          @click="openEditCheck(check)"
+        >
+          <span
+            class="check-box"
+            :class="{ checked: checksStore.isCompletedOn(check, todayStr()) }"
+            @click.stop="checksStore.toggleCompletion(check.id)"
+          >
+            <Check v-if="checksStore.isCompletedOn(check, todayStr())" :size="8" />
+          </span>
+          <span class="check-label">{{ check.title }}</span>
+        </button>
+      </div>
+    </div>
   </div>
+
+  <CheckModal
+    v-if="checkModalState === 'add'"
+    @close="closeCheckModal"
+  />
+  <CheckModal
+    v-else-if="checkModalState"
+    :editing="checkModalState"
+    @close="closeCheckModal"
+  />
 </template>
 
 <style scoped>
@@ -86,6 +148,95 @@ function removeFromFocus(id: string, obvious?: boolean) {
   font-family: var(--font-playful, sans-serif);
   text-align: center;
   margin-top: 24px;
+}
+
+/* Generous space instead of a visual divider — Checks read as lower-
+   weight background items, not a second list that needs separating from
+   the todos above it. */
+.checks-section {
+  margin-top: 88px;
+}
+
+.add-check-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 14px;
+  color: var(--ink);
+  opacity: 0.5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  font-family: var(--font-mono, monospace);
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+@media (hover: hover) {
+  .add-check-btn:hover {
+    opacity: 1;
+  }
+}
+
+.check-row {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.check-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  opacity: 0.55;
+  transition: opacity 0.1s;
+}
+
+@media (hover: hover) {
+  .check-pill:hover {
+    opacity: 0.9;
+  }
+}
+
+.check-pill.done {
+  opacity: 0.3;
+}
+
+.check-box {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.check-box.checked {
+  background: var(--ink);
+}
+
+.check-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
 }
 
 /* Same fix as AllTodos.vue's list-view: content-inner centers this

@@ -169,6 +169,17 @@ watch(deleteThemeConfirm, (open) => {
       </section>
     </div>
 
+    <!-- Checks -->
+    <div class="section-row">
+      <section class="section">
+        <h2 class="section-title">checks</h2>
+        <div class="option-row">
+          <button class="btn-outline" :class="{ active: themeStore.checksEnabled }" @click="themeStore.checksEnabled || themeStore.toggleChecks()">on</button>
+          <button class="btn-outline" :class="{ active: !themeStore.checksEnabled }" @click="themeStore.checksEnabled && themeStore.toggleChecks()">off</button>
+        </div>
+      </section>
+    </div>
+
     <!-- Data -->
     <section class="section">
       <h2 class="section-title">data</h2>

@@ -3,10 +3,14 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { motion } from 'motion-v'
 import { useTodosStore } from '../stores/todos'
+import { useChecksStore } from '../stores/checks'
+import { useThemeStore } from '../stores/theme'
 import { useScrollTracking } from '../composables/useScrollTracking'
 import ScrollDivider from '../components/ScrollDivider.vue'
 
 const store = useTodosStore()
+const checksStore = useChecksStore()
+const themeStore = useThemeStore()
 const calendarRef = ref<any>(null)
 const viewRef = ref<HTMLElement | null>(null)
 const dayDetailScrollRef = ref<HTMLElement | null>(null)
@@ -62,6 +66,16 @@ const activeDates = computed(() => {
   return [...days].map(d => new Date(d + 'T12:00:00'))
 })
 
+// Its own dot (see attributes below), kept visually distinct from Todo
+// activity — a day can carry both at once, and they track different
+// things (a Check ticked vs. a Todo done/worked on).
+const checksActiveDates = computed(() => {
+  if (!themeStore.checksEnabled) return []
+  const days = new Set<string>()
+  checksStore.checks.forEach(c => c.completedDates.forEach(d => days.add(d)))
+  return [...days].map(d => new Date(d + 'T12:00:00'))
+})
+
 const attributes = computed(() => {
   const attrs: object[] = []
   if (selectedDate.value) {
@@ -98,6 +112,9 @@ const attributes = computed(() => {
   if (activeDates.value.length) {
     attrs.push({ key: 'active', dot: { style: { backgroundColor: 'var(--ink)' } }, dates: activeDates.value })
   }
+  if (checksActiveDates.value.length) {
+    attrs.push({ key: 'checksActive', dot: { style: { backgroundColor: 'var(--ink)', opacity: 0.4 } }, dates: checksActiveDates.value })
+  }
   return attrs
 })
 
@@ -120,8 +137,12 @@ const selectedDateLabel = computed(() => {
 
 const doneOnDay = computed(() => selectedDate.value ? store.completedOn(selectedDate.value) : [])
 const workedOnDay = computed(() => selectedDate.value ? store.workedOn(selectedDate.value) : [])
+// Own section at the end of the day's list (see the template) rather than
+// mixed into doneOnDay/workedOnDay — Checks aren't Todos, ticking one is a
+// different kind of event than completing/working a Todo.
+const checksOnDay = computed(() => selectedDate.value && themeStore.checksEnabled ? checksStore.completedOn(selectedDate.value) : [])
 
-const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.value.length > 0)
+const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.value.length > 0 || checksOnDay.value.length > 0)
 </script>
 
 <template>
@@ -163,6 +184,10 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
               <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
               <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
                 <span class="icon icon--worked">✓</span>{{ todo.title }}
+              </div>
+              <div v-if="(doneOnDay.length || workedOnDay.length) && checksOnDay.length" class="day-divider" />
+              <div v-for="check in checksOnDay" :key="check.id" class="day-item day-item--check">
+                <span class="icon icon--check">☑</span>{{ check.title }}
               </div>
             </div>
 
@@ -313,6 +338,17 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
 }
 
 .icon--worked {
+  color: var(--ink);
+}
+
+/* Checks read as lower-weight than Todos everywhere else in the app (see
+   Focus's own check-row) — same treatment here via opacity rather than a
+   separate color, which the app's four-value color rule doesn't allow. */
+.day-item--check {
+  opacity: 0.65;
+}
+
+.icon--check {
   color: var(--ink);
 }
 
