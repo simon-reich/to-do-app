@@ -109,12 +109,14 @@ nextTick(() => titleInputRef.value?.focus())
 /* On phones, .modal-box's default vertical centering (see layout.css)
    puts this modal right where the on-screen keyboard shows up once the
    title input is focused — keyboard and modal fight over the same
-   vertical space. Pinning it to the upper third instead keeps it clear
-   of the keyboard entirely. Desktop/tablet have no on-screen keyboard to
-   dodge, so they keep the shared centered layout. */
+   vertical space. Pinning it near the very top instead keeps it clear of
+   the keyboard entirely, same place a Todo card lands via
+   scrollCardIntoView's block:'start' when its own editor opens. Desktop/
+   tablet have no on-screen keyboard to dodge, so they keep the shared
+   centered layout. */
 @media (max-width: 700px) {
   .check-modal-box {
-    top: 14vh;
+    top: 24px;
     left: 50%;
     transform: translateX(-50%);
   }
