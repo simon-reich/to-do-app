@@ -154,7 +154,7 @@ function closeCheckModal() {
    weight background items, not a second list that needs separating from
    the todos above it. */
 .checks-section {
-  margin-top: 88px;
+  margin-top: 66px;
 }
 
 .add-check-btn {
