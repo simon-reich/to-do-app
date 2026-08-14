@@ -185,6 +185,10 @@ function closeCheckModal() {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  /* Lines Checks' left edge up with where a todo card's own drop shadow
+     starts (box-shadow: 5px 5px 0 ..., see TodoCard.vue) rather than the
+     card's own flush-left edge. */
+  margin-left: 5px;
 }
 
 .check-pill {
