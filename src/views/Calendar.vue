@@ -6,7 +6,6 @@ import { useTodosStore, PRIORITY_TAG_ID, type Todo } from '../stores/todos'
 import { useChecksStore } from '../stores/checks'
 import { useThemeStore } from '../stores/theme'
 import { useScrollTracking } from '../composables/useScrollTracking'
-import { assignFonts } from '../composables/useTodoFonts'
 import ScrollDivider from '../components/ScrollDivider.vue'
 
 const store = useTodosStore()
@@ -163,15 +162,6 @@ const dayEntries = computed<DayEntry[]>(() => [
 ])
 const priorityEntries = computed(() => dayEntries.value.filter(e => e.todo.tags.includes(PRIORITY_TAG_ID)))
 const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.includes(PRIORITY_TAG_ID)))
-
-// Same per-todo font each item already gets everywhere else (AllTodos,
-// Focus) instead of the calendar's own fancy label font — assignFonts is a
-// pure function of the id list (deterministic hash, no state to persist
-// per Todo), so it's just called again here. Built from priorityEntries +
-// otherEntries (the actual displayed order, see the template) rather than
-// dayEntries — assignFonts' "no two adjacent entries share a font" rule
-// only means anything relative to what's actually rendered next to what.
-const dayFontMap = computed(() => assignFonts([...priorityEntries.value, ...otherEntries.value].map(e => e.todo.id)))
 </script>
 
 <template>
@@ -207,11 +197,11 @@ const dayFontMap = computed(() => assignFonts([...priorityEntries.value, ...othe
             <p class="day-label">{{ selectedDateLabel }}</p>
 
             <div v-if="hasActivity" class="day-items">
-              <div v-for="entry in priorityEntries" :key="entry.todo.id" class="day-item" :style="{ fontFamily: dayFontMap.get(entry.todo.id) }">
+              <div v-for="entry in priorityEntries" :key="entry.todo.id" class="day-item">
                 <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
               </div>
               <div v-if="priorityEntries.length && otherEntries.length" class="day-divider" />
-              <div v-for="entry in otherEntries" :key="entry.todo.id" class="day-item" :style="{ fontFamily: dayFontMap.get(entry.todo.id) }">
+              <div v-for="entry in otherEntries" :key="entry.todo.id" class="day-item">
                 <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
               </div>
               <div v-if="(priorityEntries.length || otherEntries.length) && checksOnDay.length" class="day-divider" />
