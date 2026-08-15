@@ -2,10 +2,11 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { motion } from 'motion-v'
-import { useTodosStore } from '../stores/todos'
+import { useTodosStore, PRIORITY_TAG_ID, type Todo } from '../stores/todos'
 import { useChecksStore } from '../stores/checks'
 import { useThemeStore } from '../stores/theme'
 import { useScrollTracking } from '../composables/useScrollTracking'
+import { assignFonts } from '../composables/useTodoFonts'
 import ScrollDivider from '../components/ScrollDivider.vue'
 
 const store = useTodosStore()
@@ -143,6 +144,34 @@ const workedOnDay = computed(() => selectedDate.value ? store.workedOn(selectedD
 const checksOnDay = computed(() => selectedDate.value && themeStore.checksEnabled ? checksStore.completedOn(selectedDate.value) : [])
 
 const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.value.length > 0 || checksOnDay.value.length > 0)
+
+// Each entry keeps its own done/worked "kind" (for the ✓✓ vs ✓ icon) even
+// though the day's list is no longer *grouped* by that — see dayEntries
+// below. What was actually finished vs. just touched today is still worth
+// showing per item, it's just not the more interesting question for a
+// retrospective glance at the day.
+interface DayEntry { todo: Todo; kind: 'done' | 'worked' }
+
+// Priority vs. everything else, not done vs. worked-on — priority is
+// already the app's one first-class "this mattered" signal everywhere
+// else (card fill, its own filter/sort rank in Focus), so grouping by it
+// here answers "did I get to the important stuff" instead of the more
+// bookkeeping-flavored "did I finish it or just poke at it".
+const dayEntries = computed<DayEntry[]>(() => [
+  ...doneOnDay.value.map(todo => ({ todo, kind: 'done' as const })),
+  ...workedOnDay.value.map(todo => ({ todo, kind: 'worked' as const })),
+])
+const priorityEntries = computed(() => dayEntries.value.filter(e => e.todo.tags.includes(PRIORITY_TAG_ID)))
+const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.includes(PRIORITY_TAG_ID)))
+
+// Same per-todo font each item already gets everywhere else (AllTodos,
+// Focus) instead of the calendar's own fancy label font — assignFonts is a
+// pure function of the id list (deterministic hash, no state to persist
+// per Todo), so it's just called again here. Built from priorityEntries +
+// otherEntries (the actual displayed order, see the template) rather than
+// dayEntries — assignFonts' "no two adjacent entries share a font" rule
+// only means anything relative to what's actually rendered next to what.
+const dayFontMap = computed(() => assignFonts([...priorityEntries.value, ...otherEntries.value].map(e => e.todo.id)))
 </script>
 
 <template>
@@ -178,14 +207,14 @@ const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.val
             <p class="day-label">{{ selectedDateLabel }}</p>
 
             <div v-if="hasActivity" class="day-items">
-              <div v-for="todo in doneOnDay" :key="todo.id" class="day-item">
-                <span class="icon icon--done">✓✓</span>{{ todo.title }}
+              <div v-for="entry in priorityEntries" :key="entry.todo.id" class="day-item" :style="{ fontFamily: dayFontMap.get(entry.todo.id) }">
+                <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
               </div>
-              <div v-if="doneOnDay.length && workedOnDay.length" class="day-divider" />
-              <div v-for="todo in workedOnDay" :key="todo.id" class="day-item">
-                <span class="icon icon--worked">✓</span>{{ todo.title }}
+              <div v-if="priorityEntries.length && otherEntries.length" class="day-divider" />
+              <div v-for="entry in otherEntries" :key="entry.todo.id" class="day-item" :style="{ fontFamily: dayFontMap.get(entry.todo.id) }">
+                <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
               </div>
-              <div v-if="(doneOnDay.length || workedOnDay.length) && checksOnDay.length" class="day-divider" />
+              <div v-if="(priorityEntries.length || otherEntries.length) && checksOnDay.length" class="day-divider" />
               <div v-for="check in checksOnDay" :key="check.id" class="day-item day-item--check">
                 <span class="icon icon--check">☑</span>{{ check.title }}
               </div>
