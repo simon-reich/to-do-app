@@ -206,7 +206,7 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
               </div>
               <div v-if="(priorityEntries.length || otherEntries.length) && checksOnDay.length" class="day-divider" />
               <div v-for="check in checksOnDay" :key="check.id" class="day-item day-item--check">
-                <span class="icon icon--check">☑</span>{{ check.title }}
+                <span class="icon icon--check"><span class="icon-dot" /></span>{{ check.title }}
               </div>
             </div>
 
@@ -368,7 +368,26 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
 }
 
 .icon--check {
+  /* .day-item is align-items:flex-start, so its children top-align by
+     default — align-self:stretch instead makes this icon's own box match
+     the row's full height (i.e. the text's line height), and
+     align-items:center below then centers the dot within *that*, rather
+     than the fixed line-height/margin-top nudge the ✓✓/✓ text glyphs
+     above use (tuned for their own font-size/line-height, not this). */
+  align-self: stretch;
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  letter-spacing: normal;
   color: var(--ink);
+}
+
+.icon-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .day-divider {
