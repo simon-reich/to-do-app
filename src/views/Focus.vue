@@ -145,7 +145,8 @@ function closeCheckModal() {
 
     <div v-if="themeStore.checksEnabled" class="checks-section">
       <button type="button" class="add-check-btn" @click="openAddCheck">
-        <Plus :size="14" /> add check
+        <span class="add-check-icon"><Plus :size="10" /></span>
+        <span class="add-check-label">add check</span>
       </button>
       <div v-if="checksStore.todayChecks.length" class="check-row">
         <button
@@ -212,24 +213,59 @@ function closeCheckModal() {
 .add-check-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background: none;
   border: none;
   padding: 0;
+  margin-left: 5px;
   margin-bottom: 14px;
   color: var(--ink);
-  opacity: 0.5;
+  cursor: pointer;
+}
+
+.add-check-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  color: var(--ink);
+  /* Same resting/hover opacity as .check-pill's checkboxes — one
+     consistent "dim, brightens on hover" treatment across the whole
+     Checks UI instead of a separate color-based one just for this icon. */
+  opacity: 0.55;
+  transition: opacity 0.1s;
+}
+
+/* Rolled up to nothing by default — only the circled plus sits there
+   permanently, same "doesn't compete for attention" idea as the rest of
+   the Checks UI. The label unrolls left-to-right on hover instead of
+   being visible the whole time, but stays dim — the icon's own opacity
+   brightening (see below) is the only hover accent. */
+.add-check-label {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.4px;
   font-family: var(--font-mono, monospace);
-  cursor: pointer;
-  transition: opacity 0.1s;
+  transition: max-width 0.22s ease, opacity 0.18s ease;
 }
 
 @media (hover: hover) {
-  .add-check-btn:hover {
-    opacity: 1;
+  .add-check-btn:hover .add-check-icon {
+    opacity: 0.9;
+  }
+
+  .add-check-btn:hover .add-check-label {
+    max-width: 90px;
+    opacity: 0.5;
   }
 }
 
