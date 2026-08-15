@@ -150,13 +150,13 @@ watch(deleteThemeConfirm, (open) => {
       </section>
     </div>
 
-    <!-- Celebrations + Tags -->
+    <!-- Checks + Tags -->
     <div class="section-row">
       <section class="section">
-        <h2 class="section-title">celebrations</h2>
+        <h2 class="section-title">checks</h2>
         <div class="option-row">
-          <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">on</button>
-          <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">off</button>
+          <button class="btn-outline" :class="{ active: themeStore.checksEnabled }" @click="themeStore.checksEnabled || themeStore.toggleChecks()">on</button>
+          <button class="btn-outline" :class="{ active: !themeStore.checksEnabled }" @click="themeStore.checksEnabled && themeStore.toggleChecks()">off</button>
         </div>
       </section>
 
@@ -169,13 +169,13 @@ watch(deleteThemeConfirm, (open) => {
       </section>
     </div>
 
-    <!-- Checks -->
+    <!-- Celebrations -->
     <div class="section-row">
       <section class="section">
-        <h2 class="section-title">checks</h2>
+        <h2 class="section-title">celebrations</h2>
         <div class="option-row">
-          <button class="btn-outline" :class="{ active: themeStore.checksEnabled }" @click="themeStore.checksEnabled || themeStore.toggleChecks()">on</button>
-          <button class="btn-outline" :class="{ active: !themeStore.checksEnabled }" @click="themeStore.checksEnabled && themeStore.toggleChecks()">off</button>
+          <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">on</button>
+          <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">off</button>
         </div>
       </section>
     </div>
