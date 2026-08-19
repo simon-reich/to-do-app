@@ -244,6 +244,7 @@ async function playFrameCelebration(
   importer: () => Promise<{ default: string }>,
   size: { width: number } | { height: number },
   fallbackCycleMs: number,
+  verticalAnchor: 'center' | 'bottom' = 'center',
 ) {
   const svgRaw = await loadFrameSvg(importer)
   const overlay = document.createElement('div')
@@ -258,7 +259,16 @@ async function playFrameCelebration(
   // order: earlier siblings paint first (further back), so this paints
   // after body's background but before #app — behind every card, menu,
   // and panel, without needing any z-index at all.
-  overlay.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;'
+  const alignItems = verticalAnchor === 'bottom' ? 'flex-end' : 'center'
+  // A 'bottom'-anchored overlay paints behind #app (see above), which
+  // includes the mobile bottom nav (fixed, 60px, see .mobile-bottom-nav in
+  // mobile.css) — flush against the true viewport bottom otherwise sits
+  // half-hidden underneath it. Same mobile breakpoint (700px) that CSS
+  // itself uses, checked fresh per play rather than tracked reactively —
+  // this overlay is short-lived (one animation cycle) and torn down right
+  // after, so there's nothing to keep in sync across a resize.
+  const bottomInset = verticalAnchor === 'bottom' && window.innerWidth <= 700 ? '60px' : '0'
+  overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:${bottomInset};display:flex;align-items:${alignItems};justify-content:center;overflow:hidden;pointer-events:none;`
   overlay.innerHTML = svgRaw
   const svg = overlay.querySelector('svg')
   if (svg) {
@@ -272,9 +282,6 @@ async function playFrameCelebration(
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
   document.body.prepend(overlay)
-  // No fade — the SVG's own visibility:hidden->visible frame swap is the
-  // entrance, and it just cuts out at the end of one loop.
-  //
   // Removal used to be a plain setTimeout racing against the step-end
   // keyframes, which are baked into these SVGs as `infinite` (they loop
   // forever on their own). If that timer ever fired even slightly late —
@@ -286,9 +293,36 @@ async function playFrameCelebration(
   // entirely: there's no second iteration left to loop into, and removal
   // happens exactly when the animation itself reports done, not whenever a
   // JS timer happens to wake up.
-  const animations = overlay.getAnimations?.({ subtree: true }) ?? []
+  const animations = (svg ?? overlay).getAnimations?.({ subtree: true }) ?? []
+  // Cap iterations *before* reading endTime below — the CSS declares
+  // these `infinite`, so getComputedTiming().endTime would itself still
+  // read as Infinity if asked before this.
+  animations.forEach((a) => a.effect?.updateTiming({ iterations: 1 }))
+  // Real duration of the now-capped frame loop, not the fallbackCycleMs
+  // guess — the fade below has to span exactly this or its own fade-out
+  // tail would either cut off early (still opaque) or run past removal.
+  const totalDuration = animations.length
+    ? Number(animations[0]?.effect?.getComputedTiming().endTime ?? fallbackCycleMs)
+    : fallbackCycleMs
+  // One continuous opacity animation for the whole celebration — fades in
+  // over its first ~150ms, holds, fades out over its last ~150ms. This is
+  // deliberately a single animate() call spanning the full duration
+  // (matching how the very first version of this celebration did it)
+  // rather than two separate fade-in/fade-out calls: that split version
+  // never visibly faded at all in testing, for reasons neither of us
+  // pinned down — this simpler, single-timeline version is the one
+  // that's actually confirmed to have worked before.
+  const fadeFraction = Math.min(0.3, 150 / totalDuration)
+  overlay.animate(
+    [
+      { opacity: 0 },
+      { opacity: 1, offset: fadeFraction },
+      { opacity: 1, offset: 1 - fadeFraction },
+      { opacity: 0 },
+    ],
+    { duration: totalDuration, easing: 'linear', fill: 'forwards' },
+  )
   if (animations.length) {
-    animations.forEach((a) => a.effect?.updateTiming({ iterations: 1 }))
     await Promise.allSettled(animations.map((a) => a.finished))
   } else {
     await new Promise((resolve) => setTimeout(resolve, fallbackCycleMs))
@@ -309,18 +343,27 @@ function celebrateWhale() {
   return playFrameCelebration(() => import('../assets/animations/wale-05.svg?raw'), { height: 100 }, 1200)
 }
 
+function celebratePenguin() {
+  // Fallback timeout only, matches the "2.97s" cycle baked into
+  // pinguin-01.svg's own <style> — used only if getAnimations() isn't
+  // available. Full viewport width, anchored to the bottom instead of
+  // vertically centered like cat/whale — a penguin standing on the
+  // "ground" reads better than one floating mid-screen.
+  return playFrameCelebration(() => import('../assets/animations/pinguin-01.svg?raw'), { width: 100 }, 2970, 'bottom')
+}
+
 // Every available frame-animation celebration, keyed by name — see the
 // "Celebration-Animationen" section in CLAUDE.md before adding another.
-const ALL_CELEBRATIONS = { cat: celebrateCat, whale: celebrateWhale }
+const ALL_CELEBRATIONS = { cat: celebrateCat, whale: celebrateWhale, penguin: celebratePenguin }
 
 // Shuffle-bag over the *active* subset — guarantees every pooled one turns
 // up once per full cycle instead of the same one occasionally repeating
 // several times in a row, same trick as the old particle-effect bag above.
 //
-// Only whale is active right now while it's being tuned in isolation (per
-// request) — add ALL_CELEBRATIONS.cat back in once it's ready to mix in
-// again: [ALL_CELEBRATIONS.cat, ALL_CELEBRATIONS.whale]
-const CELEBRATION_POOL: (() => Promise<void>)[] = [ALL_CELEBRATIONS.whale]
+// Only penguin is active right now while it's being tried out in isolation
+// (per request, replacing whale here) — mix others back in once settled,
+// e.g. [ALL_CELEBRATIONS.cat, ALL_CELEBRATIONS.whale, ALL_CELEBRATIONS.penguin]
+const CELEBRATION_POOL: (() => Promise<void>)[] = [ALL_CELEBRATIONS.penguin]
 let celebrationBag: (() => Promise<void>)[] = []
 
 function nextCelebration(): () => Promise<void> {
