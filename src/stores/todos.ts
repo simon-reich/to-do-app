@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { drawCelebrationKey, type CelebrationKey } from '../composables/useCelebrations'
 
 function uuid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
@@ -47,6 +48,12 @@ export interface Todo {
   completedAt?: string
   workLog: string[]
   loopInterval?: LoopInterval
+  /** Which celebration (see TodoCard.vue's "Celebration-Animationen"
+   *  section) plays when this todo is completed — assigned once in
+   *  sendToToday below, fixed for as long as it stays in Focus, rather
+   *  than re-rolled every time its check-menu happens to open. Absent for
+   *  a todo that's never been sent to Focus since this field existed. */
+  celebration?: CelebrationKey
   /** Set instead of actually removing the todo when it's deleted while it
    *  still has calendar-relevant history (a completedAt or a non-empty
    *  workLog) — see deleteTodo below. Filtered out of every active list
@@ -141,12 +148,13 @@ export const useTodosStore = defineStore('todos', () => {
     return todo
   }
 
-  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags' | 'loopInterval'>>) {
+  function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags' | 'loopInterval' | 'celebration'>>) {
     const todo = todos.value.find(t => t.id === id)
     if (!todo) return
     if (patch.title !== undefined) todo.title = patch.title.trim()
     if (patch.tags !== undefined) todo.tags = patch.tags
     if ('loopInterval' in patch) todo.loopInterval = patch.loopInterval
+    if (patch.celebration !== undefined) todo.celebration = patch.celebration
   }
 
   // Hard-removes a todo that never had any calendar-relevant history (never
@@ -169,6 +177,9 @@ export const useTodosStore = defineStore('todos', () => {
     if (todo) {
       todo.inToday = true
       todo.focusAddedAt = new Date().toISOString()
+      // Fresh roll each time it re-enters Focus, not just once ever — see
+      // Todo.celebration's own comment.
+      todo.celebration = drawCelebrationKey()
     }
   }
 

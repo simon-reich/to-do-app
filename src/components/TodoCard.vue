@@ -236,17 +236,19 @@ function loadFrameSvg(importer: () => Promise<{ default: string }>): Promise<str
   return promise
 }
 
-// Plays one of the step-end/visibility-toggling frame animations from
-// src/assets/animations/ (see the "Celebration-Animationen" section in
-// CLAUDE.md for how new ones are added) as a full-viewport background
-// overlay, then removes it once the animation completes.
-async function playFrameCelebration(
-  importer: () => Promise<{ default: string }>,
-  size: { width: number } | { height: number },
-  fallbackCycleMs: number,
-  verticalAnchor: 'center' | 'bottom' = 'center',
-) {
-  const svgRaw = await loadFrameSvg(importer)
+interface CelebrationConfig {
+  importer: () => Promise<{ default: string }>
+  size: { width: number } | { height: number }
+  fallbackCycleMs: number
+  verticalAnchor?: 'center' | 'bottom'
+}
+
+// Builds and styles the overlay + inlined SVG shared by both a real play
+// (playFrameCelebration) and the pre-completion teaser
+// (showCelebrationTeaser) below — same sizing/positioning either way, only
+// what happens to its opacity/animations afterward differs.
+function buildFrameOverlay(svgRaw: string, config: CelebrationConfig): { overlay: HTMLDivElement; svg: SVGElement | null } {
+  const { size, verticalAnchor = 'center' } = config
   const overlay = document.createElement('div')
   // overflow:hidden clips the oversized SVG below to the viewport edges
   // instead of letting it push a scrollbar into existence.
@@ -264,9 +266,9 @@ async function playFrameCelebration(
   // includes the mobile bottom nav (fixed, 60px, see .mobile-bottom-nav in
   // mobile.css) — flush against the true viewport bottom otherwise sits
   // half-hidden underneath it. Same mobile breakpoint (700px) that CSS
-  // itself uses, checked fresh per play rather than tracked reactively —
-  // this overlay is short-lived (one animation cycle) and torn down right
-  // after, so there's nothing to keep in sync across a resize.
+  // itself uses, checked fresh per build rather than tracked reactively —
+  // this overlay is short-lived and torn down right after, so there's
+  // nothing to keep in sync across a resize.
   const bottomInset = verticalAnchor === 'bottom' && window.innerWidth <= 700 ? '60px' : '0'
   overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:${bottomInset};display:flex;align-items:${alignItems};justify-content:center;overflow:hidden;pointer-events:none;`
   overlay.innerHTML = svgRaw
@@ -281,6 +283,16 @@ async function playFrameCelebration(
     svg.style.cssText = `display:block;${sizeCss}flex-shrink:0;`
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
+  return { overlay, svg }
+}
+
+// Plays one of the step-end/visibility-toggling frame animations from
+// src/assets/animations/ (see the "Celebration-Animationen" section in
+// CLAUDE.md for how new ones are added) as a full-viewport background
+// overlay, then removes it once the animation completes.
+async function playFrameCelebration(config: CelebrationConfig) {
+  const svgRaw = await loadFrameSvg(config.importer)
+  const { overlay, svg } = buildFrameOverlay(svgRaw, config)
   document.body.prepend(overlay)
   // Removal used to be a plain setTimeout racing against the step-end
   // keyframes, which are baked into these SVGs as `infinite` (they loop
@@ -302,8 +314,8 @@ async function playFrameCelebration(
   // guess — the fade below has to span exactly this or its own fade-out
   // tail would either cut off early (still opaque) or run past removal.
   const totalDuration = animations.length
-    ? Number(animations[0]?.effect?.getComputedTiming().endTime ?? fallbackCycleMs)
-    : fallbackCycleMs
+    ? Number(animations[0]?.effect?.getComputedTiming().endTime ?? config.fallbackCycleMs)
+    : config.fallbackCycleMs
   // One continuous opacity animation for the whole celebration — fades in
   // over its first ~150ms, holds, fades out over its last ~150ms. This is
   // deliberately a single animate() call spanning the full duration
@@ -325,67 +337,103 @@ async function playFrameCelebration(
   if (animations.length) {
     await Promise.allSettled(animations.map((a) => a.finished))
   } else {
-    await new Promise((resolve) => setTimeout(resolve, fallbackCycleMs))
+    await new Promise((resolve) => setTimeout(resolve, config.fallbackCycleMs))
   }
   overlay.remove()
 }
 
-function celebrateCat() {
-  // Fallback timeout only, matches the "3.64s" cycle baked into cat.svg's
-  // own <style> — used only if getAnimations() isn't available.
-  return playFrameCelebration(() => import('../assets/animations/cat.svg?raw'), { width: 160 }, 3640)
-}
-
-function celebrateWhale() {
-  // Fallback timeout only, matches the "1.2s" cycle baked into
-  // wale-05.svg's own <style> — used only if getAnimations() isn't
-  // available.
-  return playFrameCelebration(() => import('../assets/animations/wale-05.svg?raw'), { height: 100 }, 1200)
-}
-
-function celebratePenguin() {
-  // Fallback timeout only, matches the "2.97s" cycle baked into
-  // pinguin-01.svg's own <style> — used only if getAnimations() isn't
-  // available. Full viewport width, anchored to the bottom instead of
-  // vertically centered like cat/whale — a penguin standing on the
-  // "ground" reads better than one floating mid-screen.
-  return playFrameCelebration(() => import('../assets/animations/pinguin-01.svg?raw'), { width: 100 }, 2970, 'bottom')
-}
-
 // Every available frame-animation celebration, keyed by name — see the
 // "Celebration-Animationen" section in CLAUDE.md before adding another.
-const ALL_CELEBRATIONS = { cat: celebrateCat, whale: celebrateWhale, penguin: celebratePenguin }
+// Which key a given todo gets is decided once, in stores/todos.ts's
+// sendToToday (see Todo.celebration and useCelebrations.ts) — not here;
+// this map only knows how to actually render a given key.
+// fallbackCycleMs is a fallback only (used if getAnimations() isn't
+// available) — it must match the cycle duration baked into that SVG's own
+// <style> (e.g. "2.97s" -> 2970).
+const ALL_CELEBRATIONS: Record<CelebrationKey, CelebrationConfig> = {
+  cat: {
+    importer: () => import('../assets/animations/cat.svg?raw'),
+    size: { width: 160 },
+    fallbackCycleMs: 3640,
+  },
+  whale: {
+    importer: () => import('../assets/animations/wale-05.svg?raw'),
+    size: { height: 100 },
+    fallbackCycleMs: 1200,
+  },
+  penguin: {
+    // Full viewport width, anchored to the bottom instead of vertically
+    // centered like cat/whale — a penguin standing on the "ground" reads
+    // better than one floating mid-screen.
+    importer: () => import('../assets/animations/pinguin-01.svg?raw'),
+    size: { width: 100 },
+    fallbackCycleMs: 2970,
+    verticalAnchor: 'bottom',
+  },
+}
 
-// Shuffle-bag over the *active* subset — guarantees every pooled one turns
-// up once per full cycle instead of the same one occasionally repeating
-// several times in a row, same trick as the old particle-effect bag above.
-//
-// Only penguin is active right now while it's being tried out in isolation
-// (per request, replacing whale here) — mix others back in once settled,
-// e.g. [ALL_CELEBRATIONS.cat, ALL_CELEBRATIONS.whale, ALL_CELEBRATIONS.penguin]
-const CELEBRATION_POOL: (() => Promise<void>)[] = [ALL_CELEBRATIONS.penguin]
-let celebrationBag: (() => Promise<void>)[] = []
+// Pre-completion teaser — see the Focus check-menu's showMenu watch in
+// <script setup> below. Shows the given (already-assigned, see
+// ALL_CELEBRATIONS' own comment) celebration's very first frame, frozen
+// (not playing) and pale via opacity (not a separate color — see
+// CLAUDE.md's four-color rule), while the Done/Done-for-today choice is
+// still open, so the real celebration on actually completing doesn't come
+// out of nowhere. Only one can ever be showing at a time (openCheckMenuId
+// is a single shared ref app-wide).
+const TEASER_OPACITY = 0.35
+let teaserOverlay: HTMLDivElement | null = null
+let teaserToken = 0
 
-function nextCelebration(): () => Promise<void> {
-  if (celebrationBag.length === 0) {
-    const bag = [...CELEBRATION_POOL]
-    for (let i = bag.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [bag[i], bag[j]] = [bag[j], bag[i]]
-    }
-    celebrationBag = bag
-  }
-  return celebrationBag.pop()!
+// Exported (not just called from this file's own watch(showMenu, ...) —
+// see App.vue's single openCheckMenuId watcher instead: cycleOpenCard sets
+// openCheckMenuId straight to the next card in one ref assignment, and two
+// *different* TodoCard instances' own watch(showMenu, ...) callbacks then
+// raced each other over this shared teaser state, in whatever order Vue
+// happened to flush them (registration/list order, unrelated to which
+// direction you were cycling) — cycling backward reliably hit the order
+// where the new card's still-loading show() got cancelled by the old
+// card's hide() before it ever got to render. A single watcher owned by
+// one place, driven by the one ref both transitions share, has no such
+// race to lose.
+export async function showCelebrationTeaser(key: CelebrationKey) {
+  const token = ++teaserToken
+  const config = ALL_CELEBRATIONS[key]
+  const svgRaw = await loadFrameSvg(config.importer)
+  // Superseded by a newer show/hide call (menu closed again, or a
+  // different card's opened) while the SVG was still loading.
+  if (token !== teaserToken) return
+  const { overlay, svg } = buildFrameOverlay(svgRaw, config)
+  overlay.style.opacity = '0'
+  document.body.prepend(overlay)
+  // Freezes on frame 0 (its own 0%-visible keyframe) by pausing every
+  // frame animation the instant they exist, before any of them have had a
+  // chance to advance — these start running immediately on insertion
+  // regardless of anything JS does (see playFrameCelebration).
+  const animations = (svg ?? overlay).getAnimations?.({ subtree: true }) ?? []
+  animations.forEach((a) => a.pause())
+  overlay.animate([{ opacity: 0 }, { opacity: TEASER_OPACITY }], { duration: 150, easing: 'ease-out', fill: 'forwards' })
+  teaserOverlay = overlay
+}
+
+export function hideCelebrationTeaser() {
+  teaserToken++ // cancels an in-flight showCelebrationTeaser() still loading
+  const overlay = teaserOverlay
+  teaserOverlay = null
+  overlay?.remove()
 }
 
 // Full-viewport celebration for completing a todo (Done or Done for
 // today — no hierarchy between the two, both get the same treatment).
+// `key` is the todo's own already-assigned celebration (see
+// ALL_CELEBRATIONS' comment) — not drawn here, so it always matches
+// whatever the pre-completion teaser just showed for that same todo.
 //
 // The old shuffle-bag of four particle effects (hearts/confetti/balloons/
 // fireworks) is commented out below rather than deleted, so it's a
 // one-line swap to bring back if the frame animations don't stick.
-export function celebrateBackground() {
-  nextCelebration()()
+export function celebrateBackground(key: CelebrationKey) {
+  hideCelebrationTeaser()
+  playFrameCelebration(ALL_CELEBRATIONS[key])
   // const effect = nextBgEffect()
   // if (effect === 'hearts') bgHearts()
   // else if (effect === 'confetti') bgConfetti()
@@ -394,6 +442,7 @@ export function celebrateBackground() {
 }
 
 import { ref as vueRef } from 'vue'
+import { drawCelebrationKey, type CelebrationKey } from '../composables/useCelebrations'
 // Shared across all instances – only one menu open at a time. Exported so
 // App.vue's single Tab handler can tell whether a card is currently open
 // (and cycle between cards instead of views) or closed (and cycle views).
@@ -988,13 +1037,15 @@ function cancelEdit() {
 }
 
 function handleComplete(id: string) {
-  if (themeStore.celebrationsEnabled) celebrateBackground()
+  // Same fallback as the showMenu watch above — showMenu was open to even
+  // reach this button, so a key normally already exists by now.
+  if (themeStore.celebrationsEnabled) celebrateBackground(props.todo.celebration ?? drawCelebrationKey())
   openCheckMenuId.value = null
   emit('complete', id)
 }
 
 function handleDoneForToday(id: string) {
-  if (themeStore.celebrationsEnabled) celebrateBackground()
+  if (themeStore.celebrationsEnabled) celebrateBackground(props.todo.celebration ?? drawCelebrationKey())
   openCheckMenuId.value = null
   emit('done-for-today', id)
 }
@@ -1398,6 +1449,10 @@ onUnmounted(() => {
   window.removeEventListener('pointercancel', releaseGripFallback)
   unlockScroll()
   if (openTagMenuId.value === props.todo.id) openTagMenuId.value = null
+  // The celebration teaser is driven centrally by App.vue's own watcher on
+  // openCheckMenuId (see showCelebrationTeaser's own comment for why),
+  // not by this card — so setting this to null here is enough on its own
+  // to have it hidden, regardless of unmount timing.
   if (openCheckMenuId.value === props.todo.id) openCheckMenuId.value = null
   if (activeCardApi.value?.todoId === props.todo.id) activeCardApi.value = null
   if (titleClickTimer) clearTimeout(titleClickTimer)

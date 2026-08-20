@@ -12,7 +12,8 @@ import { runLoopSchedule, scheduleLoopMidnightCheck, isLoopDueToday } from './co
 import { toasts, spawnToast, spawnSentToFocusToast } from './composables/useToast'
 import ScrollDivider from './components/ScrollDivider.vue'
 import LoopPicker from './components/LoopPicker.vue'
-import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard } from './components/TodoCard.vue'
+import { openTagMenuId, openCheckMenuId, cycleOpenCard, closeActiveCard, showCelebrationTeaser, hideCelebrationTeaser } from './components/TodoCard.vue'
+import { drawCelebrationKey } from './composables/useCelebrations'
 
 const router = useRouter()
 const route = useRoute()
@@ -510,6 +511,33 @@ onUnmounted(() => {
 
 const store = useTodosStore()
 const checksStore = useChecksStore()
+
+// Pre-completion celebration teaser (see TodoCard.vue's
+// showCelebrationTeaser for the why-here) — a single watcher on
+// openCheckMenuId itself, not one per TodoCard instance watching its own
+// showMenu: cycleOpenCard (Tab-cycling between open Focus cards) sets
+// openCheckMenuId straight to the next card in one ref assignment, and
+// two *different* components' own watchers reacting to that raced each
+// other over the shared teaser state in whatever order Vue happened to
+// flush them — cycling backward reliably lost that race. One watcher
+// owned by one place, driven by the one ref every transition shares, has
+// nothing left to race.
+watch(openCheckMenuId, (id) => {
+  // Always clear the previous teaser first — cycleOpenCard jumps
+  // openCheckMenuId straight from one card's id to the next in one ref
+  // assignment (never passing through null in between), so without this
+  // every direct card-to-card cycle just piled another teaser overlay on
+  // top of the last instead of replacing it.
+  hideCelebrationTeaser()
+  const todo = id ? store.todos.find(t => t.id === id) : undefined
+  if (!todo || !themeStore.celebrationsEnabled) return
+  // Falls back to drawing (and persisting) a fresh key here for a todo
+  // that was already inToday before Todo.celebration existed —
+  // sendToToday normally assigns it.
+  const key = todo.celebration ?? drawCelebrationKey()
+  if (!todo.celebration) store.updateTodo(todo.id, { celebration: key })
+  showCelebrationTeaser(key)
+})
 
 // ── Tag sidebar ──
 const tagInput = ref('')
