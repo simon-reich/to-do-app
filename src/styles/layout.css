@@ -325,15 +325,18 @@
   opacity: 0.55;
   cursor: pointer;
   transition: opacity 0.1s;
+  /* .add-input-clear (the X above, clearing the title) sits with its
+     center 19px in from .add-wrapper's right edge (right:10px + half its
+     18px width). This button's own containing box, .add-tag-row, is
+     inset 14px from that same edge — 2px border + 12px padding, both
+     eaten from the box since box-sizing is border-box app-wide (the
+     border was the part missed on an earlier pass at this) — so sitting
+     flush against that content edge lands it at 21.5px in instead, 2.5px
+     further left. Pulling it back by exactly that makes both centers
+     coincide. */
+  margin-right: -2.5px;
 }
 
-.add-sub-chip-x svg {
-  /* The lucide X glyph's own stroke geometry sits a hair off the exact
-     center of its viewBox — nudging it half a pixel up-left is enough to
-     read as centered inside this small a circle, where the offset is
-     otherwise noticeable. */
-  transform: translate(-0.5px, -0.5px);
-}
 
 .add-sub-chip-x:hover {
   opacity: 1;
