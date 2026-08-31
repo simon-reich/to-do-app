@@ -510,7 +510,7 @@ export function closeActiveCard() {
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { CirclePlus, CircleMinus, Trash2, CheckCheck, Clock, Pencil, Check, Flag, RefreshCw } from '@lucide/vue'
 import { motion, useMotionValue, useTransform, useMotionValueEvent, animate, type PanInfo } from 'motion-v'
-import { useTodosStore, type Todo, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
+import { useTodosStore, type Todo, type Sub, type LoopInterval, PRIORITY_TAG_ID, LOOP_TAG_ID } from '../stores/todos'
 import { useThemeStore } from '../stores/theme'
 import { onQuickExpandEnter, onQuickExpandLeave } from '../composables/useQuickExpand'
 import { activeModal } from '../composables/useModalGuard'
@@ -533,6 +533,10 @@ const props = defineProps<{
    *  collection, not a sequence. Focus keeps the marching-in stagger since
    *  it's a deliberately curated, ordered subset instead. */
   gridMode?: boolean
+  /** Focus's own "expand all subs" toggle (see Focus.vue) — forces the
+   *  sub-list open even while the card itself is closed, without also
+   *  opening the Done/Done-for-today menu. */
+  forceExpandSubs?: boolean
 }>()
 
 // Entrance bounce when a card first mounts (a fresh view, a newly created
@@ -639,6 +643,70 @@ const emit = defineEmits<{
 
 const showMenu = computed(() => openCheckMenuId.value === props.todo.id)
 const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
+
+// Subs are collapsed by default — only shown once some editor surface of
+// the card is actually open (showTagMenu covers both Overview's tag/date
+// editor and Focus's own title-edit, which reuses openTagMenuId too — see
+// openEditFromToday), or Focus's Done/Done-for-today menu, or Focus's
+// "expand all" override (forceExpandSubs) regardless of anything else.
+const subsVisible = computed(() =>
+  themeStore.subsEnabled &&
+  (showTagMenu.value || (props.mode === 'today' && showMenu.value) || !!props.forceExpandSubs)
+)
+
+const newSubTitle = ref('')
+const newSubInputRef = ref<HTMLTextAreaElement | null>(null)
+
+function autoGrowSub() {
+  const el = newSubInputRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+// Enter adds the sub and keeps the same input focused+cleared, rather than
+// mounting a genuinely new row — reads as "the next line opens" without
+// needing its own draft-row bookkeeping.
+function submitNewSub() {
+  const trimmed = newSubTitle.value.trim()
+  if (!trimmed) return
+  store.addSub(props.todo.id, trimmed)
+  newSubTitle.value = ''
+  nextTick(() => {
+    autoGrowSub()
+    newSubInputRef.value?.focus()
+  })
+}
+
+// Tab out of the title (while editing) jumps straight into the add-sub
+// input instead of doing whatever Tab would otherwise do here (App.vue's
+// document-level handler drives card-cycling once a menu is open — see
+// cycleOpenCard) — only while subs are actually visible/enabled, so a
+// plain Tab still cycles cards normally when subs are off.
+function onTitleTabKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Tab' || e.shiftKey) return
+  if (!subsVisible.value) return
+  e.preventDefault()
+  e.stopPropagation()
+  nextTick(() => newSubInputRef.value?.focus())
+}
+
+// Toggling the last open sub complete auto-opens the Done/Done-for-today
+// menu (Focus only) — a nudge to actually close the todo out, without
+// forcing it: the todo stays put if nothing's clicked. Only fires on the
+// transition into "all done", not on every click once already all done.
+function handleToggleSub(sub: Sub) {
+  const wasAllDone = props.todo.subs.length > 0 && props.todo.subs.every(s => s.completedAt)
+  store.toggleSub(props.todo.id, sub.id)
+  const nowAllDone = props.todo.subs.length > 0 && props.todo.subs.every(s => s.completedAt)
+  if (!wasAllDone && nowAllDone && props.mode === 'today' && !showMenu.value) {
+    openCheckMenuId.value = props.todo.id
+  }
+}
+
+function handleDeleteSub(subId: string) {
+  store.deleteSub(props.todo.id, subId)
+}
 
 // Focus's check-row (Done for today / Done): defaults to "Done for today"
 // each time it opens fresh — Left/Right toggle it, Enter confirms whichever
@@ -1546,6 +1614,7 @@ onUnmounted(() => {
             :style="font ? { fontFamily: font } : {}"
             @keydown.enter.prevent.stop="acceptEdit"
             @keydown.escape.stop="cancelEdit"
+            @keydown="onTitleTabKeydown"
             @blur="saveEdit"
             @input="autoGrow"
             @click.stop
@@ -1645,6 +1714,51 @@ onUnmounted(() => {
             </button>
           </template>
         </div>
+
+        <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
+          <div v-if="subsVisible" class="sub-row" @click.stop>
+            <div v-for="sub in todo.subs" :key="sub.id" class="sub-item">
+              <button
+                type="button"
+                class="sub-box"
+                :class="{ checked: !!sub.completedAt }"
+                title="Toggle sub"
+                @click.stop="handleToggleSub(sub)"
+              >
+                <Check v-if="sub.completedAt" :size="10" />
+              </button>
+              <span
+                class="sub-title"
+                :class="{ done: !!sub.completedAt }"
+                :style="font ? { fontFamily: font } : {}"
+              >{{ sub.title }}</span>
+              <button
+                type="button"
+                class="sub-delete"
+                title="Delete sub"
+                @click.stop="handleDeleteSub(sub.id)"
+              >
+                <Trash2 :size="12" />
+              </button>
+            </div>
+
+            <div class="sub-item sub-item--add">
+              <span class="sub-box sub-box--empty" aria-hidden="true" />
+              <textarea
+                ref="newSubInputRef"
+                v-model="newSubTitle"
+                class="sub-input"
+                rows="1"
+                placeholder="add sub + enter"
+                :style="font ? { fontFamily: font } : {}"
+                @input="autoGrowSub"
+                @keydown.enter.prevent.stop="submitNewSub"
+                @keydown.escape.stop="newSubInputRef?.blur()"
+                @click.stop
+              />
+            </div>
+          </div>
+        </Transition>
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
           <div v-if="showMenu && mode === 'today'" class="check-row">
@@ -1945,6 +2059,27 @@ onUnmounted(() => {
   opacity: 0.35;
 }
 
+.priority .sub-box {
+  border-color: var(--bg);
+  color: var(--ink);
+}
+
+.priority .sub-box.checked {
+  background: var(--bg);
+}
+
+.priority .sub-delete {
+  color: var(--bg);
+}
+
+.priority .sub-input {
+  border-bottom-color: var(--bg);
+}
+
+.priority .sub-input::placeholder {
+  color: var(--bg);
+}
+
 /* Loop cards: border + drop shadow + fill, all in pale ink (the "faded
    priority" look), text untouched. .todo-card itself goes fully
    transparent (bg, border, shadow) — just a frame around the text — and
@@ -2146,6 +2281,105 @@ onUnmounted(() => {
   padding: 3px 0;
 }
 
+.sub-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 18px 12px;
+}
+
+.sub-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sub-box {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  border: 2px solid var(--ink);
+  border-radius: min(var(--radius), 3px);
+  box-shadow: 2px 2px 0 var(--priority-shadow);
+  background: none;
+  padding: 0;
+  color: var(--bg);
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.sub-box.checked {
+  background: var(--ink);
+}
+
+.sub-box--empty {
+  cursor: default;
+  opacity: 0.35;
+  box-shadow: none;
+}
+
+.sub-title {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  line-height: 1.3;
+  font-size: 0.92em;
+  margin-top: 1px;
+}
+
+.sub-title.done {
+  opacity: 0.3;
+}
+
+.sub-delete {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink);
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+@media (hover: hover) {
+  .sub-delete:hover {
+    opacity: 1;
+  }
+}
+
+.sub-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  font-family: inherit;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0 0 2px;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.sub-input::placeholder {
+  color: var(--ink);
+  opacity: 0.55;
+}
+
 @media (max-width: 700px) {
   .todo-card {
     font-size: 14px;
@@ -2162,6 +2396,10 @@ onUnmounted(() => {
 
   .card-btn--circle {
     display: flex;
+  }
+
+  .sub-row {
+    padding: 2px 12px 10px;
   }
 }
 
