@@ -156,7 +156,7 @@
    desktop, which pins its own separate version under Settings instead
    (see Focus.vue's expand-subs-row). */
 .mobile-subs-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink);
   font-family: var(--font-mono, monospace);
@@ -166,8 +166,8 @@
 .mobile-subs-switch {
   position: relative;
   flex-shrink: 0;
-  width: 32px;
-  height: 19px;
+  width: 36px;
+  height: 21px;
   padding: 0;
   border: 2px solid var(--ink);
   border-radius: var(--radius);
@@ -183,8 +183,8 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
   border-radius: max(0px, calc(var(--radius) - 2px));
   background: var(--ink);
   opacity: 0.35;
@@ -194,7 +194,7 @@
 .mobile-subs-switch.on .mobile-subs-switch-knob {
   background: var(--bg);
   opacity: 1;
-  transform: translateX(13px);
+  transform: translateX(15px);
 }
 
 /* .mobile-tags-btn is deliberately not included here — its display:flex

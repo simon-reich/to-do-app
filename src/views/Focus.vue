@@ -228,12 +228,12 @@ function closeCheckModal() {
   gap: 10px;
 }
 
+/* Tablet/mobile get their own version instead, replacing the inert tag
+   icon in App.vue's main-head (see App.vue's mobile-subs-toggle) — this
+   inline row would otherwise show up a second time alongside it. */
 @media (max-width: 1024px) {
   .expand-subs-row {
-    position: static;
-    width: 100%;
-    justify-content: flex-end;
-    margin-bottom: 14px;
+    display: none;
   }
 }
 
