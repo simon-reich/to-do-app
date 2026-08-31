@@ -329,7 +329,7 @@ const enterFollowupParts = computed<HintPart[]>(() => {
   if (route.path === '/all') {
     return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('Space'), label('(edit)'), box('F'), label('(focus)'), box('D'), label('(delete)')]
   }
-  return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('←→'), label('(select)'), box('Enter'), label('(confirm)'), box('D'), label('(remove)')]
+  return [box('Enter'), arrow('→'), box('Tab'), label('(cards)'), box('←→'), label('(select)'), box('Enter'), label('(confirm)'), box('Space'), label('(edit)'), box('D'), label('(remove)')]
 })
 
 // Calendar's own arrow-key navigation (see Calendar.vue's onKeydown) isn't
