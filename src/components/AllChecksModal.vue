@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted } from 'vue'
+import { Pencil } from '@lucide/vue'
 import { useChecksStore, type Check } from '../stores/checks'
 import { activeModal } from '../composables/useModalGuard'
 
@@ -40,10 +41,11 @@ onUnmounted(() => {
         v-for="check in store.activeChecks"
         :key="check.id"
         type="button"
-        class="all-checks-card"
+        class="all-checks-row"
         @click="edit(check)"
       >
-        {{ check.title }}
+        <span class="all-checks-row-title">{{ check.title }}</span>
+        <Pencil :size="14" />
       </button>
     </div>
     <p v-else class="all-checks-empty">No checks yet.</p>
@@ -60,13 +62,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-
-/* Extra separation from the card grid above it — set apart rather than
-   just the next item in the same stack, matching the "kept apart" request
-   for this specific button. */
-.all-checks-box .modal-actions {
-  margin-top: 10px;
 }
 
 @media (min-width: 701px) {
@@ -90,17 +85,12 @@ onUnmounted(() => {
   font-family: var(--font-mono, monospace);
 }
 
-/* Small cards in a wrapping grid, same idea as AllTodos.vue's own grid
-   mode — reads as "the same kind of thing as a todo", just Check-sized,
-   instead of a divided list. */
 .all-checks-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
   max-height: 50vh;
   overflow-y: auto;
-  padding: 2px;
   scrollbar-width: none;
 }
 
@@ -108,34 +98,43 @@ onUnmounted(() => {
   display: none;
 }
 
-.all-checks-card {
-  max-width: 100%;
-  padding: 9px 14px;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  box-shadow: 3px 3px 0 var(--ink);
-  background: var(--bg);
+.all-checks-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 2px;
   color: var(--ink);
   font-family: var(--font-mono, monospace);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   text-align: left;
-  word-break: break-word;
   cursor: pointer;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  opacity: 0.8;
+  transition: opacity 0.1s;
 }
 
 @media (hover: hover) {
-  .all-checks-card:hover {
-    border-color: var(--ink-dark);
-    box-shadow: 3px 3px 0 var(--ink-dark);
+  .all-checks-row:hover {
+    opacity: 1;
   }
+}
+
+.all-checks-row-title {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.all-checks-row svg {
+  flex-shrink: 0;
+  opacity: 0.6;
 }
 
 .all-checks-empty {
   font-size: 14px;
   color: var(--ink);
   opacity: 0.6;
-  text-align: center;
 }
 </style>
