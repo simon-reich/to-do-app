@@ -66,6 +66,10 @@ function onToggleCheck(check: CheckItem, event: MouseEvent) {
   }
 }
 
+// Which of the two icon buttons is currently hovered — drives the single
+// shared label underneath them (see checks-action-label in the template).
+const checksHover = ref<'add' | 'edit' | null>(null)
+
 const checkModalState = ref<'add' | CheckItem | null>(null)
 
 function openAddCheck() {
@@ -138,19 +142,30 @@ function editFromAllChecks(check: CheckItem) {
 
     <div v-if="themeStore.checksEnabled" class="checks-section">
       <div class="checks-header">
-        <button type="button" class="add-check-btn" @click="openAddCheck">
-          <span class="add-check-icon"><Plus :size="10" /></span>
-          <span class="add-check-label">add check</span>
-        </button>
-        <button
-          v-if="checksStore.activeChecks.length"
-          type="button"
-          class="edit-checks-btn"
-          @click="openAllChecks"
-        >
-          <span class="edit-checks-label">edit checks</span>
-          <span class="edit-checks-icon"><Pencil :size="10" /></span>
-        </button>
+        <div class="checks-icons">
+          <button
+            type="button"
+            class="checks-icon-btn"
+            title="Add check"
+            @click="openAddCheck"
+            @mouseenter="checksHover = 'add'"
+            @mouseleave="checksHover = null"
+          >
+            <Plus :size="10" />
+          </button>
+          <button
+            v-if="checksStore.activeChecks.length"
+            type="button"
+            class="checks-icon-btn"
+            title="Edit checks"
+            @click="openAllChecks"
+            @mouseenter="checksHover = 'edit'"
+            @mouseleave="checksHover = null"
+          >
+            <Pencil :size="10" />
+          </button>
+        </div>
+        <span class="checks-action-label" :class="{ visible: checksHover }">{{ checksHover === 'edit' ? 'edit checks' : 'add check' }}</span>
       </div>
       <div v-if="checksStore.todayChecks.length" class="check-row">
         <button
@@ -298,32 +313,25 @@ function editFromAllChecks(check: CheckItem) {
   margin-top: 66px;
 }
 
-/* Wraps add/edit into one row, further from today's own checks below it
-   than before (24px, up from the plain add-btn's old 14px) — the two
-   buttons above are their own cluster, distinct from the due-today list
-   underneath. */
+/* Icons stacked directly above their own shared label instead of side by
+   side — see checks-action-label below. 24px below the whole cluster to
+   today's own checks (up from the plain add-btn's old 14px), since it now
+   reads as its own two-line unit rather than a single inline row. */
 .checks-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   margin-left: 5px;
   margin-bottom: 24px;
 }
 
-.add-check-btn,
-.edit-checks-btn {
-  display: inline-flex;
+.checks-icons {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--ink);
-  cursor: pointer;
+  gap: 8px;
 }
 
-.add-check-icon,
-.edit-checks-icon {
+.checks-icon-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -332,7 +340,10 @@ function editFromAllChecks(check: CheckItem) {
   height: 17px;
   border: 1px solid var(--ink);
   border-radius: 50%;
+  background: none;
+  padding: 0;
   color: var(--ink);
+  cursor: pointer;
   /* Same resting/hover opacity as .check-pill's checkboxes — one
      consistent "dim, brightens on hover" treatment across the whole
      Checks UI instead of a separate color-based one just for this icon. */
@@ -340,51 +351,37 @@ function editFromAllChecks(check: CheckItem) {
   transition: opacity 0.1s;
 }
 
-/* Rolled up to nothing by default — only the circled icon sits there
-   permanently, same "doesn't compete for attention" idea as the rest of
-   the Checks UI. The label unrolls on hover instead of being visible the
-   whole time, but stays dim — the icon's own opacity brightening (see
-   below) is the only hover accent. */
-.add-check-label,
-.edit-checks-label {
-  display: inline-block;
-  max-width: 0;
+@media (hover: hover) {
+  .checks-icon-btn:hover {
+    opacity: 0.9;
+  }
+}
+
+/* Rolled up to nothing by default, unrolling directly under the icon row
+   once either one is hovered (see checksHover in the script) — whichever
+   was hovered last decides the text, "add check" or "edit checks". Stays
+   dim even once visible, same as the icons' own hover state; there's no
+   permanent-on-touch fallback here (unlike the old single-button
+   version) since there's no sensible single default between two
+   equally-likely actions — the icons (+ and pencil) carry the meaning on
+   their own there, same as e.g. TodoCard's own icon-only buttons. */
+.checks-action-label {
+  display: block;
+  max-height: 0;
   overflow: hidden;
-  white-space: nowrap;
   opacity: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.4px;
   font-family: var(--font-mono, monospace);
-  transition: max-width 0.22s ease, opacity 0.18s ease;
+  color: var(--ink);
+  transition: max-height 0.18s ease, opacity 0.18s ease, margin-top 0.18s ease;
 }
 
-@media (hover: hover) {
-  .add-check-btn:hover .add-check-icon,
-  .edit-checks-btn:hover .edit-checks-icon {
-    opacity: 0.9;
-  }
-
-  .add-check-btn:hover .add-check-label,
-  .edit-checks-btn:hover .edit-checks-label {
-    max-width: 90px;
-    opacity: 0.5;
-  }
-}
-
-/* Tablet/mobile never reliably hover (some tablets still report
-   `hover: hover` with a stylus/trackpad attached, or under devtools'
-   device emulation) — width-based instead, same breakpoint convention
-   the rest of the app's tablet/mobile CSS already uses, so the label
-   doesn't stay rolled up to nothing on a device that just never hovers
-   in practice. Same resting look the hover state settles into above,
-   just permanent instead of triggered. */
-@media (max-width: 1024px) {
-  .add-check-label,
-  .edit-checks-label {
-    max-width: 90px;
-    opacity: 0.5;
-  }
+.checks-action-label.visible {
+  max-height: 20px;
+  opacity: 0.5;
+  margin-top: 5px;
 }
 
 .check-row {
