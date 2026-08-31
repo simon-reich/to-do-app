@@ -56,6 +56,7 @@ export function seedDevData() {
     createdAt: new Date(now.getTime() - i * 60_000).toISOString(),
     inToday: i % 5 === 0,
     completedAt: undefined,
+    subs: [],
     workLog: [],
   }))
 

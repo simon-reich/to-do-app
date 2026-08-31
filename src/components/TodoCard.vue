@@ -691,6 +691,48 @@ function onTitleTabKeydown(e: KeyboardEvent) {
   nextTick(() => newSubInputRef.value?.focus())
 }
 
+// Everything the add-sub input needs to handle itself, since
+// onCardKeydown (the document-level listener) bails out entirely for
+// anything inside .sub-row (see its own comment) — so Enter/Tab/Escape
+// have to be handled right here instead of falling through to it.
+function onSubInputKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    submitNewSub()
+    return
+  }
+  // Only one sub input exists at a time (existing subs are static rows,
+  // not fields of their own) — so both directions of the cycle collapse
+  // to the same single hop: out of the sub input, back into the title.
+  // Re-enters edit mode if it isn't already (e.g. subs were opened via
+  // Focus's Done-menu or the "expand all" toggle, never through editing).
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    // Tab is handled by App.vue's document-level listener *before* its own
+    // typing-target check (a card being open takes priority, by design —
+    // see cycleOpenCard) — without stopping it here, that would still fire
+    // alongside this and jump to a different card entirely.
+    e.stopPropagation()
+    if (!isEditing.value) startEdit()
+    nextTick(() => editInputRef.value?.focus())
+    return
+  }
+  // Escape has to fully replicate onCardKeydown's own Escape branch here
+  // (that listener never sees this keystroke at all, see above) rather
+  // than just blurring the input, so Escape keeps working exactly like it
+  // does everywhere else on the card.
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    if (showMenu.value) {
+      openCheckMenuId.value = null
+    } else if (showTagMenu.value) {
+      discardDraftTagsOnClose = true
+      openTagMenuId.value = null
+    }
+    return
+  }
+}
+
 // Toggling the last open sub complete auto-opens the Done/Done-for-today
 // menu (Focus only) — a nudge to actually close the todo out, without
 // forcing it: the todo stays put if nothing's clicked. Only fires on the
@@ -834,6 +876,14 @@ watch(showTagMenu, (isOpen, wasOpen) => {
 // card-to-card cycling via cycleOpenCard() instead, using the
 // activeCardApi registered below.
 function onCardKeydown(e: KeyboardEvent) {
+  // The sub-list (checkboxes, delete buttons, the add-sub textarea) is a
+  // second typing/interaction surface this document-level listener didn't
+  // know about — without this, typing a sub title containing "d" or a
+  // space bubbled straight up and triggered Delete/startEdit below, and
+  // Enter/Escape fought with the sub input's own handling (see
+  // onSubInputKeydown). Bail out entirely for anything inside it, same
+  // idea as the isEditing guard right below for the title textarea.
+  if ((e.target as HTMLElement)?.closest?.('.sub-row')) return
   if (isEditing.value) return
   if (showMenu.value && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
     e.preventDefault()
@@ -1752,8 +1802,7 @@ onUnmounted(() => {
                 placeholder="add sub + enter"
                 :style="font ? { fontFamily: font } : {}"
                 @input="autoGrowSub"
-                @keydown.enter.prevent.stop="submitNewSub"
-                @keydown.escape.stop="newSubInputRef?.blur()"
+                @keydown="onSubInputKeydown"
                 @click.stop
               />
             </div>

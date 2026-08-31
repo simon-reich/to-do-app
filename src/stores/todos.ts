@@ -248,6 +248,21 @@ export const useTodosStore = defineStore('todos', () => {
     }
   }
 
+  // Todos persisted before Subs existed have no `subs` field at all — the
+  // localStorage-restore that pinia-plugin-persistedstate runs happens
+  // after this store's own setup() body (see the history migration above,
+  // which has the same "todos.value is still empty here" problem and
+  // works around it by reading localStorage directly), so a migration
+  // pass here can't fix already-hydrated data. Called from App.vue's
+  // onMounted instead — same spot/pattern as ensureSystemTags below —
+  // which always runs after hydration. Without this, any Subs UI reading
+  // `todo.subs` on such a todo (v-for, .length, ...) throws immediately.
+  function ensureSubsField() {
+    todos.value.forEach(todo => {
+      if (!todo.subs) todo.subs = []
+    })
+  }
+
   // ── System tags ──
   const userTags = computed(() => tags.value.filter(t => t.id !== PRIORITY_TAG_ID && t.id !== LOOP_TAG_ID))
 
@@ -334,7 +349,7 @@ export const useTodosStore = defineStore('todos', () => {
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
     addSub, toggleSub, deleteSub,
-    addTag, deleteTag, ensureSystemTags,
+    addTag, deleteTag, ensureSystemTags, ensureSubsField,
     importData,
   }
 }, {

@@ -476,6 +476,7 @@ function onVisibilityChange() {
 
 onMounted(() => {
   store.ensureSystemTags()
+  store.ensureSubsField()
   themeStore.apply(themeStore.activeBg, themeStore.activeGray)
   lastViewportHeight = window.visualViewport?.height ?? 0
   window.visualViewport?.addEventListener('resize', onViewportResize)
@@ -699,6 +700,30 @@ function onTodoTitleTabKeydown(e: KeyboardEvent) {
   if (!showTagModal.value || !themeStore.subsEnabled) return
   e.preventDefault()
   nextTick(() => newSubInputRef.value?.focus())
+}
+
+// Mirrors onTodoTitleTabKeydown the other way — only one sub field exists
+// here (already-added subs are plain chips, not fields), so both
+// directions of the cycle collapse to the same single hop back to the
+// title. Escape fully replicates the title input's own Escape (close the
+// whole panel), not just blurring this one field, so Escape keeps working
+// the same everywhere in this flow.
+function onSubDraftKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    commitNewSub()
+    return
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    todoInputRef.value?.focus()
+    return
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    showTagModal.value = false
+    newSubInputRef.value?.blur()
+  }
 }
 
 function onTodoFocus() {
@@ -989,8 +1014,7 @@ watch(() => route.path, () => {
                 class="add-sub-input"
                 placeholder="sub + enter"
                 @focus="keepTodoModalOpen"
-                @keydown.enter.prevent="commitNewSub"
-                @keydown.escape.stop="newSubInputRef?.blur()"
+                @keydown="onSubDraftKeydown"
               />
             </div>
 
