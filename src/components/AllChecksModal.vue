@@ -55,8 +55,18 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Opts out of .modal-box's own card chrome (bg fill, border, shadow,
+   padding) — the individual checks below are already their own small
+   cards, so wrapping them in one more outer card read as a card nested
+   inside a card. Keeps .modal-box's positioning/layout (fixed, centered,
+   flex column) since that's still exactly what's needed here. */
 .all-checks-box {
   width: 320px;
+  max-width: 90vw;
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
