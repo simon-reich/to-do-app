@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Plus, Check } from '@lucide/vue'
+import { Plus, Check, Pencil } from '@lucide/vue'
 import { useTodosStore, PRIORITY_TAG_ID } from '../stores/todos'
 import { useChecksStore, type Check as CheckItem } from '../stores/checks'
 import { useThemeStore } from '../stores/theme'
 import TodoCard from '../components/TodoCard.vue'
 import CheckModal from '../components/CheckModal.vue'
+import AllChecksModal from '../components/AllChecksModal.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
 import { spawnRemovedFromFocusToast } from '../composables/useToast'
@@ -78,6 +79,26 @@ function openEditCheck(check: CheckItem) {
 function closeCheckModal() {
   checkModalState.value = null
 }
+
+// Browsing/editing every Check, not just today's due ones — the only
+// place a not-currently-due check (e.g. weekly, not due this week) can be
+// reached to edit or delete at all.
+const showAllChecks = ref(false)
+
+function openAllChecks() {
+  showAllChecks.value = true
+}
+
+function closeAllChecks() {
+  showAllChecks.value = false
+}
+
+// Swaps the browse-list for CheckModal on the same check — one overlay on
+// screen at a time, same as everywhere else in the app.
+function editFromAllChecks(check: CheckItem) {
+  showAllChecks.value = false
+  checkModalState.value = check
+}
 </script>
 
 <template>
@@ -116,10 +137,21 @@ function closeCheckModal() {
     <p v-else class="empty">Nothing in focus right now.</p>
 
     <div v-if="themeStore.checksEnabled" class="checks-section">
-      <button type="button" class="add-check-btn" @click="openAddCheck">
-        <span class="add-check-icon"><Plus :size="10" /></span>
-        <span class="add-check-label">add check</span>
-      </button>
+      <div class="checks-header">
+        <button type="button" class="add-check-btn" @click="openAddCheck">
+          <span class="add-check-icon"><Plus :size="10" /></span>
+          <span class="add-check-label">add check</span>
+        </button>
+        <button
+          v-if="checksStore.activeChecks.length"
+          type="button"
+          class="edit-checks-btn"
+          @click="openAllChecks"
+        >
+          <span class="edit-checks-label">edit checks</span>
+          <span class="edit-checks-icon"><Pencil :size="10" /></span>
+        </button>
+      </div>
       <div v-if="checksStore.todayChecks.length" class="check-row">
         <button
           v-for="check in checksStore.todayChecks"
@@ -150,6 +182,12 @@ function closeCheckModal() {
     v-else-if="checkModalState"
     :editing="checkModalState"
     @close="closeCheckModal"
+  />
+
+  <AllChecksModal
+    v-if="showAllChecks"
+    @close="closeAllChecks"
+    @edit="editFromAllChecks"
   />
 </template>
 
@@ -260,20 +298,32 @@ function closeCheckModal() {
   margin-top: 66px;
 }
 
-.add-check-btn {
+/* Wraps add/edit into one row, further from today's own checks below it
+   than before (24px, up from the plain add-btn's old 14px) — the two
+   buttons above are their own cluster, distinct from the due-today list
+   underneath. */
+.checks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 5px;
+  margin-bottom: 24px;
+}
+
+.add-check-btn,
+.edit-checks-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: none;
   border: none;
   padding: 0;
-  margin-left: 5px;
-  margin-bottom: 14px;
   color: var(--ink);
   cursor: pointer;
 }
 
-.add-check-icon {
+.add-check-icon,
+.edit-checks-icon {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -290,12 +340,13 @@ function closeCheckModal() {
   transition: opacity 0.1s;
 }
 
-/* Rolled up to nothing by default — only the circled plus sits there
+/* Rolled up to nothing by default — only the circled icon sits there
    permanently, same "doesn't compete for attention" idea as the rest of
-   the Checks UI. The label unrolls left-to-right on hover instead of
-   being visible the whole time, but stays dim — the icon's own opacity
-   brightening (see below) is the only hover accent. */
-.add-check-label {
+   the Checks UI. The label unrolls on hover instead of being visible the
+   whole time, but stays dim — the icon's own opacity brightening (see
+   below) is the only hover accent. */
+.add-check-label,
+.edit-checks-label {
   display: inline-block;
   max-width: 0;
   overflow: hidden;
@@ -309,11 +360,13 @@ function closeCheckModal() {
 }
 
 @media (hover: hover) {
-  .add-check-btn:hover .add-check-icon {
+  .add-check-btn:hover .add-check-icon,
+  .edit-checks-btn:hover .edit-checks-icon {
     opacity: 0.9;
   }
 
-  .add-check-btn:hover .add-check-label {
+  .add-check-btn:hover .add-check-label,
+  .edit-checks-btn:hover .edit-checks-label {
     max-width: 90px;
     opacity: 0.5;
   }
@@ -327,7 +380,8 @@ function closeCheckModal() {
    in practice. Same resting look the hover state settles into above,
    just permanent instead of triggered. */
 @media (max-width: 1024px) {
-  .add-check-label {
+  .add-check-label,
+  .edit-checks-label {
     max-width: 90px;
     opacity: 0.5;
   }
