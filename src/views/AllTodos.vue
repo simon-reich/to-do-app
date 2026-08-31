@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { inject, computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
-import { useTodosStore, LOOP_TAG_ID } from '../stores/todos'
+import { useTodosStore, LOOP_TAG_ID, type Todo } from '../stores/todos'
 import TodoCard from '../components/TodoCard.vue'
 import { assignFonts } from '../composables/useTodoFonts'
 import { useListFlip } from '../composables/useListFlip'
 import { spawnSentToFocusToast } from '../composables/useToast'
+import { nextLoopOccurrence } from '../composables/useLoopSchedule'
 
 const store = useTodosStore()
 // Already unions loop in when loopFilterMode is "only" — see App.vue,
@@ -35,6 +36,29 @@ function alphaSortKey(title: string): string {
   return title.replace(/[^\p{L}\p{N}]+/gu, '')
 }
 
+// The default "date" sort's own key — most recently *touched*, not just
+// created. A todo just sent back to the pool via Done-for-today (see
+// TodoCard.vue) is exactly the kind of thing you're likely to pick back
+// up again soon, so it bubbles to the top the same way a brand-new todo
+// would, instead of sitting wherever its original createdAt happens to
+// rank. workLog entries are always pushed in chronological order (see
+// doneForToday in stores/todos.ts), so the last one is always the most
+// recent — and always >= createdAt, so there's no need to compare both.
+function lastTouched(t: Todo): string {
+  return t.workLog.length ? t.workLog[t.workLog.length - 1] : t.createdAt
+}
+
+// Date todos' own sort key while the Date filter is "only" — how soon
+// they're next due, soonest first, so glancing at that filtered view
+// reads as a lightweight timeline. Infinity for anything without a
+// loopInterval (still possible here: "only" unions loop in with whatever
+// other tags are active — see effectiveFilterTagIds — rather than
+// excluding them), which sorts those to the very end instead of erroring.
+function nextOccurrenceKey(t: Todo): number {
+  if (!t.loopInterval) return Infinity
+  return nextLoopOccurrence(t.loopInterval)?.getTime() ?? Infinity
+}
+
 const filteredTodos = computed(() => {
   let result = store.activeTodos.filter(t => !t.inToday)
   if (effectiveFilterTagIds.value.length > 0) {
@@ -46,10 +70,16 @@ const filteredTodos = computed(() => {
   if (loopFilterMode.value === 'hide') {
     result = result.filter(t => !t.tags.includes(LOOP_TAG_ID))
   }
+  // "only" replaces the normal date/A–Z toggle entirely with next-due-
+  // first — a dedicated timeline view of what's coming up, not just
+  // another flavor of the regular sort.
+  if (loopFilterMode.value === 'only') {
+    return [...result].sort((a, b) => nextOccurrenceKey(a) - nextOccurrenceKey(b))
+  }
   return [...result].sort((a, b) =>
     sortKey.value === 'title'
       ? alphaSortKey(a.title).localeCompare(alphaSortKey(b.title), 'de', { numeric: true })
-      : b.createdAt.localeCompare(a.createdAt)
+      : lastTouched(b).localeCompare(lastTouched(a))
   )
 })
 
