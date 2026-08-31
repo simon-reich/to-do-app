@@ -362,10 +362,14 @@ function closeCheckModal() {
   }
 }
 
-/* Touch devices never hover, so the label would otherwise stay rolled up
-   to nothing forever — same resting look the hover state settles into
-   above, just permanent instead of triggered. */
-@media (hover: none) {
+/* Tablet/mobile never reliably hover (some tablets still report
+   `hover: hover` with a stylus/trackpad attached, or under devtools'
+   device emulation) — width-based instead, same breakpoint convention
+   the rest of the app's tablet/mobile CSS already uses, so the label
+   doesn't stay rolled up to nothing on a device that just never hovers
+   in practice. Same resting look the hover state settles into above,
+   just permanent instead of triggered. */
+@media (max-width: 1024px) {
   .add-check-label {
     max-width: 90px;
     opacity: 0.5;
