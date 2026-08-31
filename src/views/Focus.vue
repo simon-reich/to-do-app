@@ -125,6 +125,20 @@ function closeCheckModal() {
 
 <template>
   <div class="focus-view" :class="{ 'is-empty': !filteredTodos.length }">
+    <div v-if="themeStore.subsEnabled && filteredTodos.length" class="expand-subs-row">
+      <span class="expand-subs-label">expand subs</span>
+      <button
+        type="button"
+        class="switch"
+        role="switch"
+        :aria-checked="themeStore.expandFocusSubs"
+        :class="{ on: themeStore.expandFocusSubs }"
+        @click="themeStore.toggleExpandFocusSubs()"
+      >
+        <span class="switch-knob" />
+      </button>
+    </div>
+
     <div v-if="filteredTodos.length" class="todo-wrap">
       <TodoCard
         v-for="(todo, index) in filteredTodos"
@@ -134,6 +148,7 @@ function closeCheckModal() {
         :font="fontMap.get(todo.id)"
         :sibling-ids="siblingIds"
         :index="index"
+        :force-expand-subs="themeStore.expandFocusSubs"
         mode="today"
         @remove-from-today="removeFromFocus"
         @complete="store.completeTodo($event)"
@@ -192,6 +207,65 @@ function closeCheckModal() {
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
+}
+
+.expand-subs-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.expand-subs-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-mono, monospace);
+  opacity: 0.7;
+}
+
+/* Same switch look as Settings.vue's daily-shuffle toggle — duplicated
+   here (scoped styles, no shared component) rather than extracted, same
+   footprint as the rest of this app's small styling duplications. */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 21px;
+  padding: 0;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.switch:hover {
+  border-color: var(--ink-dark);
+}
+
+.switch.on {
+  background: var(--ink);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: max(0px, calc(var(--radius) - 2px));
+  background: var(--ink);
+  opacity: 0.35;
+  transition: transform 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.switch.on .switch-knob {
+  background: var(--bg);
+  opacity: 1;
+  transform: translateX(15px);
 }
 
 .empty {
