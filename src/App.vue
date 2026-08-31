@@ -644,6 +644,9 @@ const todoInputRef = ref<HTMLInputElement | null>(null)
 const showTagModal = ref(false)
 const newTodoTagIds = ref<string[]>([])
 const newTodoLoopInterval = ref<LoopInterval | undefined>(undefined)
+const newTodoSubs = ref<string[]>([])
+const newSubDraft = ref('')
+const newSubInputRef = ref<HTMLInputElement | null>(null)
 
 // Tags off: the add-todo checkbox row still offers the priority tag (it's
 // not a real tag from the user's point of view, just the marker the
@@ -673,8 +676,30 @@ watch(todoInput, (val) => {
   if (!val) {
     newTodoTagIds.value = []
     newTodoLoopInterval.value = undefined
+    newTodoSubs.value = []
+    newSubDraft.value = ''
   }
 })
+
+// Enter commits the draft into newTodoSubs and clears+refocuses the same
+// input, same "next line opens" illusion as TodoCard.vue's own sub input.
+function commitNewSub() {
+  const trimmed = newSubDraft.value.trim()
+  if (!trimmed) return
+  newTodoSubs.value.push(trimmed)
+  newSubDraft.value = ''
+}
+
+// Tab out of the title input jumps straight into the sub draft input
+// instead of doing whatever Tab would otherwise do (nothing here, since
+// the top-level add-todo input isn't part of any Tab-cycling) — only
+// while the tag/sub panel is actually open and subs are enabled.
+function onTodoTitleTabKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Tab' || e.shiftKey) return
+  if (!showTagModal.value || !themeStore.subsEnabled) return
+  e.preventDefault()
+  nextTick(() => newSubInputRef.value?.focus())
+}
 
 function onTodoFocus() {
   if (addTagModalTags.value.length > 0) showTagModal.value = true
@@ -721,6 +746,8 @@ function resetTodoDraft() {
   todoInput.value = ''
   newTodoTagIds.value = []
   newTodoLoopInterval.value = undefined
+  newTodoSubs.value = []
+  newSubDraft.value = ''
 }
 
 function clearTodoInput() {
@@ -733,6 +760,7 @@ function addTodo() {
   const todo = store.addTodo(todoInput.value, {
     tags: [...newTodoTagIds.value],
     loopInterval: newTodoTagIds.value.includes(LOOP_TAG_ID) ? newTodoLoopInterval.value : undefined,
+    subs: [...newTodoSubs.value],
   })
   // A Date todo (once or loop) not actually due yet shouldn't land on
   // Focus just because it was typed there — same rule as any other Date
@@ -928,6 +956,7 @@ watch(() => route.path, () => {
             @blur="onTodoBlur"
             @keydown.enter.prevent="addTodo"
             @keydown.escape="showTagModal = false; todoInputRef?.blur()"
+            @keydown="onTodoTitleTabKeydown"
           />
           <button
             v-if="todoInput.length"
@@ -944,6 +973,26 @@ watch(() => route.path, () => {
                 <LoopPicker v-model="newTodoLoopInterval" @focus-inside="keepTodoModalOpen" />
               </div>
             </Transition>
+
+            <div v-if="themeStore.subsEnabled" class="add-subs-row">
+              <div v-if="newTodoSubs.length" class="add-subs-list">
+                <span v-for="(sub, i) in newTodoSubs" :key="i" class="add-sub-chip">
+                  {{ sub }}
+                  <button type="button" class="add-sub-chip-x" title="Remove" @mousedown.prevent="newTodoSubs.splice(i, 1)">
+                    <X :size="10" />
+                  </button>
+                </span>
+              </div>
+              <input
+                ref="newSubInputRef"
+                v-model="newSubDraft"
+                class="add-sub-input"
+                placeholder="sub + enter"
+                @focus="keepTodoModalOpen"
+                @keydown.enter.prevent="commitNewSub"
+                @keydown.escape.stop="newSubInputRef?.blur()"
+              />
+            </div>
 
             <label
               v-for="tag in addTagModalTags"
