@@ -2099,6 +2099,14 @@ onUnmounted(() => {
 }
 
 .todo-card {
+  /* Feeds .sub-box's own drop shadow below — a plain `.priority .sub-box`
+     override rule for just that one property was silently lost in the
+     production build (the minifier collapsed it into the later, unrelated
+     `.sub-box` rule sharing the same bare selector once its `.priority `
+     ancestor prefix got optimized away). Routing it through one shared
+     custom property means there's only ever one box-shadow declaration
+     for .sub-box to begin with, so there's nothing left to collide. */
+  --sub-shadow: var(--priority-shadow);
   display: inline-flex;
   flex-direction: column;
   background: var(--bg);
@@ -2132,6 +2140,11 @@ onUnmounted(() => {
 }
 
 .todo-card.priority {
+  /* --priority-shadow itself is an ink shade — invisible against this
+     card's own ink-colored fill below, unlike on the normal bg-colored
+     card --sub-shadow's base value (above) was designed for. bg is the
+     one color that always contrasts against ink. */
+  --sub-shadow: var(--bg);
   border-color: var(--ink);
   box-shadow: 5px 5px 0 var(--priority-shadow);
   background: var(--ink);
@@ -2215,13 +2228,8 @@ onUnmounted(() => {
 .priority .sub-box {
   border-color: var(--bg);
   color: var(--ink);
-  /* --priority-shadow is an ink shade (see useTheme.ts) — invisible
-     against a priority card's own ink-colored fill, unlike on the normal
-     bg-colored card it was designed for. bg is the one color that always
-     contrasts against ink, so it's the only sensible inversion here (no
-     mono/dark distinction needed the way --priority-shadow itself has,
-     since there's only one bg). */
-  box-shadow: 2px 2px 0 var(--bg);
+  /* Shadow itself is handled by --sub-shadow, set on .todo-card.priority
+     — see that rule's own comment. */
 }
 
 .priority .sub-box.checked {
@@ -2465,7 +2473,7 @@ onUnmounted(() => {
   margin-top: 2px;
   border: 2px solid var(--ink);
   border-radius: min(var(--radius), 3px);
-  box-shadow: 2px 2px 0 var(--priority-shadow);
+  box-shadow: 2px 2px 0 var(--sub-shadow);
   background: none;
   padding: 0;
   color: var(--bg);
