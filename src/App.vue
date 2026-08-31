@@ -341,6 +341,12 @@ const calendarHintParts: HintPart[] = [
   { text: '↑↓', kind: 'key' }, { text: '(week)', kind: 'label' },
 ]
 
+// Focus's S (expand-subs switch, pinned under Settings on desktop — see
+// Focus.vue's .expand-subs-row) — same "measure the real target" approach
+// as calendarHintPos above, since it doesn't live in the shared header
+// line the rest of the plain-pill hints share (see the 'S' targets entry).
+const expandSubsHintPos = ref<{ x: number; y: number } | null>(null)
+
 function getAllBtnRect(): DOMRect | null {
   return (themeStore.tagsEnabled ? allBtnSidebarRef.value : allBtnRowRef.value)?.getBoundingClientRect() ?? null
 }
@@ -357,14 +363,13 @@ function computeShortcutHints() {
   const targets: { key: string; el: HTMLElement | null }[] = [
     { key: 'C', el: calendarNavRef.value?.$el ?? null },
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
-    {
-      key: 'S',
-      el: route.path === '/all'
-        ? sortOrderBtnRef.value
-        : route.path === '/focus' && themeStore.subsEnabled
-          ? document.querySelector<HTMLElement>('.expand-subs-row .switch')
-          : null,
-    },
+    // Focus's own S target (the expand-subs switch) is measured separately
+    // below (expandSubsHintPos) rather than folded in here — it doesn't
+    // sit in the header row like every other target in this list, so
+    // sharing their one computed line (see below) would float its hint at
+    // the header's height with the switch's x, nowhere near the switch
+    // itself.
+    { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
     { key: 'N', el: (route.path === '/all' || route.path === '/focus') ? todoInputRef.value : null },
     { key: 'T', el: route.path === '/all' && themeStore.tagsEnabled ? tagInputRef.value : null },
     { key: 'X', el: settingsBtnRef.value },
@@ -425,6 +430,12 @@ function computeShortcutHints() {
   if (route.path === '/calendar') {
     const calRect = document.querySelector('.calendar-view .cal')?.getBoundingClientRect()
     if (calRect) calendarHintPos.value = { x: calRect.left + calRect.width / 2, y: calRect.top - 13 }
+  }
+
+  expandSubsHintPos.value = null
+  if (route.path === '/focus' && themeStore.subsEnabled) {
+    const switchRect = document.querySelector('.expand-subs-row .switch')?.getBoundingClientRect()
+    if (switchRect) expandSubsHintPos.value = { x: switchRect.left + switchRect.width / 2, y: switchRect.top - 13 }
   }
 
   // A/P/D are Overview-only (Focus can't be filtered at all) and each
@@ -1294,6 +1305,15 @@ watch(() => route.path, () => {
         :class="`shortcut-hint-${part.kind}`"
       >{{ part.text }}</span>
     </div>
+
+    <!-- Focus's S (expand-subs switch) — a plain pill like the header
+         shortcuts, just floated over its own measured target instead of
+         the shared header line (see expandSubsHintPos). -->
+    <div
+      v-if="expandSubsHintPos"
+      class="shortcut-hint"
+      :style="{ left: expandSubsHintPos.x + 'px', top: expandSubsHintPos.y + 'px' }"
+    >S</div>
   </template>
 
   <!-- Toast bubbles -->

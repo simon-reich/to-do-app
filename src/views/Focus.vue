@@ -209,13 +209,32 @@ function closeCheckModal() {
   gap: 12px;
 }
 
+/* Desktop (unqualified — see base.css's breakpoint convention): pinned
+   directly under the Settings button instead of living inline atop the
+   todo list. Same offsets .settings-head itself resolves to — #app's own
+   36px padding + its 16px head padding = 52px from the viewport's right
+   edge — and content-inner's own top offset (36px app padding + 88px
+   header row + 36px content-inner padding = 160px) for the vertical spot
+   this sat at before it left the document flow. Tablet/mobile revert to
+   the original inline row below — Settings doesn't have its own column
+   there to sit under. */
 .expand-subs-row {
+  position: fixed;
+  top: 160px;
+  right: 52px;
+  z-index: 25;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 10px;
-  width: 100%;
-  margin-bottom: 14px;
+}
+
+@media (max-width: 1024px) {
+  .expand-subs-row {
+    position: static;
+    width: 100%;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
 }
 
 .expand-subs-label {
