@@ -362,6 +362,16 @@ function closeCheckModal() {
   }
 }
 
+/* Touch devices never hover, so the label would otherwise stay rolled up
+   to nothing forever — same resting look the hover state settles into
+   above, just permanent instead of triggered. */
+@media (hover: none) {
+  .add-check-label {
+    max-width: 90px;
+    opacity: 0.5;
+  }
+}
+
 .check-row {
   display: flex;
   flex-direction: column;
