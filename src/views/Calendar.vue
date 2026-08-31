@@ -238,7 +238,7 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
               </div>
               <div v-if="(priorityEntries.length || otherEntries.length) && checksOnDay.length" class="day-divider" />
               <div v-for="check in checksOnDay" :key="check.id" class="day-item day-item--check">
-                <span class="icon icon--check"><span class="icon-dot" /></span>{{ check.title }}
+                <span class="icon icon--check"><span class="icon-dot" /></span>{{ checksStore.titleOn(check, selectedDate) }}
               </div>
             </div>
 

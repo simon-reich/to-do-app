@@ -49,6 +49,15 @@ export interface Check {
    *  whatever reads this, e.g. the calendar) as "due per `schedule` but
    *  absent here" instead of duplicating that bookkeeping. */
   completedDates: string[]
+  /** Snapshot of `title` at the moment each date in completedDates was
+   *  ticked — the calendar's own history shouldn't retroactively change
+   *  just because the check was later renamed (same "don't touch the
+   *  past" reasoning as deletedAt below, just for edits instead of
+   *  deletes). Only ever appended/removed by toggleCompletion, in lockstep
+   *  with completedDates. Optional/possibly missing an entry for a given
+   *  date — data from before this field existed — in which case whatever
+   *  reads it falls back to the check's current title (see titleOn). */
+  titleLog?: { date: string; title: string }[]
   /** Soft-delete, same pattern/reasoning as Todo.deletedAt: set instead of
    *  actually removing a Check that has completedDates history, so a past
    *  calendar day never retroactively loses what it already showed. A
@@ -83,6 +92,13 @@ export const useChecksStore = defineStore('checks', () => {
 
   function isCompletedOn(check: Check, dateStr: string): boolean {
     return check.completedDates.includes(dateStr)
+  }
+
+  // What the check was actually named when dateStr was ticked — see
+  // titleLog's own comment. Falls back to the current title for dates
+  // ticked before titleLog existed.
+  function titleOn(check: Check, dateStr: string): string {
+    return check.titleLog?.find(e => e.date === dateStr)?.title ?? check.title
   }
 
   // Calendar day-detail's completed side — which Checks were ticked on
@@ -129,9 +145,13 @@ export const useChecksStore = defineStore('checks', () => {
   function toggleCompletion(id: string, dateStr: string = todayStr()) {
     const check = checks.value.find(c => c.id === id)
     if (!check) return
-    check.completedDates = isCompletedOn(check, dateStr)
-      ? check.completedDates.filter(d => d !== dateStr)
-      : [...check.completedDates, dateStr]
+    if (isCompletedOn(check, dateStr)) {
+      check.completedDates = check.completedDates.filter(d => d !== dateStr)
+      check.titleLog = (check.titleLog ?? []).filter(e => e.date !== dateStr)
+    } else {
+      check.completedDates = [...check.completedDates, dateStr]
+      check.titleLog = [...(check.titleLog ?? []), { date: dateStr, title: check.title }]
+    }
   }
 
   // Full-replace restore for useStorage.ts's import/import-everything —
@@ -145,7 +165,7 @@ export const useChecksStore = defineStore('checks', () => {
     checks,
     // getters
     activeChecks, todayChecks,
-    completedOn, isCompletedOn,
+    completedOn, isCompletedOn, titleOn,
     // actions
     addCheck, updateCheck, deleteCheck, toggleCompletion, refreshToday, importChecks,
   }
