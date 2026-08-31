@@ -82,11 +82,13 @@
     flex-shrink: 0;
   }
 
-  /* Same slot the tag icon sits in — label on top, switch below, DOM
-     order already matches (no reverse needed, unlike tablet.css). */
+  /* Same slot the tag icon sits in — switch on top, "subs" label below;
+     DOM order is label-then-switch (see App.vue), so this needs the
+     reverse direction, unlike tablet.css's row-reverse for the same
+     reason. */
   .mobile-subs-toggle {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: center;
     gap: 3px;
     flex-shrink: 0;
