@@ -2576,6 +2576,42 @@ onUnmounted(() => {
 
 /* Tablet: smaller/finer cards (but keep all action buttons, unlike phone)
    so several fit per row instead of the desktop-sized cards hogging space. */
+/* Narrow desktop — a real mouse/keyboard desktop layout (sidebar, 3-column
+   grid, keyboard shortcuts all stay on), just not wide enough for
+   full-size cards to fit more than one or two per row in Overview's grid
+   (AllTodos.vue). Sized halfway between this tablet block below and the
+   unqualified desktop default above it. Applies equally to Focus, since
+   both share this same component/stylesheet — there's no separate
+   per-view card size to keep in sync. */
+@media (min-width: 1025px) and (max-width: 1400px) {
+  .todo-card {
+    font-size: 15px;
+    max-width: 500px;
+  }
+
+  .todo-card-main {
+    padding: 9px 14px;
+    gap: 9px;
+  }
+
+  /* Same circle-vs-bare-icon split as the tablet block below — see its
+     own comment. */
+  .card-btn:not(.card-btn--circle) svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .card-btn--circle {
+    width: 16px;
+    height: 16px;
+  }
+
+  .card-btn--circle svg {
+    width: 9px;
+    height: 9px;
+  }
+}
+
 @media (min-width: 701px) and (max-width: 1024px) {
   .todo-card {
     font-size: 13.5px;
