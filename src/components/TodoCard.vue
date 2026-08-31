@@ -663,6 +663,56 @@ const subsVisible = computed(() =>
 // was never actually opened would be a stray, unreachable-by-click field.
 const subsAddVisible = computed(() => themeStore.subsEnabled && cardActuallyOpen.value)
 
+// Editing an existing sub's title (typo fix, etc.) — separate from
+// newSubTitle/newSubInputRef below, which is only ever the trailing
+// add-row. At most one sub is ever being edited at a time.
+const editingSubId = ref<string | null>(null)
+const editSubTitle = ref('')
+const editSubInputRef = ref<HTMLTextAreaElement | null>(null)
+
+function autoGrowEditSub() {
+  const el = editSubInputRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+function startEditSub(sub: Sub) {
+  editingSubId.value = sub.id
+  editSubTitle.value = sub.title
+  nextTick(() => {
+    editSubInputRef.value?.focus()
+    autoGrowEditSub()
+  })
+}
+
+function saveEditSub() {
+  const id = editingSubId.value
+  if (!id) return
+  editingSubId.value = null
+  const trimmed = editSubTitle.value.trim()
+  if (trimmed) store.updateSub(props.todo.id, id, trimmed)
+}
+
+function cancelEditSub() {
+  editingSubId.value = null
+}
+
+// Same reasoning as onSubInputKeydown below: onCardKeydown bails out for
+// anything inside .sub-row, so Enter/Escape need handling right here.
+function onEditSubKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    saveEditSub()
+    return
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    cancelEditSub()
+    return
+  }
+}
+
 const newSubTitle = ref('')
 const newSubInputRef = ref<HTMLTextAreaElement | null>(null)
 
@@ -1790,11 +1840,45 @@ onUnmounted(() => {
               >
                 <Check v-if="sub.completedAt" :size="10" />
               </button>
+              <textarea
+                v-if="editingSubId === sub.id"
+                :ref="(el) => { editSubInputRef = el as HTMLTextAreaElement | null }"
+                v-model="editSubTitle"
+                class="sub-input"
+                rows="1"
+                :style="font ? { fontFamily: font } : {}"
+                @input="autoGrowEditSub"
+                @keydown="onEditSubKeydown"
+                @blur="saveEditSub"
+                @click.stop
+              />
               <span
+                v-else
                 class="sub-title"
                 :class="{ done: !!sub.completedAt }"
                 :style="font ? { fontFamily: font } : {}"
               >{{ sub.title }}</span>
+
+              <button
+                v-if="editingSubId !== sub.id"
+                type="button"
+                class="sub-edit"
+                title="Edit sub"
+                @click.stop="startEditSub(sub)"
+              >
+                <Pencil :size="11" />
+              </button>
+              <button
+                v-else
+                type="button"
+                class="sub-edit"
+                title="Save"
+                @mousedown.prevent
+                @click.stop="saveEditSub"
+              >
+                <Check :size="11" />
+              </button>
+
               <button
                 type="button"
                 class="sub-delete"
@@ -2130,6 +2214,7 @@ onUnmounted(() => {
   background: var(--bg);
 }
 
+.priority .sub-edit,
 .priority .sub-delete {
   color: var(--bg);
 }
@@ -2397,6 +2482,7 @@ onUnmounted(() => {
   opacity: 0.3;
 }
 
+.sub-edit,
 .sub-delete {
   flex-shrink: 0;
   display: flex;
@@ -2412,6 +2498,7 @@ onUnmounted(() => {
 }
 
 @media (hover: hover) {
+  .sub-edit:hover,
   .sub-delete:hover {
     opacity: 1;
   }

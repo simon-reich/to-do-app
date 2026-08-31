@@ -192,6 +192,13 @@ export const useTodosStore = defineStore('todos', () => {
     todo.subs = todo.subs.filter(s => s.id !== subId)
   }
 
+  function updateSub(todoId: string, subId: string, title: string) {
+    const sub = todos.value.find(t => t.id === todoId)?.subs.find(s => s.id === subId)
+    const trimmed = title.trim()
+    if (!sub || !trimmed) return
+    sub.title = trimmed
+  }
+
   function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags' | 'loopInterval' | 'celebration'>>) {
     const todo = todos.value.find(t => t.id === id)
     if (!todo) return
@@ -348,7 +355,7 @@ export const useTodosStore = defineStore('todos', () => {
     completedOn, workedOn, subsCompletedOn,
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
-    addSub, toggleSub, deleteSub,
+    addSub, toggleSub, deleteSub, updateSub,
     addTag, deleteTag, ensureSystemTags, ensureSubsField,
     importData,
   }
