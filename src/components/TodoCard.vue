@@ -953,9 +953,16 @@ function onCardKeydown(e: KeyboardEvent) {
     focusedCheckOption.value = focusedCheckOption.value === 'today' ? 'done' : 'today'
     return
   }
-  if (e.key === ' ' && showTagMenu.value) {
+  // Space starts editing, in either mode (cardActuallyOpen covers both —
+  // see its own comment). Overview's tag menu already has the editor UI
+  // open (showTagMenu), so a plain startEdit() is enough there. Focus's
+  // check-menu doesn't: it needs the same swap to the tag/date editor
+  // that double-clicking the title or F does (openEditFromToday), closing
+  // the check-menu first, before it can start editing.
+  if (e.key === ' ' && cardActuallyOpen.value) {
     e.preventDefault()
-    startEdit()
+    if (showTagMenu.value) startEdit()
+    else openEditFromToday()
     return
   }
   // D — delete in Overview (opens the same confirm modal the Trash icon/
