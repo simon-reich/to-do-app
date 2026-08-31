@@ -126,7 +126,7 @@ function closeCheckModal() {
 <template>
   <div class="focus-view" :class="{ 'is-empty': !filteredTodos.length }">
     <div v-if="themeStore.subsEnabled && filteredTodos.length" class="expand-subs-row">
-      <span class="expand-subs-label">expand subs</span>
+      <span class="expand-subs-label">subs</span>
       <button
         type="button"
         class="switch"
