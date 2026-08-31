@@ -1774,7 +1774,7 @@ onUnmounted(() => {
         </div>
 
         <Transition :css="false" @enter="onExpandEnter" @leave="onExpandLeave">
-          <div v-if="subsVisible" class="sub-row" @click.stop>
+          <div v-if="subsVisible && (todo.subs.length > 0 || subsAddVisible)" class="sub-row" @click.stop>
             <div v-for="sub in todo.subs" :key="sub.id" class="sub-item">
               <button
                 type="button"
