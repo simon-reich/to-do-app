@@ -152,10 +152,12 @@ const hasActivity = computed(() => dayEntries.value.length > 0 || checksOnDay.va
 // though the day's list is no longer *grouped* by that — see dayEntries
 // below. What was actually finished vs. just touched today is still worth
 // showing per item, it's just not the more interesting question for a
-// retrospective glance at the day. `kind` is absent for a todo that only
-// had subs completed today — its own icon slot stays blank (see template),
-// only the subs underneath carry a mark.
-interface DayEntry { todo: Todo; kind?: 'done' | 'worked'; subs: Sub[] }
+// retrospective glance at the day. A todo that only had subs ticked today
+// (never itself Done/Done-for-today) still counts as "worked" here — Done-
+// for-today is about closing a todo back into the pool for later, not the
+// only way of showing you touched it; ticking subs across several days is
+// the same kind of progress and should read the same way in the calendar.
+interface DayEntry { todo: Todo; kind: 'done' | 'worked'; subs: Sub[] }
 
 // Merges doneOnDay/workedOnDay/subsOnDay into one entry per todo — a todo
 // touched in more than one way the same day (e.g. Done *and* some subs
@@ -170,7 +172,7 @@ const dayEntries = computed<DayEntry[]>(() => {
   subsOnDay.value.forEach(({ todo, subs }) => {
     const existing = map.get(todo.id)
     if (existing) existing.subs = subs
-    else map.set(todo.id, { todo, subs })
+    else map.set(todo.id, { todo, kind: 'worked', subs })
   })
   return [...map.values()]
 })
@@ -219,7 +221,7 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
             <div v-if="hasActivity" class="day-items">
               <div v-for="entry in priorityEntries" :key="entry.todo.id" class="day-entry">
                 <div class="day-item">
-                  <span :class="['icon', entry.kind === 'done' ? 'icon--done' : entry.kind === 'worked' ? 'icon--worked' : '']">{{ entry.kind === 'done' ? '✓✓' : entry.kind === 'worked' ? '✓' : '' }}</span>{{ entry.todo.title }}
+                  <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
                 </div>
                 <div v-if="entry.subs.length" class="day-subs">
                   <div v-for="sub in entry.subs" :key="sub.id" class="day-sub-item">– {{ sub.title }}</div>
@@ -228,7 +230,7 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
               <div v-if="priorityEntries.length && otherEntries.length" class="day-divider" />
               <div v-for="entry in otherEntries" :key="entry.todo.id" class="day-entry">
                 <div class="day-item">
-                  <span :class="['icon', entry.kind === 'done' ? 'icon--done' : entry.kind === 'worked' ? 'icon--worked' : '']">{{ entry.kind === 'done' ? '✓✓' : entry.kind === 'worked' ? '✓' : '' }}</span>{{ entry.todo.title }}
+                  <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
                 </div>
                 <div v-if="entry.subs.length" class="day-subs">
                   <div v-for="sub in entry.subs" :key="sub.id" class="day-sub-item">– {{ sub.title }}</div>
