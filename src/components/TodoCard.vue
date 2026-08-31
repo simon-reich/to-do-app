@@ -644,15 +644,23 @@ const emit = defineEmits<{
 const showMenu = computed(() => openCheckMenuId.value === props.todo.id)
 const showTagMenu = computed(() => openTagMenuId.value === props.todo.id)
 
-// Subs are collapsed by default — only shown once some editor surface of
-// the card is actually open (showTagMenu covers both Overview's tag/date
-// editor and Focus's own title-edit, which reuses openTagMenuId too — see
-// openEditFromToday), or Focus's Done/Done-for-today menu, or Focus's
-// "expand all" override (forceExpandSubs) regardless of anything else.
+// showTagMenu covers both Overview's tag/date editor and Focus's own
+// title-edit, which reuses openTagMenuId too (see openEditFromToday) —
+// either of those, or Focus's Done/Done-for-today menu, means some editor
+// surface of the card is genuinely open right now.
+const cardActuallyOpen = computed(() => showTagMenu.value || (props.mode === 'today' && showMenu.value))
+
+// Subs are collapsed by default — shown once the card is genuinely open
+// (see above), or forced via Focus's "expand all" toggle.
 const subsVisible = computed(() =>
-  themeStore.subsEnabled &&
-  (showTagMenu.value || (props.mode === 'today' && showMenu.value) || !!props.forceExpandSubs)
+  themeStore.subsEnabled && (cardActuallyOpen.value || !!props.forceExpandSubs)
 )
+
+// The add-sub row only makes sense while the card is genuinely open —
+// forceExpandSubs alone (Focus's "expand all", card still closed) shows
+// existing subs to skim, but offering an input to type into a card that
+// was never actually opened would be a stray, unreachable-by-click field.
+const subsAddVisible = computed(() => themeStore.subsEnabled && cardActuallyOpen.value)
 
 const newSubTitle = ref('')
 const newSubInputRef = ref<HTMLTextAreaElement | null>(null)
@@ -1792,7 +1800,7 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <div class="sub-item sub-item--add">
+            <div v-if="subsAddVisible" class="sub-item sub-item--add">
               <span class="sub-box sub-box--empty" aria-hidden="true" />
               <textarea
                 ref="newSubInputRef"
