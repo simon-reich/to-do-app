@@ -2215,6 +2215,13 @@ onUnmounted(() => {
 .priority .sub-box {
   border-color: var(--bg);
   color: var(--ink);
+  /* --priority-shadow is an ink shade (see useTheme.ts) — invisible
+     against a priority card's own ink-colored fill, unlike on the normal
+     bg-colored card it was designed for. bg is the one color that always
+     contrasts against ink, so it's the only sensible inversion here (no
+     mono/dark distinction needed the way --priority-shadow itself has,
+     since there's only one bg). */
+  box-shadow: 2px 2px 0 var(--bg);
 }
 
 .priority .sub-box.checked {
