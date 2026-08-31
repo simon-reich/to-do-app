@@ -25,6 +25,10 @@ export const useThemeStore = defineStore('theme', () => {
   const celebrationsEnabled = ref(true)
   const tagsEnabled = ref(true)
   const checksEnabled = ref(true)
+  const subsEnabled = ref(true)
+  // Focus-only: force every card's sub-list open without having to expand
+  // each one individually — see Focus.vue's own toggle switch.
+  const expandFocusSubs = ref(false)
   const savedThemes = ref<ColorTheme[]>([])
   const dailyThemeRotationEnabled = ref(false)
   // Last date (YYYY-MM-DD) a rotation actually happened — guards against
@@ -58,6 +62,14 @@ export const useThemeStore = defineStore('theme', () => {
 
   function toggleChecks() {
     checksEnabled.value = !checksEnabled.value
+  }
+
+  function toggleSubs() {
+    subsEnabled.value = !subsEnabled.value
+  }
+
+  function toggleExpandFocusSubs() {
+    expandFocusSubs.value = !expandFocusSubs.value
   }
 
   function saveTheme(name: string) {
@@ -105,9 +117,9 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   return {
-    activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, checksEnabled, savedThemes,
+    activeBg, activeGray, rounded, priorityShadow, celebrationsEnabled, tagsEnabled, checksEnabled, subsEnabled, expandFocusSubs, savedThemes,
     dailyThemeRotationEnabled, lastThemeRotationDate,
-    apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, toggleChecks, saveTheme, deleteTheme, loadTheme,
+    apply, toggleRounded, togglePriorityShadow, toggleCelebrations, toggleTags, toggleChecks, toggleSubs, toggleExpandFocusSubs, saveTheme, deleteTheme, loadTheme,
     toggleDailyThemeRotation, runDailyThemeRotation,
   }
 }, { persist: true })

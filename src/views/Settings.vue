@@ -169,13 +169,21 @@ watch(deleteThemeConfirm, (open) => {
       </section>
     </div>
 
-    <!-- Celebrations -->
+    <!-- Celebrations + Subs -->
     <div class="section-row">
       <section class="section">
         <h2 class="section-title">celebrations</h2>
         <div class="option-row">
           <button class="btn-outline" :class="{ active: themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled || themeStore.toggleCelebrations()">on</button>
           <button class="btn-outline" :class="{ active: !themeStore.celebrationsEnabled }" @click="themeStore.celebrationsEnabled && themeStore.toggleCelebrations()">off</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">subs</h2>
+        <div class="option-row">
+          <button class="btn-outline" :class="{ active: themeStore.subsEnabled }" @click="themeStore.subsEnabled || themeStore.toggleSubs()">on</button>
+          <button class="btn-outline" :class="{ active: !themeStore.subsEnabled }" @click="themeStore.subsEnabled && themeStore.toggleSubs()">off</button>
         </div>
       </section>
     </div>
