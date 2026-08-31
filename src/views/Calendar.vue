@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { motion } from 'motion-v'
-import { useTodosStore, PRIORITY_TAG_ID, type Todo } from '../stores/todos'
+import { useTodosStore, PRIORITY_TAG_ID, type Todo, type Sub } from '../stores/todos'
 import { useChecksStore } from '../stores/checks'
 import { useThemeStore } from '../stores/theme'
 import { useScrollTracking } from '../composables/useScrollTracking'
@@ -141,25 +141,45 @@ const workedOnDay = computed(() => selectedDate.value ? store.workedOn(selectedD
 // mixed into doneOnDay/workedOnDay — Checks aren't Todos, ticking one is a
 // different kind of event than completing/working a Todo.
 const checksOnDay = computed(() => selectedDate.value && themeStore.checksEnabled ? checksStore.completedOn(selectedDate.value) : [])
+// Subs completed this day, per parent todo — a todo can show up here even
+// on a day it was never itself Done/Done-for-today (see dayEntries below),
+// which is exactly why subs-only progress still lands on the calendar.
+const subsOnDay = computed(() => selectedDate.value && themeStore.subsEnabled ? store.subsCompletedOn(selectedDate.value) : [])
 
-const hasActivity = computed(() => doneOnDay.value.length > 0 || workedOnDay.value.length > 0 || checksOnDay.value.length > 0)
+const hasActivity = computed(() => dayEntries.value.length > 0 || checksOnDay.value.length > 0)
 
 // Each entry keeps its own done/worked "kind" (for the ✓✓ vs ✓ icon) even
 // though the day's list is no longer *grouped* by that — see dayEntries
 // below. What was actually finished vs. just touched today is still worth
 // showing per item, it's just not the more interesting question for a
-// retrospective glance at the day.
-interface DayEntry { todo: Todo; kind: 'done' | 'worked' }
+// retrospective glance at the day. `kind` is absent for a todo that only
+// had subs completed today — its own icon slot stays blank (see template),
+// only the subs underneath carry a mark.
+interface DayEntry { todo: Todo; kind?: 'done' | 'worked'; subs: Sub[] }
+
+// Merges doneOnDay/workedOnDay/subsOnDay into one entry per todo — a todo
+// touched in more than one way the same day (e.g. Done *and* some subs
+// ticked first) gets a single row with both its kind and its subs, instead
+// of appearing twice.
+const dayEntries = computed<DayEntry[]>(() => {
+  const map = new Map<string, DayEntry>()
+  doneOnDay.value.forEach(todo => map.set(todo.id, { todo, kind: 'done', subs: [] }))
+  workedOnDay.value.forEach(todo => {
+    if (!map.has(todo.id)) map.set(todo.id, { todo, kind: 'worked', subs: [] })
+  })
+  subsOnDay.value.forEach(({ todo, subs }) => {
+    const existing = map.get(todo.id)
+    if (existing) existing.subs = subs
+    else map.set(todo.id, { todo, subs })
+  })
+  return [...map.values()]
+})
 
 // Priority vs. everything else, not done vs. worked-on — priority is
 // already the app's one first-class "this mattered" signal everywhere
 // else (card fill, its own filter/sort rank in Focus), so grouping by it
 // here answers "did I get to the important stuff" instead of the more
 // bookkeeping-flavored "did I finish it or just poke at it".
-const dayEntries = computed<DayEntry[]>(() => [
-  ...doneOnDay.value.map(todo => ({ todo, kind: 'done' as const })),
-  ...workedOnDay.value.map(todo => ({ todo, kind: 'worked' as const })),
-])
 const priorityEntries = computed(() => dayEntries.value.filter(e => e.todo.tags.includes(PRIORITY_TAG_ID)))
 const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.includes(PRIORITY_TAG_ID)))
 </script>
@@ -197,12 +217,22 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
             <p class="day-label">{{ selectedDateLabel }}</p>
 
             <div v-if="hasActivity" class="day-items">
-              <div v-for="entry in priorityEntries" :key="entry.todo.id" class="day-item">
-                <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
+              <div v-for="entry in priorityEntries" :key="entry.todo.id" class="day-entry">
+                <div class="day-item">
+                  <span :class="['icon', entry.kind === 'done' ? 'icon--done' : entry.kind === 'worked' ? 'icon--worked' : '']">{{ entry.kind === 'done' ? '✓✓' : entry.kind === 'worked' ? '✓' : '' }}</span>{{ entry.todo.title }}
+                </div>
+                <div v-if="entry.subs.length" class="day-subs">
+                  <div v-for="sub in entry.subs" :key="sub.id" class="day-sub-item">– {{ sub.title }}</div>
+                </div>
               </div>
               <div v-if="priorityEntries.length && otherEntries.length" class="day-divider" />
-              <div v-for="entry in otherEntries" :key="entry.todo.id" class="day-item">
-                <span :class="['icon', entry.kind === 'done' ? 'icon--done' : 'icon--worked']">{{ entry.kind === 'done' ? '✓✓' : '✓' }}</span>{{ entry.todo.title }}
+              <div v-for="entry in otherEntries" :key="entry.todo.id" class="day-entry">
+                <div class="day-item">
+                  <span :class="['icon', entry.kind === 'done' ? 'icon--done' : entry.kind === 'worked' ? 'icon--worked' : '']">{{ entry.kind === 'done' ? '✓✓' : entry.kind === 'worked' ? '✓' : '' }}</span>{{ entry.todo.title }}
+                </div>
+                <div v-if="entry.subs.length" class="day-subs">
+                  <div v-for="sub in entry.subs" :key="sub.id" class="day-sub-item">– {{ sub.title }}</div>
+                </div>
               </div>
               <div v-if="(priorityEntries.length || otherEntries.length) && checksOnDay.length" class="day-divider" />
               <div v-for="check in checksOnDay" :key="check.id" class="day-item day-item--check">
@@ -332,6 +362,12 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
   gap: 6px;
 }
 
+.day-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .day-item {
   display: flex;
   align-items: flex-start;
@@ -340,6 +376,27 @@ const otherEntries = computed(() => dayEntries.value.filter(e => !e.todo.tags.in
   font-weight: bold;
   color: var(--ink);
   font-family: var(--font-playful, sans-serif);
+}
+
+/* Completed subs for that same day, nested under their parent todo — same
+   lower-weight opacity treatment as Checks (.day-item--check) rather than
+   a new color, matching the app's four-value color rule. Indented past
+   the ✓✓/✓ icon column (1.4em + its 10px gap) so it reads as belonging to
+   the todo above it. */
+.day-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: calc(1.4em + 10px);
+  opacity: 0.65;
+}
+
+.day-sub-item {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-playful, sans-serif);
+  word-break: break-word;
 }
 
 .icon {
