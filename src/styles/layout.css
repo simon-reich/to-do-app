@@ -294,32 +294,37 @@
 
 .add-subs-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .add-sub-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
   color: var(--ink);
-  padding: 3px 6px 3px 8px;
-  border: 1px solid var(--ink);
-  border-radius: var(--radius);
+  padding: 1px 0;
   font-family: var(--font-mono, monospace);
-  max-width: 100%;
+  word-break: break-word;
 }
 
 .add-sub-chip-x {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
   background: none;
-  border: none;
   padding: 0;
   color: var(--ink);
   opacity: 0.55;
   cursor: pointer;
+  transition: opacity 0.1s;
 }
 
 .add-sub-chip-x:hover {
