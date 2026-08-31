@@ -1027,7 +1027,7 @@ watch(() => route.path, () => {
                 <span v-for="(sub, i) in newTodoSubs" :key="i" class="add-sub-chip">
                   {{ sub }}
                   <button type="button" class="add-sub-chip-x" title="Remove" @mousedown.prevent="newTodoSubs.splice(i, 1)">
-                    <X :size="10" />
+                    <X :size="9" />
                   </button>
                 </span>
               </div>

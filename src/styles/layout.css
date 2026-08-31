@@ -315,8 +315,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
   border: 1px solid var(--ink);
   border-radius: 50%;
   background: none;
@@ -325,6 +325,14 @@
   opacity: 0.55;
   cursor: pointer;
   transition: opacity 0.1s;
+}
+
+.add-sub-chip-x svg {
+  /* The lucide X glyph's own stroke geometry sits a hair off the exact
+     center of its viewBox — nudging it half a pixel up-left is enough to
+     read as centered inside this small a circle, where the offset is
+     otherwise noticeable. */
+  transform: translate(-0.5px, -0.5px);
 }
 
 .add-sub-chip-x:hover {
