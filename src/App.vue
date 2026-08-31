@@ -153,13 +153,18 @@ function onGlobalKeydown(e: KeyboardEvent) {
   if (shortcutsBlocked(e)) return
   const key = e.key.toLowerCase()
 
-  // S — toggle sort (date / A–Z). Overview only, matching where the sort
-  // button itself is shown; a no-op elsewhere rather than changing state
-  // the user can't currently see.
+  // S — toggle sort (date / A–Z) on Overview, matching where the sort
+  // button itself is shown. Reused on Focus for its own "expand subs"
+  // switch (only when Subs are actually enabled) — same letter, since the
+  // two views never show both controls at once. No-op everywhere else.
   if (key === 's') {
-    if (route.path !== '/all') return
-    e.preventDefault()
-    toggleSort()
+    if (route.path === '/all') {
+      e.preventDefault()
+      toggleSort()
+    } else if (route.path === '/focus' && themeStore.subsEnabled) {
+      e.preventDefault()
+      themeStore.toggleExpandFocusSubs()
+    }
     return
   }
 
@@ -352,7 +357,14 @@ function computeShortcutHints() {
   const targets: { key: string; el: HTMLElement | null }[] = [
     { key: 'C', el: calendarNavRef.value?.$el ?? null },
     { key: 'G', el: route.path === '/all' ? sortListBtnRef.value : null },
-    { key: 'S', el: route.path === '/all' ? sortOrderBtnRef.value : null },
+    {
+      key: 'S',
+      el: route.path === '/all'
+        ? sortOrderBtnRef.value
+        : route.path === '/focus' && themeStore.subsEnabled
+          ? document.querySelector<HTMLElement>('.expand-subs-row .switch')
+          : null,
+    },
     { key: 'N', el: (route.path === '/all' || route.path === '/focus') ? todoInputRef.value : null },
     { key: 'T', el: route.path === '/all' && themeStore.tagsEnabled ? tagInputRef.value : null },
     { key: 'X', el: settingsBtnRef.value },
