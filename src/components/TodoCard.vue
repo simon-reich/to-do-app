@@ -515,6 +515,7 @@ import { useThemeStore } from '../stores/theme'
 import { onQuickExpandEnter, onQuickExpandLeave } from '../composables/useQuickExpand'
 import { activeModal } from '../composables/useModalGuard'
 import { runLoopSchedule, isLoopDueToday } from '../composables/useLoopSchedule'
+import { burstCheckbox } from '../composables/useCheckboxBurst'
 import LoopPicker from './LoopPicker.vue'
 
 const props = defineProps<{
@@ -745,9 +746,13 @@ function onSubInputKeydown(e: KeyboardEvent) {
 // menu (Focus only) — a nudge to actually close the todo out, without
 // forcing it: the todo stays put if nothing's clicked. Only fires on the
 // transition into "all done", not on every click once already all done.
-function handleToggleSub(sub: Sub) {
+function handleToggleSub(sub: Sub, event: MouseEvent) {
+  const wasChecked = !!sub.completedAt
   const wasAllDone = props.todo.subs.length > 0 && props.todo.subs.every(s => s.completedAt)
   store.toggleSub(props.todo.id, sub.id)
+  if (!wasChecked && themeStore.celebrationsEnabled) {
+    burstCheckbox(event.currentTarget as HTMLElement)
+  }
   const nowAllDone = props.todo.subs.length > 0 && props.todo.subs.every(s => s.completedAt)
   if (!wasAllDone && nowAllDone && props.mode === 'today' && !showMenu.value) {
     openCheckMenuId.value = props.todo.id
@@ -1781,7 +1786,7 @@ onUnmounted(() => {
                 class="sub-box"
                 :class="{ checked: !!sub.completedAt }"
                 title="Toggle sub"
-                @click.stop="handleToggleSub(sub)"
+                @click.stop="handleToggleSub(sub, $event)"
               >
                 <Check v-if="sub.completedAt" :size="10" />
               </button>
