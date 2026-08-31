@@ -128,6 +128,17 @@
     opacity: 0.35;
   }
 
+  /* Same grid slot the tag icon sits in — row-reverse so the switch
+     (visually first, per its own DOM order it's second) sits where the
+     icon used to, with the "subs" label to its right. */
+  .mobile-subs-toggle {
+    display: flex;
+    grid-area: tags;
+    align-items: center;
+    flex-direction: row-reverse;
+    gap: 6px;
+  }
+
   /* ── Tag panel (full screen overlay; shared bits in layout.css) ──
      display:flex must stay here (not hoisted to layout.css) so it only
      wins against layout.css's own .mobile-only default (display:none)

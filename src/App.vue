@@ -1067,9 +1067,29 @@ watch(() => route.path, () => {
           </RouterLink>
         </nav>
 
-        <!-- Mobile/Tablet: tag panel toggle, or direct All/Priority toggle when tags are off -->
+        <!-- Mobile/Tablet: tag panel toggle, or direct All/Priority toggle
+             when tags are off — but in Focus, tags are always inert (see
+             #app.is-focus's own dimming rules), so this slot shows the
+             subs expand-toggle instead whenever Subs are enabled, taking
+             priority over both other variants. -->
+        <div
+          v-if="route.path === '/focus' && themeStore.subsEnabled"
+          class="mobile-subs-toggle mobile-only"
+        >
+          <span class="mobile-subs-label">subs</span>
+          <button
+            type="button"
+            class="mobile-subs-switch"
+            role="switch"
+            :aria-checked="themeStore.expandFocusSubs"
+            :class="{ on: themeStore.expandFocusSubs }"
+            @click="themeStore.toggleExpandFocusSubs()"
+          >
+            <span class="mobile-subs-switch-knob" />
+          </button>
+        </div>
         <button
-          v-if="themeStore.tagsEnabled"
+          v-else-if="themeStore.tagsEnabled"
           class="mobile-tags-btn mobile-only"
           title="Tags"
           @click="showMobileTags = true"

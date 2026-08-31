@@ -82,6 +82,16 @@
     flex-shrink: 0;
   }
 
+  /* Same slot the tag icon sits in — label on top, switch below, DOM
+     order already matches (no reverse needed, unlike tablet.css). */
+  .mobile-subs-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
   /* ── Tag panel (full screen overlay; shared bits in layout.css) ──
      display:flex must stay here (not hoisted to layout.css): .mobile-only
      already makes this element flex here, so this is somewhat redundant,
