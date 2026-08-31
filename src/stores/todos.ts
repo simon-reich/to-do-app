@@ -36,12 +36,22 @@ export interface LoopInterval {
   startDate: string
 }
 
+export interface Sub {
+  id: string
+  title: string
+  /** ISO-Timestamp when checked; undefined = still open. */
+  completedAt?: string
+}
+
 export interface Todo {
   id: string
   title: string
   tags: string[]
   createdAt: string
   inToday: boolean
+  /** Optional sub-todos — live and die with this todo, no independent
+   *  schedule/archive of their own (unlike Checks). See Sub above. */
+  subs: Sub[]
   /** When this todo was last sent to Focus — drives Focus's own sort
    *  order (oldest addition first), separate from createdAt. */
   focusAddedAt?: string
@@ -98,6 +108,7 @@ export const useTodosStore = defineStore('todos', () => {
           tags: [],
           createdAt: entry.workLog[0] ?? (entry.done ? `${entry.done}T00:00:00.000Z` : new Date().toISOString()),
           inToday: false,
+          subs: [],
           workLog: entry.workLog,
           completedAt: entry.done ? `${entry.done}T00:00:00.000Z` : undefined,
           deletedAt: new Date().toISOString(),
@@ -133,19 +144,52 @@ export const useTodosStore = defineStore('todos', () => {
     )
   }
 
+  // Subs completed on a given calendar day, grouped by their parent todo —
+  // Calendar.vue's day-detail merges this into its entry list so progress on
+  // a todo's subs shows up even on a day the todo itself was never Done or
+  // Done-for-today. Same "reads all todos, deletedAt stubs included" shape
+  // as completedOn/workedOn above, for the same reason.
+  function subsCompletedOn(dateStr: string): { todo: Todo; subs: Sub[] }[] {
+    return todos.value
+      .map(todo => ({ todo, subs: todo.subs.filter(s => s.completedAt?.slice(0, 10) === dateStr) }))
+      .filter(entry => entry.subs.length > 0)
+  }
+
   // ── Todo Actions ──
-  function addTodo(title: string, extra: Partial<Pick<Todo, 'tags' | 'loopInterval'>> = {}): Todo {
+  function addTodo(title: string, extra: Partial<Pick<Todo, 'tags' | 'loopInterval'>> & { subs?: string[] } = {}): Todo {
     const todo: Todo = {
       id: uuid(),
       title: title.trim(),
       tags: extra.tags ?? [],
       createdAt: new Date().toISOString(),
       inToday: false,
+      subs: (extra.subs ?? []).map(subTitle => ({ id: uuid(), title: subTitle.trim() })).filter(s => s.title),
       workLog: [],
       loopInterval: extra.loopInterval,
     }
     todos.value.unshift(todo)
     return todo
+  }
+
+  function addSub(todoId: string, title: string): Sub | undefined {
+    const todo = todos.value.find(t => t.id === todoId)
+    const trimmed = title.trim()
+    if (!todo || !trimmed) return
+    const sub: Sub = { id: uuid(), title: trimmed }
+    todo.subs.push(sub)
+    return sub
+  }
+
+  function toggleSub(todoId: string, subId: string) {
+    const sub = todos.value.find(t => t.id === todoId)?.subs.find(s => s.id === subId)
+    if (!sub) return
+    sub.completedAt = sub.completedAt ? undefined : new Date().toISOString()
+  }
+
+  function deleteSub(todoId: string, subId: string) {
+    const todo = todos.value.find(t => t.id === todoId)
+    if (!todo) return
+    todo.subs = todo.subs.filter(s => s.id !== subId)
   }
 
   function updateTodo(id: string, patch: Partial<Pick<Todo, 'title' | 'tags' | 'loopInterval' | 'celebration'>>) {
@@ -165,7 +209,7 @@ export const useTodosStore = defineStore('todos', () => {
   function deleteTodo(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (!todo) return
-    if (todo.completedAt || todo.workLog.length > 0) {
+    if (todo.completedAt || todo.workLog.length > 0 || todo.subs.some(s => s.completedAt)) {
       todo.deletedAt = new Date().toISOString()
     } else {
       todos.value = todos.value.filter(t => t.id !== id)
@@ -252,7 +296,8 @@ export const useTodosStore = defineStore('todos', () => {
   // migration above: reconstruct a deletedAt stub for any todoId it
   // mentions that isn't in the imported todos themselves.
   function importData(data: { todos: Todo[]; tags: Tag[]; history?: { todoId: string; title: string; date: string; type: 'done' | 'worklog' }[] }) {
-    todos.value = data.todos
+    // Absent in files exported before Subs existed — default to none.
+    todos.value = data.todos.map(t => ({ ...t, subs: t.subs ?? [] }))
     tags.value = data.tags
     if (data.history?.length) {
       const byTodo = new Map<string, { title: string; done?: string; workLog: string[] }>()
@@ -271,6 +316,7 @@ export const useTodosStore = defineStore('todos', () => {
           tags: [],
           createdAt: entry.workLog[0] ?? (entry.done ? `${entry.done}T00:00:00.000Z` : new Date().toISOString()),
           inToday: false,
+          subs: [],
           workLog: entry.workLog,
           completedAt: entry.done ? `${entry.done}T00:00:00.000Z` : undefined,
           deletedAt: new Date().toISOString(),
@@ -284,9 +330,10 @@ export const useTodosStore = defineStore('todos', () => {
     todos, tags,
     // getters
     activeTodos, todayTodos, userTags,
-    completedOn, workedOn,
+    completedOn, workedOn, subsCompletedOn,
     // actions
     addTodo, updateTodo, deleteTodo, sendToToday, removeFromToday, completeTodo, doneForToday,
+    addSub, toggleSub, deleteSub,
     addTag, deleteTag, ensureSystemTags,
     importData,
   }
