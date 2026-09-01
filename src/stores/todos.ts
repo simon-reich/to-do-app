@@ -34,6 +34,14 @@ export interface LoopInterval {
   /** ISO date (YYYY-MM-DD) — the recurrence's start date in loop mode, or
    *  the due date itself in once mode. */
   startDate: string
+  /** Loop mode only. When true, checking this todo off as "Done for
+   *  today" shifts startDate to that moment instead of leaving it fixed —
+   *  so a todo due every 3 days, but actually ticked off a day late,
+   *  counts its next occurrence 3 days from the actual check-off rather
+   *  than from the original schedule. Default false (fixed schedule,
+   *  existing behavior). No effect in 'once' mode or on 'weekdays' unit,
+   *  where due-ness doesn't depend on startDate at all. */
+  rescheduleFromCompletion?: boolean
 }
 
 export interface Sub {
@@ -250,8 +258,15 @@ export const useTodosStore = defineStore('todos', () => {
   function doneForToday(id: string) {
     const todo = todos.value.find(t => t.id === id)
     if (todo) {
-      todo.workLog.push(new Date().toISOString())
+      const now = new Date()
+      todo.workLog.push(now.toISOString())
       todo.inToday = false
+      // Opt-in per-todo (see LoopInterval.rescheduleFromCompletion) — the
+      // next occurrence counts from this check-off instead of the
+      // original fixed schedule.
+      if (todo.loopInterval?.rescheduleFromCompletion && (todo.loopInterval.mode ?? 'loop') === 'loop') {
+        todo.loopInterval.startDate = now.toISOString().slice(0, 10)
+      }
     }
   }
 

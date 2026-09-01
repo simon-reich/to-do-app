@@ -14,8 +14,16 @@ const props = withDefaults(defineProps<{
    *  schedule is always recurring (Checks — see CLAUDE.md's Checks
    *  section) and has no once/loop distinction to begin with. */
   allowOnce?: boolean
+  /** false hides the "shift schedule when done late" toggle — for callers
+   *  whose schedule type has no field to persist it in (Checks' own
+   *  CheckSchedule, unlike Todo's LoopInterval, has no
+   *  rescheduleFromCompletion — see CheckModal.vue's updateSchedule,
+   *  which strips it back out). Showing it there would look togglable
+   *  but silently never stick. */
+  allowReschedule?: boolean
 }>(), {
   allowOnce: true,
+  allowReschedule: true,
 })
 
 const emit = defineEmits<{
@@ -69,6 +77,7 @@ function selectMode(m: 'once' | 'loop') {
     unit: props.modelValue?.unit ?? 'day',
     count: props.modelValue?.count ?? 1,
     startDate: startDate.value,
+    rescheduleFromCompletion: props.modelValue?.rescheduleFromCompletion,
   })
 }
 
@@ -91,14 +100,14 @@ const selectedWeekdays = computed(() => isWeekdaysMode.value ? (props.modelValue
 // rather than losing it, same idea as selectMode's once↔loop handling.
 function selectWeekdaysMode() {
   const weekdays = isWeekdaysMode.value && props.modelValue!.weekdays?.length ? props.modelValue!.weekdays! : [1, 2, 3, 4, 5]
-  emit('update:modelValue', { mode: 'loop', unit: 'weekdays', weekdays, startDate: startDate.value })
+  emit('update:modelValue', { mode: 'loop', unit: 'weekdays', weekdays, startDate: startDate.value, rescheduleFromCompletion: props.modelValue?.rescheduleFromCompletion })
 }
 
 function toggleWeekday(day: number) {
   const next = selectedWeekdays.value.includes(day)
     ? selectedWeekdays.value.filter(d => d !== day)
     : [...selectedWeekdays.value, day].sort((a, b) => a - b)
-  emit('update:modelValue', { mode: 'loop', unit: 'weekdays', weekdays: next, startDate: startDate.value })
+  emit('update:modelValue', { mode: 'loop', unit: 'weekdays', weekdays: next, startDate: startDate.value, rescheduleFromCompletion: props.modelValue?.rescheduleFromCompletion })
 }
 
 const MAX_CUSTOM_DAYS = 999
@@ -122,13 +131,13 @@ const startDateDisplay = computed(() => {
 })
 
 function select(unit: LoopUnit, count: number) {
-  emit('update:modelValue', { mode: 'loop', unit, count, startDate: startDate.value })
+  emit('update:modelValue', { mode: 'loop', unit, count, startDate: startDate.value, rescheduleFromCompletion: props.modelValue?.rescheduleFromCompletion })
 }
 
 function applyCustomCount() {
   const count = Math.min(MAX_CUSTOM_DAYS, Math.max(1, Math.round(customCount.value) || 1))
   customCount.value = count
-  emit('update:modelValue', { mode: 'loop', unit: 'day', count, startDate: startDate.value })
+  emit('update:modelValue', { mode: 'loop', unit: 'day', count, startDate: startDate.value, rescheduleFromCompletion: props.modelValue?.rescheduleFromCompletion })
 }
 
 // maxlength doesn't actually clamp type="number" inputs in most browsers
@@ -145,6 +154,14 @@ function onCustomCountInput(e: Event) {
 function updateStartDate(date: string) {
   const base = props.modelValue ?? { mode: 'once' as const, startDate: date }
   emit('update:modelValue', { ...base, startDate: date })
+}
+
+// No effect on 'weekdays' (due-ness there is pure day-of-week, startDate
+// is just an anchor for the forward search) — hidden for that unit rather
+// than shown as a no-op toggle.
+function toggleReschedule() {
+  if (!props.modelValue) return
+  emit('update:modelValue', { ...props.modelValue, rescheduleFromCompletion: !props.modelValue.rescheduleFromCompletion })
 }
 
 // The "from" date picker opens as a centered modal (same pattern as the
@@ -304,6 +321,20 @@ const dateAttributes = computed(() => [{
         </div>
       </div>
 
+      <div v-if="allowReschedule && !isWeekdaysMode" class="loop-row">
+        <button
+          type="button"
+          class="loop-toggle"
+          :class="{ active: !!modelValue?.rescheduleFromCompletion }"
+          title="Count the next occurrence from when it's checked off, not the fixed schedule"
+          @mousedown.prevent
+          @click="toggleReschedule"
+        >
+          <span class="loop-toggle-box" />
+          updates when done
+        </button>
+      </div>
+
       <div class="loop-row">
         <span class="loop-next">{{ loopNextText }}</span>
       </div>
@@ -421,6 +452,53 @@ const dateAttributes = computed(() => [{
 .loop-custom-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.loop-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--ink);
+  opacity: 0.55;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.loop-toggle.active {
+  opacity: 1;
+}
+
+.loop-toggle-box {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 2px solid var(--ink);
+  /* Same idea as Checks' checkbox (see CLAUDE.md) — tracks
+     rounded/square, but capped at 3px so a box this small doesn't turn
+     into a full circle in rounded mode. */
+  border-radius: min(var(--radius), 3px);
+  background: none;
+}
+
+.loop-toggle.active .loop-toggle-box {
+  background: var(--ink);
+}
+
+.inverted .loop-toggle {
+  color: var(--bg);
+}
+
+.inverted .loop-toggle-box {
+  border-color: var(--bg);
+}
+
+.inverted .loop-toggle.active .loop-toggle-box {
+  background: var(--bg);
 }
 
 .loop-next {

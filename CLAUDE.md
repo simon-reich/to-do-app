@@ -74,6 +74,8 @@ interface AppState {
 ```
 
 > **Date-Feature.** Der System-Tag `date` (intern weiterhin die ID `__loop__`, nur das Label wurde von "loop" umbenannt) gibt einem Todo optional ein `loopInterval`-Objekt mit `mode: 'once' | 'loop'`. `'once'` ist ein einmaliges Fälligkeitsdatum (`startDate`), `'loop'` die bestehende Wiederholung (`unit`/`count`/`startDate`). Ein fälliges Todo (once ab seinem Datum, loop nach der bisherigen Logik) wird automatisch nach Focus geschickt, genau wie bisher — `'once'` bleibt dabei fällig (taucht bei Rückgabe in den Pool wieder auf), bis es tatsächlich erledigt wird.
+>
+> **"updates when done"-Toggle.** Optionaler Loop-Todo-Schalter (`loopInterval.rescheduleFromCompletion`, Default `false`, kein Effekt bei `'once'`/`weekdays`): lässt `doneForToday` den `startDate` auf den Abhak-Zeitpunkt verschieben, statt ihn fix zu lassen — die nächste Fälligkeit zählt dann ab dem tatsächlichen Abhaken. Checks blenden den Toggle über `:allow-reschedule="false"` aus (`CheckSchedule` hat kein passendes Feld dafür).
 
 > **Projekte wurden entfernt.** Das Datenmodell kennt keine `Project`-Entität mehr. Tags sind das einzige Kategorisierungs-Feature.
 
