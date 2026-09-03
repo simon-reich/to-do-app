@@ -31,3 +31,5 @@ SPEC-flutter-port.md
 *.njsproj
 *.sln
 *.sw?
+
+scripts
