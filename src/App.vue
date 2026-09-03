@@ -777,6 +777,21 @@ function onTodoBlur() {
   }, 200)
 }
 
+// Escape on the add-todo input itself has to defer to a modal opened from
+// inside it (LoopPicker's "from"/"starts" date picker) — that modal is a
+// Teleport, so it never actually moves focus off this input (see
+// LoopPicker's mousedown.prevent), meaning this handler is still the one
+// that receives the keydown. Without this guard, Escaping the date modal
+// closed the whole tag/loop panel and blurred the input in the same
+// keystroke — this handler runs at the input itself, before the event
+// even reaches onGlobalKeydown's activeModal handling further up the
+// document, so stopImmediatePropagation there comes too late to stop it.
+function onTodoInputEscape() {
+  if (activeModal.value) return
+  showTagModal.value = false
+  todoInputRef.value?.blur()
+}
+
 function keepTodoModalOpen() {
   if (todoBlurCloseTimer) {
     clearTimeout(todoBlurCloseTimer)
@@ -1003,7 +1018,7 @@ watch(() => route.path, () => {
             @input="onTodoInput"
             @blur="onTodoBlur"
             @keydown.enter.prevent="addTodo"
-            @keydown.escape="showTagModal = false; todoInputRef?.blur()"
+            @keydown.escape="onTodoInputEscape"
             @keydown="onTodoTitleTabKeydown"
           />
           <button
