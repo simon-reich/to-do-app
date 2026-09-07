@@ -236,10 +236,33 @@ function loadFrameSvg(importer: () => Promise<{ default: string }>): Promise<str
   return promise
 }
 
-interface CelebrationConfig {
+// Three breakpoint tiers, each with its own hand-exported artwork (not
+// just a scaled-up/-down version of one file — frame count/timing can
+// differ between tiers, see CelebrationVariant.fallbackCycleMs) at
+// src/assets/animations/svg/<name>_<width>.svg, matching the app's own
+// existing breakpoints (700px mobile/tablet split, 1024px tablet/desktop
+// split — see mobile.css/layout.css) rather than inventing new ones.
+type CelebrationTier = 'phone' | 'tablet' | 'desktop'
+
+function currentCelebrationTier(): CelebrationTier {
+  const w = window.innerWidth
+  if (w <= 700) return 'phone'
+  if (w <= 1024) return 'tablet'
+  return 'desktop'
+}
+
+interface CelebrationVariant {
   importer: () => Promise<{ default: string }>
-  size: { width: number } | { height: number }
+  // Fallback only (used if getAnimations() isn't available) — must match
+  // the cycle duration baked into that tier's own SVG <style> (e.g.
+  // "2.97s" -> 2970). Tracked per tier, not just per celebration: the
+  // desktop/tablet/phone exports of the same celebration don't always
+  // share one duration.
   fallbackCycleMs: number
+}
+
+interface CelebrationConfig {
+  variants: Record<CelebrationTier, CelebrationVariant>
   verticalAnchor?: 'center' | 'bottom'
 }
 
@@ -247,12 +270,19 @@ interface CelebrationConfig {
 // (playFrameCelebration) and the pre-completion teaser
 // (showCelebrationTeaser) below — same sizing/positioning either way, only
 // what happens to its opacity/animations afterward differs.
+//
+// Sizing is "cover", not "contain": every tier's artwork always fills the
+// entire overlay on both axes, cropped rather than letterboxed on
+// whichever axis it doesn't naturally match — same idea as CSS
+// background-size:cover/object-fit:cover, just computed by hand since an
+// inlined <svg> (needed so its paths can be recolored, see the comment
+// above loadFrameSvg) doesn't get either of those for free. Scale is
+// derived from the SVG's own viewBox, not the tier's nominal pixel width,
+// so this keeps working correctly even if a future export's viewBox
+// doesn't exactly match its filename's width.
 function buildFrameOverlay(svgRaw: string, config: CelebrationConfig): { overlay: HTMLDivElement; svg: SVGElement | null } {
-  const { size, verticalAnchor = 'center' } = config
+  const { verticalAnchor = 'center' } = config
   const overlay = document.createElement('div')
-  // overflow:hidden clips the oversized SVG below to the viewport edges
-  // instead of letting it push a scrollbar into existence.
-  //
   // No z-index — same trick as the old particle() helper above: #app is
   // a plain, non-positioned box and body isn't its own stacking context
   // either, so a fixed element's z-index would stack against the *root*
@@ -261,26 +291,33 @@ function buildFrameOverlay(svgRaw: string, config: CelebrationConfig): { overlay
   // order: earlier siblings paint first (further back), so this paints
   // after body's background but before #app — behind every card, menu,
   // and panel, without needing any z-index at all.
-  const alignItems = verticalAnchor === 'bottom' ? 'flex-end' : 'center'
-  // A 'bottom'-anchored overlay paints behind #app (see above), which
+  //
+  // A 'bottom'-anchored celebration paints behind #app (see above), which
   // includes the mobile bottom nav (fixed, 60px, see .mobile-bottom-nav in
   // mobile.css) — flush against the true viewport bottom otherwise sits
   // half-hidden underneath it. Same mobile breakpoint (700px) that CSS
   // itself uses, checked fresh per build rather than tracked reactively —
   // this overlay is short-lived and torn down right after, so there's
-  // nothing to keep in sync across a resize.
-  const bottomInset = verticalAnchor === 'bottom' && window.innerWidth <= 700 ? '60px' : '0'
-  overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:${bottomInset};display:flex;align-items:${alignItems};justify-content:center;overflow:hidden;pointer-events:none;`
+  // nothing to keep in sync across a resize. Shrinking the overlay's own
+  // box (rather than just nudging the svg) means the cover-scale
+  // calculation below sees the same, smaller viewport the crop is
+  // actually happening against.
+  const bottomInsetPx = verticalAnchor === 'bottom' && window.innerWidth <= 700 ? 60 : 0
+  overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:${bottomInsetPx}px;overflow:hidden;pointer-events:none;`
   overlay.innerHTML = svgRaw
   const svg = overlay.querySelector('svg')
   if (svg) {
-    // Either pinned to a viewport width (wider than 100vw on purpose for
-    // some — centered and cropped by the overlay's overflow:hidden, so it
-    // runs off both left and right edges rather than fitting inside them)
-    // or pinned to a viewport height, with the other axis left to `auto`
-    // so the SVG's own aspect ratio drives it.
-    const sizeCss = 'width' in size ? `width:${size.width}vw;height:auto;` : `height:${size.height}vh;width:auto;`
-    svg.style.cssText = `display:block;${sizeCss}flex-shrink:0;`
+    const viewBox = svg.viewBox.baseVal
+    const naturalWidth = viewBox?.width || svg.width.baseVal.value
+    const naturalHeight = viewBox?.height || svg.height.baseVal.value
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight - bottomInsetPx
+    const scale = Math.max(viewportWidth / naturalWidth, viewportHeight / naturalHeight)
+    const scaledWidth = naturalWidth * scale
+    const scaledHeight = naturalHeight * scale
+    const left = (viewportWidth - scaledWidth) / 2
+    const top = verticalAnchor === 'bottom' ? viewportHeight - scaledHeight : (viewportHeight - scaledHeight) / 2
+    svg.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${scaledWidth}px;height:${scaledHeight}px;`
     svg.querySelectorAll('path').forEach((p) => p.setAttribute('fill', 'var(--ink)'))
   }
   return { overlay, svg }
@@ -291,7 +328,8 @@ function buildFrameOverlay(svgRaw: string, config: CelebrationConfig): { overlay
 // CLAUDE.md for how new ones are added) as a full-viewport background
 // overlay, then removes it once the animation completes.
 async function playFrameCelebration(config: CelebrationConfig) {
-  const svgRaw = await loadFrameSvg(config.importer)
+  const variant = config.variants[currentCelebrationTier()]
+  const svgRaw = await loadFrameSvg(variant.importer)
   const { overlay, svg } = buildFrameOverlay(svgRaw, config)
   document.body.prepend(overlay)
   // Removal used to be a plain setTimeout racing against the step-end
@@ -314,8 +352,8 @@ async function playFrameCelebration(config: CelebrationConfig) {
   // guess — the fade below has to span exactly this or its own fade-out
   // tail would either cut off early (still opaque) or run past removal.
   const totalDuration = animations.length
-    ? Number(animations[0]?.effect?.getComputedTiming().endTime ?? config.fallbackCycleMs)
-    : config.fallbackCycleMs
+    ? Number(animations[0]?.effect?.getComputedTiming().endTime ?? variant.fallbackCycleMs)
+    : variant.fallbackCycleMs
   // One continuous opacity animation for the whole celebration — fades in
   // over its first ~150ms, holds, fades out over its last ~150ms. This is
   // deliberately a single animate() call spanning the full duration
@@ -337,7 +375,7 @@ async function playFrameCelebration(config: CelebrationConfig) {
   if (animations.length) {
     await Promise.allSettled(animations.map((a) => a.finished))
   } else {
-    await new Promise((resolve) => setTimeout(resolve, config.fallbackCycleMs))
+    await new Promise((resolve) => setTimeout(resolve, variant.fallbackCycleMs))
   }
   overlay.remove()
 }
@@ -346,30 +384,45 @@ async function playFrameCelebration(config: CelebrationConfig) {
 // "Celebration-Animationen" section in CLAUDE.md before adding another.
 // Which key a given todo gets is decided once, in stores/todos.ts's
 // sendToToday (see Todo.celebration and useCelebrations.ts) — not here;
-// this map only knows how to actually render a given key.
-// fallbackCycleMs is a fallback only (used if getAnimations() isn't
-// available) — it must match the cycle duration baked into that SVG's own
-// <style> (e.g. "2.97s" -> 2970).
+// this map only knows how to actually render a given key. Each celebration
+// needs all three tiers (desktop/tablet/phone, see CelebrationTier) —
+// there's no single-tier fallback, since a viewport can only ever ask for
+// its own tier.
 const ALL_CELEBRATIONS: Record<CelebrationKey, CelebrationConfig> = {
-  cat: {
-    importer: () => import('../assets/animations/cat.svg?raw'),
-    size: { width: 160 },
-    fallbackCycleMs: 3640,
+  blackCat: {
+    variants: {
+      desktop: { importer: () => import('../assets/animations/svg/cat-black_1920.svg?raw'), fallbackCycleMs: 3780 },
+      tablet: { importer: () => import('../assets/animations/svg/cat-black_810.svg?raw'), fallbackCycleMs: 3360 },
+      phone: { importer: () => import('../assets/animations/svg/cat-black_486.svg?raw'), fallbackCycleMs: 3150 },
+    },
   },
   whale: {
-    importer: () => import('../assets/animations/wale-05.svg?raw'),
-    size: { height: 100 },
-    fallbackCycleMs: 1200,
+    variants: {
+      desktop: { importer: () => import('../assets/animations/svg/whale-05_1920.svg?raw'), fallbackCycleMs: 1680 },
+      tablet: { importer: () => import('../assets/animations/svg/whale-05_810.svg?raw'), fallbackCycleMs: 1680 },
+      phone: { importer: () => import('../assets/animations/svg/whale-05_486.svg?raw'), fallbackCycleMs: 1680 },
+    },
   },
   penguin: {
-    // Full viewport width, anchored to the bottom instead of vertically
-    // centered like cat/whale — a penguin standing on the "ground" reads
-    // better than one floating mid-screen.
-    importer: () => import('../assets/animations/pinguin-01.svg?raw'),
-    size: { width: 100 },
-    fallbackCycleMs: 2970,
+    // Anchored to the bottom instead of vertically centered like
+    // cat/whale — a penguin standing on the "ground" reads better than
+    // one floating mid-screen, and stays true even scaled up to cover the
+    // viewport (see buildFrameOverlay's verticalAnchor handling).
+    variants: {
+      desktop: { importer: () => import('../assets/animations/svg/pinguin_1920.svg?raw'), fallbackCycleMs: 2970 },
+      tablet: { importer: () => import('../assets/animations/svg/pinguin_810.svg?raw'), fallbackCycleMs: 2970 },
+      phone: { importer: () => import('../assets/animations/svg/pinguin_486.svg?raw'), fallbackCycleMs: 2970 },
+    },
     verticalAnchor: 'bottom',
   },
+}
+
+// Old persisted todos can still carry a celebration key retired from
+// CELEBRATION_KEYS (e.g. the plain, non-black 'cat' this replaced) —
+// ALL_CELEBRATIONS has nothing for those anymore. Re-drawing a fresh key
+// on the fly beats crashing on an undefined config.
+function resolveCelebrationConfig(key: CelebrationKey): CelebrationConfig {
+  return ALL_CELEBRATIONS[key] ?? ALL_CELEBRATIONS[drawCelebrationKey()]
 }
 
 // Pre-completion teaser — see the Focus check-menu's showMenu watch in
@@ -397,8 +450,8 @@ let teaserToken = 0
 // race to lose.
 export async function showCelebrationTeaser(key: CelebrationKey) {
   const token = ++teaserToken
-  const config = ALL_CELEBRATIONS[key]
-  const svgRaw = await loadFrameSvg(config.importer)
+  const config = resolveCelebrationConfig(key)
+  const svgRaw = await loadFrameSvg(config.variants[currentCelebrationTier()].importer)
   // Superseded by a newer show/hide call (menu closed again, or a
   // different card's opened) while the SVG was still loading.
   if (token !== teaserToken) return
@@ -433,7 +486,7 @@ export function hideCelebrationTeaser() {
 // one-line swap to bring back if the frame animations don't stick.
 export function celebrateBackground(key: CelebrationKey) {
   hideCelebrationTeaser()
-  playFrameCelebration(ALL_CELEBRATIONS[key])
+  playFrameCelebration(resolveCelebrationConfig(key))
   // const effect = nextBgEffect()
   // if (effect === 'hearts') bgHearts()
   // else if (effect === 'confetti') bgConfetti()
